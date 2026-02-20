@@ -48,13 +48,13 @@ export default function HeroSection() {
       {/* Floating light orbs */}
       <motion.div
         className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(217 91% 60% / 0.08) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, hsl(38 85% 55% / 0.08) 0%, transparent 70%)" }}
         animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(199 89% 48% / 0.06) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, hsl(25 90% 58% / 0.06) 0%, transparent 70%)" }}
         animate={{ y: [0, 15, 0], x: [0, -15, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
