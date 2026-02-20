@@ -8,7 +8,8 @@ import {
   Sparkles, X, AlertTriangle, ChevronDown, Users, Briefcase, Filter,
   ArrowUpDown, Bell, Heart, Share2, BarChart3, Luggage, Wifi, UtensilsCrossed,
   Zap, Eye, Star, Shield, ChevronRight, RefreshCw, CheckCircle2, ArrowLeft,
-  ShoppingCart, CreditCard, Loader2
+  ShoppingCart, CreditCard, Loader2, FileText, Info, AlertCircle, Package,
+  Clock, Coffee
 } from "lucide-react";
 
 const PRICE_MARKUP = 1.10; // 10% markup sobre preço Amadeus
@@ -678,6 +679,271 @@ const quickSearches = [
   { origin: "GRU", dest: "MCO", label: "São Paulo → Orlando", emoji: "🇺🇸" },
 ];
 
+// ─── Baggage rules by cabin ───
+const baggageRules: Record<string, { carry: string; checked: string; extra: string }> = {
+  economy:  { carry: "1 mala de mão (até 10 kg, 55x35x25 cm)", checked: "1 mala despachada (até 23 kg)", extra: "Malas adicionais cobradas à parte" },
+  premium:  { carry: "1 mala de mão (até 12 kg)", checked: "2 malas despachadas (até 23 kg cada)", extra: "Itens esportivos permitidos (taxa)" },
+  business: { carry: "2 malas de mão (até 12 kg cada)", checked: "2 malas despachadas (até 32 kg cada)", extra: "1 item esportivo gratuito" },
+  first:    { carry: "2 malas de mão (até 18 kg cada)", checked: "3 malas despachadas (até 32 kg cada)", extra: "Itens esportivos e instrumentos gratuitos" },
+};
+
+// ─── Checkout Summary Component ───
+function CheckoutSummary({
+  outbound, returnFlight, originAirport, destAirport,
+  totalSelected, checkoutLoading, checkoutError,
+  onCheckout, onReset, applyMarkup
+}: {
+  outbound: PromoResult;
+  returnFlight: PromoResult;
+  originAirport: typeof airports[0] | undefined;
+  destAirport: typeof airports[0] | undefined;
+  totalSelected: number;
+  checkoutLoading: boolean;
+  checkoutError: string | null;
+  onCheckout: () => void;
+  onReset: () => void;
+  applyMarkup: (p: number) => number;
+}) {
+  const [accepted, setAccepted] = useState(false);
+  const [showContract, setShowContract] = useState(false);
+
+  const cabin = outbound.cabin?.toLowerCase().includes("executiva") ? "business"
+    : outbound.cabin?.toLowerCase().includes("premium") ? "premium"
+    : outbound.cabin?.toLowerCase().includes("primeira") ? "first"
+    : "economy";
+  const baggage = baggageRules[cabin];
+
+  const FlightLeg = ({ flight, label, from, to }: { flight: PromoResult; label: string; from: string; to: string }) => (
+    <div className="p-4 rounded-xl bg-muted/30 border border-border">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{label}</span>
+        <span className="text-xs font-bold text-foreground bg-primary/10 px-2 py-0.5 rounded-full">{flight.cabin}</span>
+      </div>
+
+      {/* Route visual */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-center min-w-[48px]">
+          <p className="text-xl font-bold font-display text-foreground leading-none">{flight.departTime}</p>
+          <p className="text-[10px] text-muted-foreground font-semibold">{from}</p>
+        </div>
+        <div className="flex-1 flex flex-col items-center gap-0.5">
+          <div className="flex items-center gap-1 w-full">
+            <div className="h-px flex-1 bg-border" />
+            <Plane className="w-3.5 h-3.5 text-primary rotate-0" />
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <p className="text-[10px] text-muted-foreground">{flight.duration}</p>
+          {flight.stops > 0 && (
+            <p className="text-[10px] text-amber-500 font-semibold">{flight.stops} escala{flight.stops > 1 ? "s" : ""}{flight.stopCity ? ` · ${flight.stopCity}` : ""}</p>
+          )}
+          {flight.stops === 0 && <p className="text-[10px] text-signal-green font-semibold">Direto</p>}
+        </div>
+        <div className="text-center min-w-[48px]">
+          <p className="text-xl font-bold font-display text-foreground leading-none">{flight.returnTime}</p>
+          <p className="text-[10px] text-muted-foreground font-semibold">{to}</p>
+        </div>
+      </div>
+
+      {/* Airline + flight number + date */}
+      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+        <Plane className="w-3 h-3" />
+        <span className="font-semibold text-foreground">{flight.airline}</span>
+        <span>·</span>
+        <span>{flight.flightNumber}</span>
+        <span>·</span>
+        <span>{flight.aircraft}</span>
+      </div>
+      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+        <Calendar className="w-3 h-3" />
+        <span>{flight.departDate}</span>
+      </div>
+
+      {/* Amenities */}
+      <div className="flex items-center gap-3 mb-3">
+        <span className={`flex items-center gap-1 text-[11px] font-medium ${flight.wifi ? "text-signal-green" : "text-muted-foreground line-through"}`}>
+          <Wifi className="w-3 h-3" /> Wi-Fi
+        </span>
+        <span className={`flex items-center gap-1 text-[11px] font-medium ${flight.meal ? "text-signal-green" : "text-muted-foreground line-through"}`}>
+          <Coffee className="w-3 h-3" /> Refeição
+        </span>
+        <span className="flex items-center gap-1 text-[11px] font-medium text-signal-green">
+          <Shield className="w-3 h-3" /> {flight.alliance}
+        </span>
+      </div>
+
+      {/* Price */}
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <span className="text-xs text-muted-foreground">Subtotal</span>
+        <span className="font-bold text-primary text-base font-display">R$ {applyMarkup(flight.promoPrice).toLocaleString("pt-BR")}</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <motion.div
+      id="selection-summary"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-10 space-y-4"
+    >
+      {/* Title */}
+      <div className="flex items-center gap-2">
+        <CheckCircle2 className="w-5 h-5 text-signal-green" />
+        <h3 className="font-display font-bold text-foreground text-lg">Resumo da viagem</h3>
+      </div>
+
+      {/* ── Voos ── */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <FlightLeg flight={outbound} label={`Ida · ${originAirport?.city} → ${destAirport?.city}`} from={outbound.originCode} to={outbound.destCode} />
+        <FlightLeg flight={returnFlight} label={`Volta · ${destAirport?.city} → ${originAirport?.city}`} from={returnFlight.originCode} to={returnFlight.destCode} />
+      </div>
+
+      {/* ── Bagagem ── */}
+      <div className="p-4 rounded-xl bg-muted/30 border border-border">
+        <div className="flex items-center gap-2 mb-3">
+          <Luggage className="w-4 h-4 text-primary" />
+          <h4 className="font-semibold text-foreground text-sm">Política de bagagem — {outbound.cabin}</h4>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div className="flex gap-2">
+            <Package className="w-4 h-4 text-signal-green flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Bagagem de mão</p>
+              <p className="text-xs text-foreground">{baggage.carry}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Luggage className="w-4 h-4 text-signal-green flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Bagagem despachada</p>
+              <p className="text-xs text-foreground">{baggage.checked}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Extras</p>
+              <p className="text-xs text-foreground">{baggage.extra}</p>
+            </div>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-3 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" />
+          Regras de bagagem válidas conforme tarifa selecionada. Verifique restrições da companhia aérea antes do embarque.
+        </p>
+      </div>
+
+      {/* ── Total ── */}
+      <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between">
+        <div>
+          <p className="font-bold text-foreground">Total da viagem</p>
+          <p className="text-[11px] text-muted-foreground">Ida + volta · inclui taxas e serviços PromoCéu</p>
+        </div>
+        <div className="text-right">
+          <p className="text-primary font-bold text-2xl font-display">R$ {totalSelected.toLocaleString("pt-BR")}</p>
+          <p className="text-[10px] text-muted-foreground">≈ R$ {Math.round(totalSelected / 12).toLocaleString("pt-BR")}/mês em 12x</p>
+        </div>
+      </div>
+
+      {/* ── Contrato / Aceite ── */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        <button
+          onClick={() => setShowContract(v => !v)}
+          className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" />
+            <span className="font-semibold text-foreground text-sm">Termos e condições da viagem</span>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showContract ? "rotate-180" : ""}`} />
+        </button>
+        <AnimatePresence>
+          {showContract && (
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: "auto" }}
+              exit={{ height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 text-xs text-muted-foreground space-y-3 bg-card max-h-64 overflow-y-auto leading-relaxed">
+                <p className="font-bold text-foreground uppercase tracking-wide text-[10px]">Contrato de Serviço — PromoCéu Viagens</p>
+
+                <p><strong className="text-foreground">1. Objeto do serviço.</strong> A PromoCéu atua como intermediadora na busca e indicação de tarifas aéreas. A emissão das passagens é de responsabilidade da companhia aérea escolhida, mediante confirmação de disponibilidade de assentos no momento da compra.</p>
+
+                <p><strong className="text-foreground">2. Preços e taxas.</strong> Os valores apresentados incluem taxas aeroportuárias e tarifa de serviço PromoCéu (10%). Variações cambiais ou encargos adicionais aplicados pela companhia aérea após a emissão são de responsabilidade do passageiro.</p>
+
+                <p><strong className="text-foreground">3. Bagagem.</strong> As regras de bagagem exibidas são baseadas na tarifa selecionada. A companhia aérea pode aplicar políticas distintas em caso de conexões internacionais, codeshare ou mudanças tarifárias. Consulte sempre o site oficial da companhia aérea antes do embarque.</p>
+
+                <p><strong className="text-foreground">4. Cancelamentos e alterações.</strong> Reembolsos e remarcações estão sujeitos às regras da tarifa contratada. Tarifas promocionais geralmente são não reembolsáveis. A PromoCéu não se responsabiliza por penalidades aplicadas pelas companhias aéreas.</p>
+
+                <p><strong className="text-foreground">5. Documentos necessários.</strong> É responsabilidade do passageiro verificar a validade do passaporte (mínimo 6 meses além da data de retorno), necessidade de visto e exigências sanitárias dos países de origem, trânsito e destino.</p>
+
+                <p><strong className="text-foreground">6. Seguro viagem.</strong> A PromoCéu recomenda fortemente a contratação de seguro viagem cobrindo assistência médica, cancelamento e extravio de bagagem. Este serviço não está incluído no valor apresentado.</p>
+
+                <p><strong className="text-foreground">7. Dados pessoais.</strong> Os dados fornecidos para emissão da passagem serão tratados conforme a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018) e compartilhados com a companhia aérea exclusivamente para fins de emissão e check-in.</p>
+
+                <p><strong className="text-foreground">8. Foro.</strong> Fica eleito o Foro da Comarca de São Paulo/SP para dirimir quaisquer controvérsias oriundas deste contrato.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Aceite ── */}
+      <label className="flex items-start gap-3 p-4 rounded-xl border border-border bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={e => setAccepted(e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-primary cursor-pointer flex-shrink-0"
+        />
+        <span className="text-sm text-foreground leading-relaxed">
+          Li e aceito os <button type="button" onClick={e => { e.preventDefault(); setShowContract(true); }} className="text-primary underline underline-offset-2 hover:text-primary/80">termos e condições</button> da viagem, incluindo as políticas de bagagem, cancelamento e proteção de dados da PromoCéu.
+        </span>
+      </label>
+
+      {/* ── Erro e Botões ── */}
+      {checkoutError && (
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {checkoutError}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <motion.button
+          onClick={onCheckout}
+          disabled={checkoutLoading || !accepted}
+          className="glow-button flex-1 inline-flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          whileHover={{ scale: (checkoutLoading || !accepted) ? 1 : 1.02 }}
+          whileTap={{ scale: (checkoutLoading || !accepted) ? 1 : 0.98 }}
+        >
+          {checkoutLoading ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Preparando checkout...</>
+          ) : (
+            <><CreditCard className="w-4 h-4" /> Comprar passagem — R$ {totalSelected.toLocaleString("pt-BR")}</>
+          )}
+        </motion.button>
+        <button
+          onClick={onReset}
+          className="px-4 py-3 border border-border rounded-lg text-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Recomeçar seleção
+        </button>
+      </div>
+
+      {!accepted && (
+        <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+          <Shield className="w-3 h-3" />
+          Aceite os termos acima para prosseguir com o pagamento
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
 // ─── Main component ───
 export default function FlightSearchSection() {
   const [origin, setOrigin] = useState("");
@@ -1220,70 +1486,21 @@ export default function FlightSearchSection() {
                 )}
               </AnimatePresence>
 
-              {/* ─── SELECTION SUMMARY ─── */}
+              {/* ─── CHECKOUT EXPANDIDO ─── */}
               <AnimatePresence>
                 {selectionStep === "complete" && selectedOutbound && selectedReturn && (
-                  <motion.div
-                    id="selection-summary"
-                    initial={{ opacity: 0, scale: 0.97 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-10 glass-card-highlight p-6"
-                  >
-                    <div className="flex items-center gap-2 mb-4">
-                      <CheckCircle2 className="w-5 h-5 text-signal-green" />
-                      <h3 className="font-display font-bold text-foreground">Combinação selecionada</h3>
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4 mb-5">
-                      <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Ida — {originAirport?.city} → {destAirport?.city}</p>
-                        <p className="font-semibold text-foreground text-sm">{selectedOutbound.airline} · {selectedOutbound.departTime}</p>
-                        <p className="text-xs text-muted-foreground">{selectedOutbound.duration} · {selectedOutbound.stops === 0 ? "Direto" : `${selectedOutbound.stops} escala${selectedOutbound.stopDuration ? ` (${selectedOutbound.stopDuration})` : ""}`}</p>
-                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {applyMarkup(selectedOutbound.promoPrice).toLocaleString("pt-BR")}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Volta — {destAirport?.city} → {originAirport?.city}</p>
-                        <p className="font-semibold text-foreground text-sm">{selectedReturn.airline} · {selectedReturn.departTime}</p>
-                        <p className="text-xs text-muted-foreground">{selectedReturn.duration} · {selectedReturn.stops === 0 ? "Direto" : `${selectedReturn.stops} escala${selectedReturn.stopDuration ? ` (${selectedReturn.stopDuration})` : ""}`}</p>
-                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {applyMarkup(selectedReturn.promoPrice).toLocaleString("pt-BR")}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mb-5 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                      <div>
-                        <span className="font-semibold text-foreground block">Total da viagem</span>
-                        <span className="text-[11px] text-muted-foreground">inclui taxas e serviços PromoCéu</span>
-                      </div>
-                      <span className="text-primary font-bold text-2xl font-display">R$ {totalSelected.toLocaleString("pt-BR")}</span>
-                    </div>
-
-                    {checkoutError && (
-                      <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                        {checkoutError}
-                      </div>
-                    )}
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <motion.button
-                        onClick={() => handleCheckout(selectedOutbound, selectedReturn)}
-                        disabled={checkoutLoading}
-                        className="glow-button flex-1 inline-flex items-center justify-center gap-2 text-sm disabled:opacity-60"
-                        whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
-                        whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
-                      >
-                        {checkoutLoading ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Preparando checkout...</>
-                        ) : (
-                          <><CreditCard className="w-4 h-4" /> Comprar passagem — R$ {totalSelected.toLocaleString("pt-BR")}</>
-                        )}
-                      </motion.button>
-                      <button
-                        onClick={handleResetSelection}
-                        className="px-4 py-3 border border-border rounded-lg text-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        Recomeçar seleção
-                      </button>
-                    </div>
-                  </motion.div>
+                  <CheckoutSummary
+                    outbound={selectedOutbound}
+                    returnFlight={selectedReturn}
+                    originAirport={originAirport}
+                    destAirport={destAirport}
+                    totalSelected={totalSelected}
+                    checkoutLoading={checkoutLoading}
+                    checkoutError={checkoutError}
+                    onCheckout={() => handleCheckout(selectedOutbound, selectedReturn)}
+                    onReset={handleResetSelection}
+                    applyMarkup={applyMarkup}
+                  />
                 )}
               </AnimatePresence>
 
