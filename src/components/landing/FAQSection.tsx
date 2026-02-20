@@ -8,28 +8,28 @@ import {
 
 const faqs = [
   {
-    q: "Como recebo os alertas?",
-    a: "Você recebe alertas em tempo real pelo nosso grupo exclusivo e notificações diretas no celular.",
+    q: "Como recebo os alertas de promoção?",
+    a: "Você recebe notificações em tempo real pelo nosso grupo exclusivo e alertas diretos no celular. Cada alerta inclui rota, preço, companhia e janela de datas disponíveis.",
   },
   {
-    q: "Quantas promoções por dia vocês enviam?",
-    a: "Depende do dia, mas monitoramos milhares de rotas diariamente. Promoções reais podem surgir a qualquer momento.",
+    q: "Quantas promoções vocês detectam por dia?",
+    a: "O volume varia conforme o mercado, mas nosso sistema monitora milhares de rotas continuamente. Em média, detectamos entre 5 e 15 oportunidades relevantes por dia, filtrando apenas as que representam economia real.",
   },
   {
-    q: "É garantido que vou encontrar passagem barata?",
-    a: "Não garantimos viagem, mas garantimos acesso estratégico às melhores oportunidades antes que esgotem.",
+    q: "Vocês garantem que vou encontrar passagem barata?",
+    a: "Não garantimos uma passagem específica, mas garantimos acesso estratégico e antecipado às melhores oportunidades do mercado. Quanto mais tempo como membro, maior a probabilidade de aproveitar uma tarifa excepcional.",
   },
   {
-    q: "Posso cancelar quando quiser?",
-    a: "Sim. Cancelamento simples, sem burocracia e sem taxas escondidas.",
+    q: "Posso cancelar a assinatura quando quiser?",
+    a: "Sim, sem burocracia. O cancelamento é imediato e sem taxas. Não há período mínimo de fidelidade nem cobrança de multa.",
   },
   {
-    q: "Vocês vendem passagens?",
-    a: "Não. A PromoCéu monitora e alerta. Você compra diretamente na companhia aérea.",
+    q: "Vocês vendem passagens aéreas?",
+    a: "Não. O PromoCéu é uma plataforma de inteligência de mercado. Monitoramos, analisamos e alertamos. A compra é feita por você, diretamente no site da companhia aérea.",
   },
   {
-    q: "O que é o alerta de Classe Executiva?",
-    a: "Um complemento que dá acesso a promoções exclusivas de Classe Executiva e Primeira Classe por um valor adicional acessível.",
+    q: "O que é o módulo de Classe Executiva?",
+    a: "É um complemento opcional que dá acesso a promoções exclusivas de Classe Executiva e Primeira Classe. Ideal para quem busca conforto premium com economia significativa.",
   },
 ];
 
@@ -40,10 +40,10 @@ export default function FAQSection() {
       <div className="max-w-3xl mx-auto">
         <ScrollReveal>
           <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">
-            Dúvidas frequentes
+            Perguntas frequentes
           </p>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-12">
-            Perguntas comuns
+            Tire suas dúvidas
           </h2>
         </ScrollReveal>
 
@@ -55,7 +55,7 @@ export default function FAQSection() {
                 value={`faq-${i}`}
                 className="glass-card px-6 border-none"
               >
-                <AccordionTrigger className="font-display font-semibold text-left hover:no-underline py-5">
+                <AccordionTrigger className="font-display font-semibold text-left hover:no-underline py-5 text-foreground">
                   {faq.q}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-5">

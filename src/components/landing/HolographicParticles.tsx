@@ -1,31 +1,20 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  duration: number;
-  delay: number;
-  color: string;
-}
-
-export default function HolographicParticles({ count = 20 }: { count?: number }) {
-  const particles = useMemo<Particle[]>(() => {
+export default function HolographicParticles({ count = 12 }: { count?: number }) {
+  const particles = useMemo(() => {
     const colors = [
-      "hsl(217, 91%, 60%)",
-      "hsl(217, 91%, 70%)",
-      "hsl(45, 70%, 58%)",
-      "hsl(220, 14%, 50%)",
+      "hsl(217, 80%, 46%)",
+      "hsl(217, 80%, 60%)",
+      "hsl(28, 80%, 52%)",
     ];
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: 1 + Math.random() * 2,
-      duration: 8 + Math.random() * 12,
-      delay: Math.random() * 10,
+      size: 2 + Math.random() * 3,
+      duration: 10 + Math.random() * 15,
+      delay: Math.random() * 12,
       color: colors[Math.floor(Math.random() * colors.length)],
     }));
   }, [count]);
@@ -42,13 +31,11 @@ export default function HolographicParticles({ count = 20 }: { count?: number })
             width: p.size,
             height: p.size,
             background: p.color,
-            boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+            opacity: 0.12,
           }}
           animate={{
-            y: [0, -40, -80, -40, 0],
-            x: [0, 15, -8, 10, 0],
-            opacity: [0, 0.4, 0.2, 0.5, 0],
-            scale: [0.5, 1, 0.7, 0.9, 0.5],
+            y: [0, -30, -60, -30, 0],
+            opacity: [0, 0.15, 0.08, 0.12, 0],
           }}
           transition={{
             duration: p.duration,
