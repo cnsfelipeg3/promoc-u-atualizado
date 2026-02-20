@@ -72,9 +72,9 @@ function StatusBadge({ status, promo }: { status: FlightStatus; promo?: string }
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/30 relative overflow-hidden"
         animate={{
           boxShadow: [
-            "0 0 0px hsl(38 85% 55% / 0)",
-            "0 0 15px hsl(38 85% 55% / 0.25)",
-            "0 0 0px hsl(38 85% 55% / 0)",
+            "0 0 0px hsl(185 85% 50% / 0)",
+            "0 0 15px hsl(185 85% 50% / 0.25)",
+            "0 0 0px hsl(185 85% 50% / 0)",
           ],
         }}
         transition={{ duration: 2, repeat: Infinity }}
@@ -82,7 +82,7 @@ function StatusBadge({ status, promo }: { status: FlightStatus; promo?: string }
         {/* Internal scanline */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(transparent 50%, hsl(38 85% 55% / 0.03) 50%)", backgroundSize: "100% 4px" }}
+          style={{ background: "linear-gradient(transparent 50%, hsl(185 85% 50% / 0.03) 50%)", backgroundSize: "100% 4px" }}
         />
         <span className="text-primary font-bold text-xs font-mono relative z-10">{promo}</span>
         <motion.span
@@ -184,7 +184,7 @@ export default function FlightBoardSection() {
     <section className="relative py-24 px-4 overflow-hidden">
       {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse at 50% 30%, hsl(38 85% 55% / 0.03) 0%, transparent 60%)",
+        background: "radial-gradient(ellipse at 50% 30%, hsl(185 85% 50% / 0.03) 0%, transparent 60%)",
       }} />
 
       {/* Multiple scanlines */}
@@ -238,7 +238,7 @@ export default function FlightBoardSection() {
             {/* Holographic scanline overlay on the board */}
             <div className="absolute inset-0 pointer-events-none z-10"
               style={{
-                background: "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(38 85% 55% / 0.008) 2px, hsl(38 85% 55% / 0.008) 4px)",
+                background: "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(185 85% 50% / 0.008) 2px, hsl(185 85% 50% / 0.008) 4px)",
               }}
             />
 
@@ -249,9 +249,9 @@ export default function FlightBoardSection() {
                   className="w-2.5 h-2.5 rounded-full bg-primary"
                   animate={{
                     boxShadow: [
-                      "0 0 0px hsl(38 85% 55% / 0)",
-                      "0 0 12px hsl(38 85% 55% / 0.6)",
-                      "0 0 0px hsl(38 85% 55% / 0)",
+                      "0 0 0px hsl(185 85% 50% / 0)",
+                      "0 0 12px hsl(185 85% 50% / 0.6)",
+                      "0 0 0px hsl(185 85% 50% / 0)",
                     ],
                   }}
                   transition={{ duration: 1.5, repeat: Infinity }}
