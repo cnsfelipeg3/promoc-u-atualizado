@@ -2,21 +2,21 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { UserPlus, Bell, ShoppingCart } from "lucide-react";
 
 const steps = [
-  { icon: UserPlus, title: "Entre na comunidade", desc: "Escolha seu plano e faça parte do clube." },
-  { icon: Bell, title: "Receba alertas estratégicos", desc: "Oportunidades reais direto no seu celular." },
-  { icon: ShoppingCart, title: "Compre antes que acabe", desc: "Direto na companhia aérea, sem intermediários." },
+  { icon: UserPlus, title: "Escolha seu plano", desc: "Selecione a assinatura ideal para o seu perfil de viagem e prioridades." },
+  { icon: Bell, title: "Receba alertas qualificados", desc: "Oportunidades verificadas com dados de mercado chegam direto no seu celular." },
+  { icon: ShoppingCart, title: "Compre direto na companhia", desc: "Sem intermediários, sem taxas extras. A compra é 100% direta e segura." },
 ];
 
 export default function HowItWorksSection() {
   return (
-    <section className="relative py-24 px-4 bg-secondary/20">
+    <section className="relative py-24 px-4 bg-secondary/40">
       <div className="max-w-4xl mx-auto">
         <ScrollReveal>
           <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">
-            Simples assim
+            Processo simples
           </p>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-16">
-            Como funciona
+            Como funciona na prática
           </h2>
         </ScrollReveal>
 
@@ -33,7 +33,7 @@ export default function HowItWorksSection() {
                   </span>
                 </div>
                 <h3 className="font-display text-xl font-semibold mb-2">{step.title}</h3>
-                <p className="text-muted-foreground">{step.desc}</p>
+                <p className="text-muted-foreground leading-relaxed">{step.desc}</p>
               </div>
             </ScrollReveal>
           ))}

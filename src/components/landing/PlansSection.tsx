@@ -43,31 +43,25 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="absolute inset-0 bg-background/85 backdrop-blur-md"
+        className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
         onClick={onClose}
       />
 
       <motion.div
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl"
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl bg-card shadow-2xl"
         initial={{ scale: 0.9, y: 30 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 30 }}
         transition={{ type: "spring", damping: 25 }}
       >
-        {/* Top banner — urgency */}
-        <div className="bg-primary/10 border-b border-primary/20 px-6 py-3 flex items-center justify-center gap-2">
-          <motion.div
-            animate={{ rotate: [0, 15, -15, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Sparkles className="w-4 h-4 text-primary" />
-          </motion.div>
-          <span className="text-primary font-mono text-xs font-bold tracking-widest uppercase">
+        <div className="bg-primary/5 border-b border-primary/15 px-6 py-3 flex items-center justify-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <span className="text-primary text-xs font-bold tracking-widest uppercase">
             Oferta exclusiva — apenas no checkout
           </span>
         </div>
 
-        <div className="bg-card p-6 sm:p-8">
+        <div className="p-6 sm:p-8">
           <button
             onClick={onClose}
             className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors z-20"
@@ -75,40 +69,22 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
             <X className="w-5 h-5" />
           </button>
 
-          {/* Icon */}
           <div className="flex justify-center mb-5">
-            <motion.div
-              className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center"
-              animate={{
-                boxShadow: [
-                  "0 0 0px hsl(var(--primary) / 0)",
-                  "0 0 25px hsl(var(--primary) / 0.2)",
-                  "0 0 0px hsl(var(--primary) / 0)",
-                ],
-              }}
-              transition={{ duration: 2.5, repeat: Infinity }}
-            >
+            <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center">
               <Plane className="w-8 h-8 text-primary" />
-            </motion.div>
+            </div>
           </div>
 
           <h3 className="font-display text-xl sm:text-2xl font-bold text-center mb-2">
-            Quer voar de <span className="text-gradient-primary">Classe Executiva</span>?
+            Adicionar <span className="text-gradient-primary">Classe Executiva</span>?
           </h3>
 
           <p className="text-muted-foreground text-center text-sm mb-6">
-            Membros que adicionam o módulo Executivo economizam em média{" "}
+            Membros com o módulo Executivo economizam em média{" "}
             <span className="text-primary font-bold">R$ 8.400/ano</span> em voos premium.
           </p>
 
-          {/* Perks */}
-          <div className="glass-card p-5 mb-6 relative overflow-hidden">
-            {/* Corner accents */}
-            <div className="absolute top-0 left-0 w-8 h-8 pointer-events-none">
-              <div className="absolute top-0 left-0 w-px h-4 bg-gradient-to-b from-primary/30 to-transparent" />
-              <div className="absolute top-0 left-0 h-px w-4 bg-gradient-to-r from-primary/30 to-transparent" />
-            </div>
-
+          <div className="glass-card p-5 mb-6">
             <ul className="space-y-3">
               {executivePerks.map((perk, i) => (
                 <motion.li
@@ -124,8 +100,8 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
               ))}
             </ul>
 
-            <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">
-              <span className="text-muted-foreground text-xs font-mono">MÓDULO EXECUTIVO</span>
+            <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">Módulo Executivo</span>
               <div className="text-right">
                 <span className="text-primary font-display text-xl font-bold">+R$ 14,90</span>
                 <span className="text-muted-foreground text-xs">/mês</span>
@@ -133,7 +109,6 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
             </div>
           </div>
 
-          {/* CTA buttons */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -147,14 +122,10 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
 
           <button
             onClick={() => onContinue(false)}
-            className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors font-mono tracking-wider"
+            className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Não obrigado, continuar sem Executiva
+            Não, continuar sem Executiva
           </button>
-
-          <p className="text-center text-[10px] text-muted-foreground/50 mt-3 font-mono">
-            Pode cancelar o módulo a qualquer momento
-          </p>
         </div>
       </motion.div>
     </motion.div>
@@ -164,12 +135,7 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
 export default function PlansSection() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
-  const handleSubscribe = (plan: Plan) => {
-    setSelectedPlan(plan);
-  };
-
   const handleContinue = (withBump: boolean) => {
-    // Here you would redirect to checkout
     console.log(`Checkout: ${selectedPlan?.name}, executive: ${withBump}`);
     setSelectedPlan(null);
   };
@@ -183,10 +149,10 @@ export default function PlansSection() {
             Planos
           </p>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-4">
-            Escolha o seu acesso
+            Escolha o plano ideal para você
           </h2>
           <p className="text-muted-foreground text-center mb-16 max-w-xl mx-auto">
-            Quanto mais tempo, mais oportunidades você aproveita — e menos paga.
+            Quanto maior o período, mais oportunidades você aproveita — e menor o custo mensal.
           </p>
         </ScrollReveal>
 
@@ -194,9 +160,9 @@ export default function PlansSection() {
           {plans.map((plan, i) => (
             <ScrollReveal key={i} delay={i * 0.1}>
               <motion.div
-                whileHover={{ y: -6 }}
+                whileHover={{ y: -4 }}
                 transition={{ duration: 0.3 }}
-                className={`relative rounded-2xl p-8 h-full flex flex-col ${
+                className={`relative rounded-xl p-8 h-full flex flex-col ${
                   plan.highlight
                     ? "glass-card-highlight border-glow"
                     : "glass-card"
@@ -212,7 +178,7 @@ export default function PlansSection() {
                 <h3 className="font-display text-xl font-semibold mb-1">{plan.name}</h3>
                 
                 <div className="mb-6">
-                  <span className="font-display text-4xl font-bold">
+                  <span className="font-display text-4xl font-bold text-foreground">
                     R$ {plan.monthlyPrice.toFixed(2).replace(".", ",")}
                   </span>
                   <span className="text-muted-foreground text-sm">{plan.period}</span>
@@ -231,7 +197,7 @@ export default function PlansSection() {
 
                 <ul className="space-y-3 mb-8 flex-1">
                   {features.map((f, fi) => (
-                    <li key={fi} className="flex items-center gap-2 text-sm text-secondary-foreground">
+                    <li key={fi} className="flex items-center gap-2 text-sm text-foreground/70">
                       <Check className="w-4 h-4 text-primary flex-shrink-0" />
                       {f}
                     </li>
@@ -239,13 +205,13 @@ export default function PlansSection() {
                 </ul>
 
                 <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => handleSubscribe(plan)}
-                  className={`w-full py-3.5 rounded-xl font-semibold transition-all duration-300 ${
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedPlan(plan)}
+                  className={`w-full py-3.5 rounded-lg font-semibold transition-all duration-300 ${
                     plan.highlight
                       ? "glow-button"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      : "bg-secondary text-foreground hover:bg-secondary/80"
                   }`}
                 >
                   Assinar agora
@@ -256,7 +222,6 @@ export default function PlansSection() {
         </div>
       </div>
 
-      {/* Order Bump Popup */}
       <AnimatePresence>
         {selectedPlan && (
           <OrderBumpPopup

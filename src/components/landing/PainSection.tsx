@@ -1,46 +1,78 @@
 import ScrollReveal from "@/components/ScrollReveal";
-import { Clock, TrendingDown, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, TrendingDown, AlertTriangle, X, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 const pains = [
   {
     icon: TrendingDown,
-    title: "Você pagou caro demais",
-    desc: "E dias depois, a mesma passagem custava metade do preço.",
+    title: "Pagou mais caro do que deveria",
+    desc: "Dias depois, a mesma passagem custava metade. Acontece com frequência.",
+    detail: "Companhias aéreas ajustam preços centenas de vezes por dia usando algoritmos de precificação dinâmica. Sem monitoramento ativo, você paga a tarifa do momento — não a melhor tarifa disponível. O PromoCéu rastreia essas variações em tempo real e avisa quando o preço cai significativamente.",
   },
   {
     icon: Clock,
-    title: "As melhores tarifas duram horas",
-    desc: "Promoções reais aparecem e somem antes de você saber.",
+    title: "As melhores tarifas duram poucas horas",
+    desc: "Promoções reais surgem e desaparecem antes de você sequer ficar sabendo.",
+    detail: "Erros tarifários, promoções relâmpago e quedas súbitas de preço são corrigidos rapidamente pelas companhias. Um alerta enviado 2 horas atrasado pode significar a diferença entre R$ 2.000 e R$ 6.000. O sistema PromoCéu detecta e notifica em menos de 5 minutos.",
   },
   {
     icon: AlertTriangle,
-    title: "Quem chega tarde, paga mais",
-    desc: "O problema não é falta de dinheiro. É falta de acesso no momento certo.",
+    title: "Falta de acesso, não de dinheiro",
+    desc: "O problema real é não ter a informação certa no momento certo.",
+    detail: "Pesquisar manualmente em dezenas de sites e companhias consome horas e ainda assim você pode perder a oportunidade. O PromoCéu automatiza esse trabalho com tecnologia de monitoramento contínuo em mais de 150 destinos, 24 horas por dia.",
   },
 ];
 
 export default function PainSection() {
+  const [expanded, setExpanded] = useState<number | null>(null);
+
   return (
     <section className="relative py-24 px-4">
       <div className="section-divider w-full absolute top-0" />
       <div className="max-w-5xl mx-auto">
         <ScrollReveal>
           <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">
-            O problema
+            O desafio
           </p>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-16 text-balance">
-            Você já pagou caro por uma passagem e depois<br className="hidden sm:block" /> descobriu que ela ficou pela metade do preço?
+            Por que a maioria das pessoas paga mais caro<br className="hidden sm:block" /> do que deveria em passagens aéreas?
           </h2>
         </ScrollReveal>
 
         <div className="grid md:grid-cols-3 gap-6">
           {pains.map((p, i) => (
             <ScrollReveal key={i} delay={i * 0.15}>
-              <div className="glass-card p-8 h-full group hover:-translate-y-1.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+              <motion.div
+                layout
+                onClick={() => setExpanded(expanded === i ? null : i)}
+                className="glass-card p-8 h-full cursor-pointer group hover:shadow-md hover:border-primary/20 transition-all duration-300"
+              >
                 <p.icon className="w-10 h-10 text-primary mb-5" strokeWidth={1.5} />
                 <h3 className="font-display text-xl font-semibold mb-3">{p.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{p.desc}</p>
-              </div>
+
+                <AnimatePresence>
+                  {expanded === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <p className="text-sm text-foreground/70 leading-relaxed">{p.detail}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="flex items-center gap-1 mt-4 text-primary text-sm font-medium">
+                  <span>{expanded === i ? "Fechar" : "Saiba mais"}</span>
+                  <ChevronRight className={`w-4 h-4 transition-transform ${expanded === i ? "rotate-90" : ""}`} />
+                </div>
+              </motion.div>
             </ScrollReveal>
           ))}
         </div>
