@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import logo from "@/assets/logo-promoceu.png";
+import heroBg from "@/assets/hero-airport.jpg";
 
 const airlines = [
   "LATAM", "Emirates", "Air France", "Lufthansa", "Qatar Airways",
@@ -32,15 +33,30 @@ function MarqueeRow({ items, reverse = false }: { items: string[]; reverse?: boo
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-secondary/30 pointer-events-none" />
-      
-      {/* Subtle radial glow */}
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, hsl(217 91% 60% / 0.06) 0%, transparent 70%)",
-        }}
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img
+          src={heroBg}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
+      </div>
+
+      {/* Floating light orbs */}
+      <motion.div
+        className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(217 91% 60% / 0.08) 0%, transparent 70%)" }}
+        animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(199 89% 48% / 0.06) 0%, transparent 70%)" }}
+        animate={{ y: [0, 15, 0], x: [0, -15, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
 
       <motion.div

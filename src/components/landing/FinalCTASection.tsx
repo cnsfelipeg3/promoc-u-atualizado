@@ -1,13 +1,20 @@
 import ScrollReveal from "@/components/ScrollReveal";
 import { motion } from "framer-motion";
+import heroBg from "@/assets/hero-airport.jpg";
 
 export default function FinalCTASection() {
   return (
-    <section className="relative py-32 px-4">
+    <section className="relative py-32 px-4 overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-20" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/80" />
+      </div>
+
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, hsl(217 91% 60% / 0.08) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse at center, hsl(217 91% 60% / 0.1) 0%, transparent 60%)",
         }}
       />
       <div className="max-w-3xl mx-auto text-center relative z-10">
