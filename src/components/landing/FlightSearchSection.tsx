@@ -4,11 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import ScrollReveal from "@/components/ScrollReveal";
 import {
-  Search, Plane, Calendar, MapPin, TrendingDown, ArrowRight, ArrowLeftRight,
-  Sparkles, X, Clock, AlertTriangle, ChevronDown, Users, Briefcase, Filter,
+  Search, Plane, Calendar, MapPin, ArrowRight, ArrowLeftRight,
+  Sparkles, X, AlertTriangle, ChevronDown, Users, Briefcase, Filter,
   ArrowUpDown, Bell, Heart, Share2, BarChart3, Luggage, Wifi, UtensilsCrossed,
-  Zap, Eye, Star, Shield, ChevronRight, RefreshCw, CheckCircle2, ArrowLeft
+  Zap, Eye, Star, Shield, ChevronRight, RefreshCw, CheckCircle2, ArrowLeft,
+  ShoppingCart, CreditCard, Loader2
 } from "lucide-react";
+
+const PRICE_MARKUP = 1.10; // 10% markup sobre preço Amadeus
+
+function applyMarkup(price: number): number {
+  return Math.round(price * PRICE_MARKUP);
+}
 
 // ─── Real airline route data with IATA codes ───
 const realRoutes: Record<string, { airlines: string[]; baseTime: string; aircraft: string }> = {
@@ -417,7 +424,7 @@ function MiniPriceChart({ data, currentPrice }: { data: number[]; currentPrice: 
   );
 }
 
-function PromoResultCard({ result, index, onFavorite, isFav, onSelect, isSelected, selectionLabel }: {
+function PromoResultCard({ result, index, onFavorite, isFav, onSelect, isSelected, selectionLabel, onBuy }: {
   result: PromoResult;
   index: number;
   onFavorite: (id: string) => void;
@@ -425,9 +432,11 @@ function PromoResultCard({ result, index, onFavorite, isFav, onSelect, isSelecte
   onSelect?: (result: PromoResult) => void;
   isSelected?: boolean;
   selectionLabel?: string;
+  onBuy?: (result: PromoResult) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const savings = result.marketPrice - result.promoPrice;
+  const finalPrice = applyMarkup(result.promoPrice);
+  const savings = result.marketPrice - finalPrice;
   const savingsPerPerson = savings;
 
   return (
@@ -539,12 +548,13 @@ function PromoResultCard({ result, index, onFavorite, isFav, onSelect, isSelecte
           </div>
           <div className="text-right">
             <span className="text-muted-foreground line-through text-sm block">R$ {result.marketPrice.toLocaleString("pt-BR")}</span>
-            <span className="text-primary font-bold text-2xl font-display">R$ {result.promoPrice.toLocaleString("pt-BR")}</span>
+            <span className="text-primary font-bold text-2xl font-display">R$ {finalPrice.toLocaleString("pt-BR")}</span>
+            <p className="text-[10px] text-muted-foreground mt-0.5">inclui taxas e serviços</p>
           </div>
         </div>
       </div>
 
-      {/* Select + Expand footer */}
+      {/* Select + Buy + Expand footer */}
       <div className="flex border-t border-border">
         {onSelect && (
           <button
@@ -560,6 +570,15 @@ function PromoResultCard({ result, index, onFavorite, isFav, onSelect, isSelecte
             ) : (
               <><CheckCircle2 className="w-4 h-4" /> {selectionLabel || "Selecionar este voo"}</>
             )}
+          </button>
+        )}
+        {onBuy && (
+          <button
+            onClick={() => onBuy(result)}
+            className="px-4 py-3 bg-signal-green/10 text-signal-green hover:bg-signal-green/20 transition-colors flex items-center gap-2 text-sm font-semibold border-l border-border"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Comprar
           </button>
         )}
         <button 
@@ -676,6 +695,8 @@ export default function FlightSearchSection() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchPhase, setSearchPhase] = useState(0);
   const [dataSource, setDataSource] = useState<"amadeus" | "simulated">("simulated");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // Two-step selection: outbound → return
   const [selectionStep, setSelectionStep] = useState<"idle" | "selecting-outbound" | "selecting-return" | "complete">("idle");
@@ -781,6 +802,30 @@ export default function FlightSearchSection() {
     setSelectionStep("selecting-outbound");
   };
 
+  const handleCheckout = useCallback(async (outbound: PromoResult, returnFlight?: PromoResult | null) => {
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: {
+          outbound,
+          returnFlight: returnFlight || null,
+          passengers,
+          origin,
+          destination,
+        },
+      });
+      if (error || !data?.url) {
+        throw new Error(error?.message || data?.error || "Erro ao criar sessão de pagamento");
+      }
+      window.open(data.url, "_blank");
+    } catch (err: any) {
+      setCheckoutError(err.message || "Erro inesperado. Tente novamente.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }, [passengers, origin, destination]);
+
   const sortResults = useCallback((list: PromoResult[] | null) => {
     if (!list) return null;
     let sorted = [...list];
@@ -805,7 +850,7 @@ export default function FlightSearchSection() {
   const avgSavings = sortedResults ? Math.round(sortedResults.reduce((s, r) => s + r.marketPrice - r.promoPrice, 0) / sortedResults.length) : 0;
   const bestDiscount = sortedResults ? Math.max(...sortedResults.map(r => r.discount)) : 0;
   const directCount = results ? results.filter(r => r.stops === 0).length : 0;
-  const totalSelected = (selectedOutbound?.promoPrice || 0) + (selectedReturn?.promoPrice || 0);
+  const totalSelected = applyMarkup((selectedOutbound?.promoPrice || 0) + (selectedReturn?.promoPrice || 0));
 
   const searchPhases = [
     "Conectando à API Amadeus...",
@@ -1126,6 +1171,7 @@ export default function FlightSearchSection() {
                         onSelect={handleSelectOutbound}
                         isSelected={selectedOutbound?.id === result.id}
                         selectionLabel="Selecionar ida"
+                        onBuy={(r) => handleCheckout(r)}
                       />
                     ))}
                   </div>
@@ -1166,6 +1212,7 @@ export default function FlightSearchSection() {
                           onSelect={handleSelectReturn}
                           isSelected={selectedReturn?.id === result.id}
                           selectionLabel="Selecionar volta"
+                          onBuy={(r) => handleCheckout(r)}
                         />
                       ))}
                     </div>
@@ -1191,29 +1238,43 @@ export default function FlightSearchSection() {
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Ida — {originAirport?.city} → {destAirport?.city}</p>
                         <p className="font-semibold text-foreground text-sm">{selectedOutbound.airline} · {selectedOutbound.departTime}</p>
                         <p className="text-xs text-muted-foreground">{selectedOutbound.duration} · {selectedOutbound.stops === 0 ? "Direto" : `${selectedOutbound.stops} escala${selectedOutbound.stopDuration ? ` (${selectedOutbound.stopDuration})` : ""}`}</p>
-                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {selectedOutbound.promoPrice.toLocaleString("pt-BR")}</p>
+                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {applyMarkup(selectedOutbound.promoPrice).toLocaleString("pt-BR")}</p>
                       </div>
                       <div className="p-3 rounded-lg bg-muted/30 border border-border">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Volta — {destAirport?.city} → {originAirport?.city}</p>
                         <p className="font-semibold text-foreground text-sm">{selectedReturn.airline} · {selectedReturn.departTime}</p>
                         <p className="text-xs text-muted-foreground">{selectedReturn.duration} · {selectedReturn.stops === 0 ? "Direto" : `${selectedReturn.stops} escala${selectedReturn.stopDuration ? ` (${selectedReturn.stopDuration})` : ""}`}</p>
-                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {selectedReturn.promoPrice.toLocaleString("pt-BR")}</p>
+                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {applyMarkup(selectedReturn.promoPrice).toLocaleString("pt-BR")}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between mb-5 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                      <span className="font-semibold text-foreground">Total da viagem</span>
+                      <div>
+                        <span className="font-semibold text-foreground block">Total da viagem</span>
+                        <span className="text-[11px] text-muted-foreground">inclui taxas e serviços PromoCéu</span>
+                      </div>
                       <span className="text-primary font-bold text-2xl font-display">R$ {totalSelected.toLocaleString("pt-BR")}</span>
                     </div>
+
+                    {checkoutError && (
+                      <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                        {checkoutError}
+                      </div>
+                    )}
+
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <motion.a
-                        href="#planos"
-                        className="glow-button flex-1 inline-flex items-center justify-center gap-2 text-sm"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                      <motion.button
+                        onClick={() => handleCheckout(selectedOutbound, selectedReturn)}
+                        disabled={checkoutLoading}
+                        className="glow-button flex-1 inline-flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+                        whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
+                        whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
                       >
-                        <Bell className="w-4 h-4" />
-                        Ativar alerta para esta combinação
-                      </motion.a>
+                        {checkoutLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Preparando checkout...</>
+                        ) : (
+                          <><CreditCard className="w-4 h-4" /> Comprar passagem — R$ {totalSelected.toLocaleString("pt-BR")}</>
+                        )}
+                      </motion.button>
                       <button
                         onClick={handleResetSelection}
                         className="px-4 py-3 border border-border rounded-lg text-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-2"
