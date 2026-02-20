@@ -35,8 +35,8 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 pt-16">
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover" loading="eager" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/92 via-background/85 to-background" />
+        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-15" loading="eager" />
+        <div className="absolute inset-0 bg-background" />
       </div>
 
       <motion.div

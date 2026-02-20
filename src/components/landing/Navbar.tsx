@@ -4,6 +4,7 @@ import { Menu, X, ChevronDown, Plane } from "lucide-react";
 import PromoCeuLogo from "./PromoCeuLogo";
 
 const navLinks = [
+  { label: "Simulador", href: "#simulador" },
   { label: "Como funciona", href: "#como-funciona" },
   { label: "Tecnologia", href: "#tecnologia" },
   {
