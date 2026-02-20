@@ -2,7 +2,10 @@ import HeroSection from "@/components/landing/HeroSection";
 import PainSection from "@/components/landing/PainSection";
 import MechanismSection from "@/components/landing/MechanismSection";
 import ProofSection from "@/components/landing/ProofSection";
+import GlobalRoutesSection from "@/components/landing/GlobalRoutesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import InspirationSection from "@/components/landing/InspirationSection";
+import ExecutiveSection from "@/components/landing/ExecutiveSection";
 import PlansSection from "@/components/landing/PlansSection";
 import GuaranteeSection from "@/components/landing/GuaranteeSection";
 import FAQSection from "@/components/landing/FAQSection";
@@ -16,7 +19,10 @@ const Index = () => {
       <PainSection />
       <MechanismSection />
       <ProofSection />
+      <GlobalRoutesSection />
       <HowItWorksSection />
+      <InspirationSection />
+      <ExecutiveSection />
       <PlansSection />
       <GuaranteeSection />
       <FAQSection />

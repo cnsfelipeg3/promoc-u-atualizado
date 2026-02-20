@@ -1,4 +1,3 @@
-import { useState } from "react";
 import ScrollReveal from "@/components/ScrollReveal";
 import { motion } from "framer-motion";
 import { Check, Crown } from "lucide-react";
@@ -52,7 +51,7 @@ const plans: Plan[] = [
 ];
 
 export default function PlansSection() {
-  const [executiva, setExecutiva] = useState(false);
+  
 
   return (
     <section id="planos" className="relative py-24 px-4">
@@ -134,28 +133,7 @@ export default function PlansSection() {
           ))}
         </div>
 
-        {/* Order Bump */}
-        <ScrollReveal>
-          <div className="glass-card max-w-lg mx-auto p-6">
-            <label className="flex items-start gap-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={executiva}
-                onChange={() => setExecutiva(!executiva)}
-                className="mt-1 w-5 h-5 accent-primary rounded"
-              />
-              <div>
-                <p className="font-display font-semibold text-base mb-1">
-                  🥇 Adicionar alertas de Classe Executiva
-                </p>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Promoções estratégicas para voar com conforto pagando menos que econômica cheia.
-                </p>
-                <p className="text-primary font-bold mt-2">+ R$ 14,90/mês</p>
-              </div>
-            </label>
-          </div>
-        </ScrollReveal>
+        
       </div>
     </section>
   );
