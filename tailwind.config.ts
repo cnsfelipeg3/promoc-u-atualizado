@@ -53,6 +53,7 @@ export default {
         },
         highlight: "hsl(var(--highlight))",
         gold: "hsl(var(--gold))",
+        "neon-accent": "hsl(var(--neon-accent))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

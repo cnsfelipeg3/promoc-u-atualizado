@@ -1,13 +1,12 @@
 import ScrollReveal from "@/components/ScrollReveal";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 
 function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Individual digit flip component
 function FlipDigit({ digit, prev }: { digit: string; prev: string }) {
   const changed = digit !== prev;
   return (
@@ -30,7 +29,6 @@ function FlipDigit({ digit, prev }: { digit: string; prev: string }) {
 }
 
 function AnalogCounter({ value, prevValue }: { value: string; prevValue: string }) {
-  // Pad both to same length
   const maxLen = Math.max(value.length, prevValue.length);
   const padded = value.padStart(maxLen);
   const paddedPrev = prevValue.padStart(maxLen);
@@ -56,7 +54,7 @@ export default function SavingsCounterSection() {
     const interval = setInterval(() => {
       setTotal((prev) => {
         setPrevFormatted(formatBRL(prev));
-        const increment = 12 + Math.random() * 3; // 12-15 BRL
+        const increment = 12 + Math.random() * 3;
         return prev + increment;
       });
     }, 2000);
@@ -69,11 +67,10 @@ export default function SavingsCounterSection() {
     <section className="relative py-20 px-4 overflow-hidden">
       <div className="section-divider w-full absolute top-0" />
 
-      {/* Ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, hsl(38 85% 55% / 0.05) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse at center, hsl(185 85% 50% / 0.04) 0%, transparent 60%)",
         }}
       />
 
@@ -98,7 +95,6 @@ export default function SavingsCounterSection() {
               <div className="absolute bottom-0 right-0 h-px w-6 bg-gradient-to-l from-primary/40 to-transparent" />
             </div>
 
-            {/* Icon */}
             <div className="flex items-center justify-center gap-2 mb-6">
               <motion.div
                 animate={{ y: [0, -3, 0] }}
@@ -111,18 +107,16 @@ export default function SavingsCounterSection() {
               </p>
             </div>
 
-            {/* Counter */}
             <AnalogCounter value={formatted} prevValue={prevFormatted} />
 
-            {/* Live indicator */}
             <div className="mt-6 flex items-center justify-center gap-2">
               <motion.span
                 className="w-2 h-2 rounded-full bg-primary"
                 animate={{
                   boxShadow: [
-                    "0 0 0px hsl(38 85% 55% / 0)",
-                    "0 0 8px hsl(38 85% 55% / 0.5)",
-                    "0 0 0px hsl(38 85% 55% / 0)",
+                    "0 0 0px hsl(185 85% 50% / 0)",
+                    "0 0 8px hsl(185 85% 50% / 0.5)",
+                    "0 0 0px hsl(185 85% 50% / 0)",
                   ],
                 }}
                 transition={{ duration: 1.5, repeat: Infinity }}
@@ -132,7 +126,6 @@ export default function SavingsCounterSection() {
               </span>
             </div>
 
-            {/* Sub-text */}
             <p className="text-muted-foreground text-sm mt-4 max-w-md mx-auto">
               Valor total economizado pelos membros da PromoCéu desde o lançamento da plataforma.
             </p>
