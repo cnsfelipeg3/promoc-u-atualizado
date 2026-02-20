@@ -2,6 +2,8 @@ import HeroSection from "@/components/landing/HeroSection";
 import PainSection from "@/components/landing/PainSection";
 import MechanismSection from "@/components/landing/MechanismSection";
 import ProofSection from "@/components/landing/ProofSection";
+import PriceDropChartSection from "@/components/landing/PriceDropChartSection";
+import FlightBoardSection from "@/components/landing/FlightBoardSection";
 import GlobalRoutesSection from "@/components/landing/GlobalRoutesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import InspirationSection from "@/components/landing/InspirationSection";
@@ -18,7 +20,9 @@ const Index = () => {
       <HeroSection />
       <PainSection />
       <MechanismSection />
+      <PriceDropChartSection />
       <ProofSection />
+      <FlightBoardSection />
       <GlobalRoutesSection />
       <HowItWorksSection />
       <InspirationSection />

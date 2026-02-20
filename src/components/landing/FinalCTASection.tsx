@@ -14,7 +14,7 @@ export default function FinalCTASection() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, hsl(217 91% 60% / 0.1) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse at center, hsl(38 85% 55% / 0.1) 0%, transparent 60%)",
         }}
       />
       <div className="max-w-3xl mx-auto text-center relative z-10">
