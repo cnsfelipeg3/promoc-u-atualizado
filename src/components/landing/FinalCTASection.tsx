@@ -5,16 +5,15 @@ import heroBg from "@/assets/hero-airport.jpg";
 export default function FinalCTASection() {
   return (
     <section className="relative py-32 px-4 overflow-hidden">
-      {/* Background image */}
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-20" loading="lazy" />
+        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-15" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/80" />
       </div>
 
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, hsl(var(--primary) / 0.08) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse at center, hsl(var(--primary) / 0.06) 0%, transparent 60%)",
         }}
       />
       <div className="max-w-3xl mx-auto text-center relative z-10">
@@ -29,8 +28,8 @@ export default function FinalCTASection() {
           <motion.a
             href="#planos"
             className="glow-button text-lg inline-block"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             Entrar para o PromoCéu agora
           </motion.a>

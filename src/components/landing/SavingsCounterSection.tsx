@@ -67,34 +67,9 @@ export default function SavingsCounterSection() {
     <section className="relative py-20 px-4 overflow-hidden">
       <div className="section-divider w-full absolute top-0" />
 
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse at center, hsl(var(--primary) / 0.04) 0%, transparent 60%)",
-        }}
-      />
-
       <div className="max-w-4xl mx-auto relative z-10">
         <ScrollReveal>
           <div className="glass-card-highlight p-8 sm:p-12 text-center relative overflow-hidden">
-            {/* Corner decorations */}
-            <div className="absolute top-0 left-0 w-12 h-12 pointer-events-none">
-              <div className="absolute top-0 left-0 w-px h-6 bg-gradient-to-b from-primary/40 to-transparent" />
-              <div className="absolute top-0 left-0 h-px w-6 bg-gradient-to-r from-primary/40 to-transparent" />
-            </div>
-            <div className="absolute top-0 right-0 w-12 h-12 pointer-events-none">
-              <div className="absolute top-0 right-0 w-px h-6 bg-gradient-to-b from-primary/40 to-transparent" />
-              <div className="absolute top-0 right-0 h-px w-6 bg-gradient-to-l from-primary/40 to-transparent" />
-            </div>
-            <div className="absolute bottom-0 left-0 w-12 h-12 pointer-events-none">
-              <div className="absolute bottom-0 left-0 w-px h-6 bg-gradient-to-t from-primary/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 h-px w-6 bg-gradient-to-r from-primary/40 to-transparent" />
-            </div>
-            <div className="absolute bottom-0 right-0 w-12 h-12 pointer-events-none">
-              <div className="absolute bottom-0 right-0 w-px h-6 bg-gradient-to-t from-primary/40 to-transparent" />
-              <div className="absolute bottom-0 right-0 h-px w-6 bg-gradient-to-l from-primary/40 to-transparent" />
-            </div>
-
             <div className="flex items-center justify-center gap-2 mb-6">
               <motion.div
                 animate={{ y: [0, -3, 0] }}
@@ -115,7 +90,7 @@ export default function SavingsCounterSection() {
                 animate={{
                   boxShadow: [
                     "0 0 0px hsl(var(--primary) / 0)",
-                    "0 0 8px hsl(var(--primary) / 0.5)",
+                    "0 0 6px hsl(var(--primary) / 0.4)",
                     "0 0 0px hsl(var(--primary) / 0)",
                   ],
                 }}
