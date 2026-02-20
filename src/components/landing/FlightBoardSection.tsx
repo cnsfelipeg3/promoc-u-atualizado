@@ -2,6 +2,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
 import { Plane, Radar, X, MapPin } from "lucide-react";
+import worldMap from "@/assets/world-map-dark.jpg";
 
 // Types
 type FlightStatus = "NO HORÁRIO" | "EMBARQUE" | "DECOLOU" | "ALERTA PROMO";
@@ -37,10 +38,17 @@ const initialFlights: Flight[] = [
 const statusFlow: FlightStatus[] = ["NO HORÁRIO", "EMBARQUE", "DECOLOU"];
 const promos = ["R$ 1.990", "R$ 2.290", "R$ 2.490", "R$ 2.970", "R$ 3.190", "R$ 1.590"];
 
+// Equirectangular: x=(lon+180)/360*100, y=(90-lat)/180*80
 const airportCoords: Record<string, [number, number]> = {
-  GRU: [32, 72], CDG: [49, 28], DXB: [63, 38], JFK: [27, 30],
-  LIS: [45, 32], LHR: [48, 25], FRA: [51, 26], NRT: [85, 30],
-  AMS: [50, 24], MIA: [24, 38], BCN: [49, 31], FCO: [52, 31], SIN: [76, 55],
+  GRU: [37, 50], CDG: [50.6, 18.3], DXB: [65.4, 28.8], JFK: [29.4, 21.9],
+  LIS: [47.5, 22.8], LHR: [50, 17.1], FRA: [52.4, 17.7], NRT: [88.8, 24.1],
+  AMS: [51.4, 16.7], MIA: [27.7, 28.6], BCN: [50.6, 21.6], FCO: [53.5, 21.4], SIN: [78.9, 39.3],
+};
+
+const airlineLogos: Record<string, string> = {
+  "LATAM": "LA", "EMIRATES": "EK", "AMERICAN": "AA", "AIR FRANCE": "AF",
+  "TAP": "TP", "LUFTHANSA": "LH", "QATAR": "QR", "KLM": "KL",
+  "DELTA": "DL", "BRITISH": "BA", "ITA": "AZ", "SINGAPORE": "SQ",
 };
 
 function SplitFlapChar({ char, delay = 0 }: { char: string; delay?: number }) {
@@ -141,7 +149,12 @@ function FlightRoutePopup({ flight, onClose }: { flight: Flight; onClose: () => 
         </button>
 
         <div className="flex items-center gap-3 mb-2">
-          <Plane className="w-5 h-5 text-primary" />
+          <img
+            src={`https://images.kiwi.com/airlines/64/${airlineLogos[flight.airline] || "XX"}.png`}
+            alt={flight.airline}
+            className="w-10 h-10 rounded-lg object-contain bg-white/10 p-1"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+          />
           <div>
             <h3 className="font-display text-xl font-bold">{flight.code} — {flight.airline}</h3>
             <span className="font-mono text-sm text-muted-foreground">GRU → {flight.destinationCode}</span>
@@ -155,8 +168,11 @@ function FlightRoutePopup({ flight, onClose }: { flight: Flight; onClose: () => 
           Rota real: Guarulhos (GRU) → {flight.destination}
         </p>
 
-        <div className="border border-border/30 rounded-lg bg-background/60 p-4 relative overflow-hidden">
-          <svg viewBox="0 0 100 80" className="w-full h-auto" style={{ maxHeight: 300 }}>
+        <div className="border border-border/30 rounded-lg bg-background/60 relative overflow-hidden">
+          {/* Real world map background */}
+          <img src={worldMap} alt="" className="w-full h-auto block opacity-30" style={{ maxHeight: 300, objectFit: "cover" }} />
+          
+          <svg viewBox="0 0 100 80" className="absolute inset-0 w-full h-full z-10" preserveAspectRatio="xMidYMid slice">
             <defs>
               <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="hsl(217, 91%, 60%)" stopOpacity="0.3" />
@@ -169,22 +185,12 @@ function FlightRoutePopup({ flight, onClose }: { flight: Flight; onClose: () => 
               </filter>
             </defs>
 
-            <path d="M 15,15 L 25,12 35,18 38,30 35,40 30,42 20,38 15,28 Z" fill="hsl(217, 91%, 60%)" fillOpacity="0.04" stroke="hsl(217, 91%, 60%)" strokeOpacity="0.12" strokeWidth="0.3" />
-            <path d="M 25,50 L 35,48 38,55 37,70 32,75 28,70 25,60 Z" fill="hsl(217, 91%, 60%)" fillOpacity="0.04" stroke="hsl(217, 91%, 60%)" strokeOpacity="0.12" strokeWidth="0.3" />
-            <path d="M 43,10 L 55,8 58,20 55,35 48,40 42,35 40,20 Z" fill="hsl(217, 91%, 60%)" fillOpacity="0.04" stroke="hsl(217, 91%, 60%)" strokeOpacity="0.12" strokeWidth="0.3" />
-            <path d="M 55,30 L 65,25 75,28 80,35 78,45 70,50 60,48 55,40 Z" fill="hsl(217, 91%, 60%)" fillOpacity="0.04" stroke="hsl(217, 91%, 60%)" strokeOpacity="0.12" strokeWidth="0.3" />
-            <path d="M 78,15 L 90,12 95,25 92,35 85,38 80,30 Z" fill="hsl(217, 91%, 60%)" fillOpacity="0.04" stroke="hsl(217, 91%, 60%)" strokeOpacity="0.12" strokeWidth="0.3" />
-
-            {[20, 40, 60].map((y) => (
-              <line key={y} x1="5" y1={y} x2="95" y2={y} stroke="hsl(220, 14%, 25%)" strokeOpacity="0.2" strokeWidth="0.2" strokeDasharray="2 2" />
-            ))}
-
-            <path d={arcPath} fill="none" stroke="hsl(217, 91%, 60%)" strokeWidth="0.2" strokeOpacity="0.15" />
+            <path d={arcPath} fill="none" stroke="hsl(217, 91%, 60%)" strokeWidth="0.3" strokeOpacity="0.2" />
             <motion.path
               d={arcPath}
               fill="none"
               stroke="url(#routeGrad)"
-              strokeWidth="0.6"
+              strokeWidth="0.8"
               strokeLinecap="round"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
@@ -192,7 +198,7 @@ function FlightRoutePopup({ flight, onClose }: { flight: Flight; onClose: () => 
             />
 
             <motion.circle
-              r="1"
+              r="1.2"
               fill="hsl(217, 91%, 60%)"
               filter="url(#dotGlow)"
               initial={{ offsetDistance: "0%" }}
@@ -201,11 +207,11 @@ function FlightRoutePopup({ flight, onClose }: { flight: Flight; onClose: () => 
               style={{ offsetPath: `path("${arcPath}")` }}
             />
 
-            <circle cx={from[0]} cy={from[1]} r="1.5" fill="hsl(217, 91%, 60%)" filter="url(#dotGlow)" />
-            <text x={from[0]} y={from[1] - 3} textAnchor="middle" fill="hsl(217, 91%, 60%)" fontSize="3" fontFamily="monospace" fontWeight="bold">GRU</text>
+            <circle cx={from[0]} cy={from[1]} r="2" fill="hsl(217, 91%, 60%)" filter="url(#dotGlow)" />
+            <text x={from[0]} y={from[1] + 5} textAnchor="middle" fill="hsl(217, 91%, 60%)" fontSize="3.5" fontFamily="monospace" fontWeight="bold">GRU</text>
 
-            <circle cx={to[0]} cy={to[1]} r="1.5" fill="hsl(45, 70%, 58%)" filter="url(#dotGlow)" />
-            <text x={to[0]} y={to[1] - 3} textAnchor="middle" fill="hsl(45, 70%, 58%)" fontSize="3" fontFamily="monospace" fontWeight="bold">{flight.destinationCode}</text>
+            <circle cx={to[0]} cy={to[1]} r="2" fill="hsl(45, 70%, 58%)" filter="url(#dotGlow)" />
+            <text x={to[0]} y={to[1] - 4} textAnchor="middle" fill="hsl(45, 70%, 58%)" fontSize="3.5" fontFamily="monospace" fontWeight="bold">{flight.destinationCode}</text>
           </svg>
         </div>
 
@@ -366,7 +372,15 @@ export default function FlightBoardSection() {
                   <span className="font-mono text-sm text-foreground/80 tracking-wider">
                     <SplitFlapText text={flight.code} />
                   </span>
-                  <span className="font-mono text-[10px] text-muted-foreground/60 tracking-wider">{flight.airline}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground/60 tracking-wider flex items-center gap-1.5">
+                    <img
+                      src={`https://images.kiwi.com/airlines/64/${airlineLogos[flight.airline] || "XX"}.png`}
+                      alt={flight.airline}
+                      className="w-4 h-4 rounded-sm object-contain"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                    {flight.airline}
+                  </span>
                   <span className="font-mono text-sm font-semibold text-foreground tracking-wider flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-primary/30 hidden sm:inline" />
                     <SplitFlapText text={flight.destination} />
