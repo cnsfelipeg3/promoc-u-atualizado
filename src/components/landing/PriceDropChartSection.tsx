@@ -1,7 +1,7 @@
 import ScrollReveal from "@/components/ScrollReveal";
-import { motion } from "framer-motion";
-import { TrendingDown, Activity } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingDown, Activity, X, ArrowDown } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 interface RouteData {
   route: string;
@@ -24,10 +24,26 @@ const routes: RouteData[] = [
   { route: "GRU → BCN", label: "Barcelona", flag: "🇪🇸", basePrice: 5100, promoPrice: 2290, drop: "-55%" },
 ];
 
+const months = ["Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez", "Jan", "Fev"];
+
+function generateHistory(basePrice: number, promoPrice: number) {
+  const market: number[] = [];
+  const natleva: number[] = [];
+  for (let i = 0; i < 12; i++) {
+    const variation = 0.85 + Math.random() * 0.3;
+    market.push(Math.round(basePrice * variation));
+    const promoVariation = 0.8 + Math.random() * 0.4;
+    natleva.push(Math.round(promoPrice * promoVariation));
+  }
+  return { market, natleva };
+}
+
+// Mini live chart on canvas — SLOWER speed
 function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoPrice: number; index: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dataRef = useRef<number[]>([]);
   const frameRef = useRef<number>(0);
+  const lastPointTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,7 +56,6 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
     const maxPoints = 60;
     const range = basePrice - promoPrice;
 
-    // Seed initial data with a downward trend
     if (dataRef.current.length === 0) {
       for (let i = 0; i < maxPoints; i++) {
         const progress = i / maxPoints;
@@ -52,17 +67,21 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
 
     let animId: number;
     const phaseOffset = index * 1.3;
+    const POINT_INTERVAL = 120; // ms between new data points (slower)
 
-    const draw = () => {
+    const draw = (timestamp: number) => {
       frameRef.current++;
 
-      // Add new point with continuous downward oscillation
-      const t = frameRef.current * 0.02 + phaseOffset;
-      const cyclicDrop = Math.sin(t) * range * 0.06;
-      const longTrend = Math.max(promoPrice, promoPrice + range * 0.15 * Math.cos(t * 0.3) + cyclicDrop);
-      const noise = (Math.random() - 0.5) * range * 0.03;
-      dataRef.current.push(longTrend + noise);
-      if (dataRef.current.length > maxPoints) dataRef.current.shift();
+      // Only add a new point every POINT_INTERVAL ms
+      if (timestamp - lastPointTimeRef.current > POINT_INTERVAL) {
+        lastPointTimeRef.current = timestamp;
+        const t = frameRef.current * 0.008 + phaseOffset;
+        const cyclicDrop = Math.sin(t) * range * 0.06;
+        const longTrend = Math.max(promoPrice, promoPrice + range * 0.15 * Math.cos(t * 0.3) + cyclicDrop);
+        const noise = (Math.random() - 0.5) * range * 0.03;
+        dataRef.current.push(longTrend + noise);
+        if (dataRef.current.length > maxPoints) dataRef.current.shift();
+      }
 
       const data = dataRef.current;
       const min = Math.min(...data) - range * 0.05;
@@ -71,7 +90,6 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
 
       ctx.clearRect(0, 0, w, h);
 
-      // Grid lines (futuristic)
       ctx.strokeStyle = "hsla(38, 85%, 55%, 0.06)";
       ctx.lineWidth = 0.5;
       for (let i = 0; i < 5; i++) {
@@ -82,7 +100,6 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
         ctx.stroke();
       }
 
-      // Area gradient
       const grad = ctx.createLinearGradient(0, 0, 0, h);
       grad.addColorStop(0, "hsla(38, 85%, 55%, 0.15)");
       grad.addColorStop(1, "hsla(38, 85%, 55%, 0)");
@@ -101,7 +118,6 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Line
       const lineGrad = ctx.createLinearGradient(0, 0, w, 0);
       lineGrad.addColorStop(0, "hsla(38, 85%, 55%, 0.3)");
       lineGrad.addColorStop(0.7, "hsla(38, 85%, 55%, 0.9)");
@@ -118,13 +134,11 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Glow dot at the end
       const lastVal = data[data.length - 1];
       const dotX = lastX;
       const dotY = ((max - lastVal) / valRange) * h;
 
-      // Pulse glow
-      const pulseSize = 8 + Math.sin(frameRef.current * 0.1) * 3;
+      const pulseSize = 8 + Math.sin(frameRef.current * 0.04) * 3;
       const glowGrad = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, pulseSize);
       glowGrad.addColorStop(0, "hsla(38, 85%, 55%, 0.6)");
       glowGrad.addColorStop(1, "hsla(38, 85%, 55%, 0)");
@@ -133,14 +147,12 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
       ctx.fillStyle = glowGrad;
       ctx.fill();
 
-      // Solid dot
       ctx.beginPath();
       ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
       ctx.fillStyle = "hsl(38, 85%, 55%)";
       ctx.fill();
 
-      // Scanline effect
-      const scanY = (frameRef.current * 1.5) % h;
+      const scanY = (frameRef.current * 0.5) % h;
       const scanGrad = ctx.createLinearGradient(0, scanY - 2, 0, scanY + 2);
       scanGrad.addColorStop(0, "hsla(38, 85%, 55%, 0)");
       scanGrad.addColorStop(0.5, "hsla(38, 85%, 55%, 0.04)");
@@ -165,8 +177,189 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
   );
 }
 
+// Expanded 12-month history chart using SVG
+function HistoryChart({ route }: { route: RouteData }) {
+  const [history] = useState(() => generateHistory(route.basePrice, route.promoPrice));
+
+  const allValues = [...history.market, ...history.natleva];
+  const maxVal = Math.max(...allValues) * 1.05;
+  const minVal = Math.min(...allValues) * 0.9;
+  const range = maxVal - minVal;
+
+  const w = 700;
+  const h = 280;
+  const padL = 60;
+  const padR = 20;
+  const padT = 20;
+  const padB = 40;
+  const chartW = w - padL - padR;
+  const chartH = h - padT - padB;
+
+  const getX = (i: number) => padL + (i / 11) * chartW;
+  const getY = (val: number) => padT + ((maxVal - val) / range) * chartH;
+
+  const marketPath = history.market.map((v, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getY(v)}`).join(" ");
+  const natlevaPath = history.natleva.map((v, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getY(v)}`).join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto">
+      <defs>
+        <linearGradient id="natlevaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(38, 85%, 55%)" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="hsl(38, 85%, 55%)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Grid */}
+      {[0, 1, 2, 3, 4].map((i) => {
+        const y = padT + (i / 4) * chartH;
+        const val = maxVal - (i / 4) * range;
+        return (
+          <g key={i}>
+            <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="hsl(38, 85%, 55%)" strokeOpacity="0.08" strokeWidth="0.5" />
+            <text x={padL - 8} y={y + 4} textAnchor="end" fill="hsl(40, 20%, 60%)" fontSize="9" fontFamily="monospace">
+              {Math.round(val / 1000)}k
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Month labels */}
+      {months.map((m, i) => (
+        <text key={m} x={getX(i)} y={h - 8} textAnchor="middle" fill="hsl(40, 20%, 60%)" fontSize="9" fontFamily="monospace">
+          {m}
+        </text>
+      ))}
+
+      {/* NatLeva area fill */}
+      <path
+        d={`${natlevaPath} L ${getX(11)} ${padT + chartH} L ${getX(0)} ${padT + chartH} Z`}
+        fill="url(#natlevaFill)"
+      />
+
+      {/* Market line */}
+      <path d={marketPath} fill="none" stroke="hsl(0, 0%, 55%)" strokeWidth="2" strokeDasharray="6 3" opacity="0.6" />
+
+      {/* NatLeva line */}
+      <path d={natlevaPath} fill="none" stroke="hsl(38, 85%, 55%)" strokeWidth="2.5" />
+
+      {/* Dots */}
+      {history.market.map((v, i) => (
+        <circle key={`m-${i}`} cx={getX(i)} cy={getY(v)} r="3" fill="hsl(0, 0%, 55%)" opacity="0.5" />
+      ))}
+      {history.natleva.map((v, i) => (
+        <circle key={`n-${i}`} cx={getX(i)} cy={getY(v)} r="3.5" fill="hsl(38, 85%, 55%)" />
+      ))}
+    </svg>
+  );
+}
+
+// Expanded modal overlay
+function ExpandedChart({ route, onClose }: { route: RouteData; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Backdrop */}
+      <motion.div
+        className="absolute inset-0 bg-background/80 backdrop-blur-md"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      />
+
+      {/* Content */}
+      <motion.div
+        className="relative z-10 w-full max-w-3xl glass-card-highlight p-6 sm:p-8 overflow-hidden"
+        initial={{ scale: 0.9, y: 30 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 30 }}
+        transition={{ type: "spring", damping: 25 }}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Corner accents */}
+        <div className="absolute top-0 left-0 w-16 h-16 pointer-events-none">
+          <div className="absolute top-0 left-0 w-px h-8 bg-gradient-to-b from-primary/40 to-transparent" />
+          <div className="absolute top-0 left-0 h-px w-8 bg-gradient-to-r from-primary/40 to-transparent" />
+        </div>
+        <div className="absolute bottom-0 right-0 w-16 h-16 pointer-events-none">
+          <div className="absolute bottom-0 right-0 w-px h-8 bg-gradient-to-t from-primary/40 to-transparent" />
+          <div className="absolute bottom-0 right-0 h-px w-8 bg-gradient-to-l from-primary/40 to-transparent" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-2xl">{route.flag}</span>
+          <div>
+            <h3 className="font-display text-xl font-bold text-foreground">{route.label}</h3>
+            <span className="font-mono text-sm text-muted-foreground">{route.route}</span>
+          </div>
+          <span className="ml-auto flex items-center gap-1 text-primary text-lg font-bold font-mono">
+            <ArrowDown className="w-5 h-5" />
+            {route.drop}
+          </span>
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-6">
+          Histórico de 12 meses — Preço de mercado vs. Preço NatLeva
+        </p>
+
+        {/* Legend */}
+        <div className="flex items-center gap-6 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-0.5 bg-muted-foreground" style={{ borderTop: "2px dashed hsl(0, 0%, 55%)" }} />
+            <span className="text-xs text-muted-foreground font-mono">Mercado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-0.5 bg-primary rounded" />
+            <span className="text-xs text-primary font-mono font-bold">NatLeva</span>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="border border-border/30 rounded-lg bg-background/40 p-3">
+          <HistoryChart route={route} />
+        </div>
+
+        {/* Summary */}
+        <div className="flex justify-between items-end mt-5 pt-4 border-t border-border/20">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Tarifa média de mercado</p>
+            <p className="text-muted-foreground line-through text-lg font-mono">
+              R$ {route.basePrice.toLocaleString("pt-BR")}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Melhor preço NatLeva</p>
+            <p className="text-primary font-bold text-2xl font-display">
+              R$ {route.promoPrice.toLocaleString("pt-BR")}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function PriceDropChartSection() {
   const [now, setNow] = useState(new Date());
+  const [selectedRoute, setSelectedRoute] = useState<RouteData | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
@@ -177,7 +370,6 @@ export default function PriceDropChartSection() {
     <section id="price-charts" className="relative py-24 px-4 overflow-hidden">
       <div className="section-divider w-full absolute top-0" />
 
-      {/* Background grid pattern */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
@@ -207,7 +399,7 @@ export default function PriceDropChartSection() {
           </h2>
           <p className="text-muted-foreground text-center mb-4 max-w-2xl mx-auto">
             Nosso sistema de inteligência aérea rastreia milhares de rotas em tempo real.
-            Os gráficos abaixo refletem a dinâmica de preços monitorada pela PromoCéu.
+            Clique em qualquer destino para ver o histórico completo de 12 meses.
           </p>
           <p className="text-center mb-12">
             <span className="inline-flex items-center gap-2 font-mono text-xs text-primary/80 bg-primary/5 border border-primary/20 rounded-full px-4 py-1.5">
@@ -223,8 +415,14 @@ export default function PriceDropChartSection() {
               <motion.div
                 whileHover={{ y: -4, scale: 1.01 }}
                 transition={{ duration: 0.25 }}
-                className="glass-card p-5 group relative overflow-hidden"
+                className="glass-card p-5 group relative overflow-hidden cursor-pointer"
+                onClick={() => setSelectedRoute(r)}
               >
+                {/* Click hint */}
+                <div className="absolute bottom-2 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-primary/60 font-mono">
+                  CLIQUE PARA EXPANDIR
+                </div>
+
                 {/* Corner accent */}
                 <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
                   <div className="absolute top-0 right-0 w-px h-8 bg-gradient-to-b from-primary/40 to-transparent" />
@@ -271,6 +469,13 @@ export default function PriceDropChartSection() {
           ))}
         </div>
       </div>
+
+      {/* Expanded chart modal */}
+      <AnimatePresence>
+        {selectedRoute && (
+          <ExpandedChart route={selectedRoute} onClose={() => setSelectedRoute(null)} />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
