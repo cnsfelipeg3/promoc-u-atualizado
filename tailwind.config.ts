@@ -54,6 +54,9 @@ export default {
         highlight: "hsl(var(--highlight))",
         gold: "hsl(var(--gold))",
         "neon-accent": "hsl(var(--neon-accent))",
+        "signal-red": "hsl(var(--signal-red))",
+        "signal-green": "hsl(var(--signal-green))",
+        "signal-amber": "hsl(var(--signal-amber))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

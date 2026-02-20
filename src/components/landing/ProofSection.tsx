@@ -9,6 +9,9 @@ import destSalvador from "@/assets/dest-salvador.jpg";
 import destTokyo from "@/assets/dest-tokyo.jpg";
 import destLisbon from "@/assets/dest-lisbon.jpg";
 import destDubai from "@/assets/dest-dubai.jpg";
+import destSantorini from "@/assets/dest-santorini.jpg";
+import destMachuPicchu from "@/assets/dest-machupicchu.jpg";
+import destMaldives from "@/assets/dest-maldives.jpg";
 
 const deals = [
   { route: "São Paulo → Paris", original: "R$ 6.890", promo: "R$ 2.970", flag: "🇫🇷", image: destParis, label: "Oportunidade real" },
@@ -17,6 +20,9 @@ const deals = [
   { route: "São Paulo → Tóquio", original: "R$ 8.200", promo: "R$ 3.490", flag: "🇯🇵", image: destTokyo, label: "Erro tarifário" },
   { route: "São Paulo → Lisboa", original: "R$ 4.800", promo: "R$ 2.190", flag: "🇵🇹", image: destLisbon, label: "Promoção recente" },
   { route: "São Paulo → Dubai", original: "R$ 7.500", promo: "R$ 3.280", flag: "🇦🇪", image: destDubai, label: "Oportunidade real" },
+  { route: "São Paulo → Santorini", original: "R$ 7.200", promo: "R$ 3.150", flag: "🇬🇷", image: destSantorini, label: "Erro tarifário" },
+  { route: "São Paulo → Machu Picchu", original: "R$ 3.400", promo: "R$ 1.290", flag: "🇵🇪", image: destMachuPicchu, label: "Promoção recente" },
+  { route: "São Paulo → Maldivas", original: "R$ 9.800", promo: "R$ 4.190", flag: "🇲🇻", image: destMaldives, label: "Oportunidade real" },
 ];
 
 function CounterStat() {

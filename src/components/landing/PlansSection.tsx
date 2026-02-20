@@ -81,9 +81,9 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
               className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center"
               animate={{
                 boxShadow: [
-                  "0 0 0px hsl(185 85% 50% / 0)",
-                  "0 0 25px hsl(185 85% 50% / 0.2)",
-                  "0 0 0px hsl(185 85% 50% / 0)",
+                  "0 0 0px hsl(var(--primary) / 0)",
+                  "0 0 25px hsl(var(--primary) / 0.2)",
+                  "0 0 0px hsl(var(--primary) / 0)",
                 ],
               }}
               transition={{ duration: 2.5, repeat: Infinity }}

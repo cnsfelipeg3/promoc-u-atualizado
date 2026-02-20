@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import logo from "@/assets/logo-promoceu.png";
 import heroBg from "@/assets/hero-airport.jpg";
+import PromoCeuLogo from "@/components/landing/PromoCeuLogo";
 
 const airlines = [
   "LATAM", "Emirates", "Air France", "Lufthansa", "Qatar Airways",
@@ -42,19 +42,19 @@ export default function HeroSection() {
           loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background" />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
       </div>
 
       {/* Floating light orbs */}
       <motion.div
         className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(185 85% 50% / 0.06) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%)" }}
         animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(280 80% 65% / 0.04) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, hsl(var(--neon-accent) / 0.04) 0%, transparent 70%)" }}
         animate={{ y: [0, 15, 0], x: [0, -15, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -66,14 +66,7 @@ export default function HeroSection() {
         className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto"
       >
         {/* Logo */}
-        <motion.img
-          src={logo}
-          alt="PromoCéu"
-          className="w-20 h-20 mb-8 invert opacity-90"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.9, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        />
+        <PromoCeuLogo size={80} className="mb-8" />
 
         <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-balance">
           Viaje pagando menos.{" "}

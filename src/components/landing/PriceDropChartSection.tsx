@@ -90,7 +90,7 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
 
       ctx.clearRect(0, 0, w, h);
 
-      ctx.strokeStyle = "hsla(185, 85%, 50%, 0.06)";
+      ctx.strokeStyle = "hsla(142, 72%, 46%, 0.06)";
       ctx.lineWidth = 0.5;
       for (let i = 0; i < 5; i++) {
         const y = (i / 4) * h;
@@ -101,8 +101,8 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
       }
 
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, "hsla(185, 85%, 50%, 0.15)");
-      grad.addColorStop(1, "hsla(185, 85%, 50%, 0)");
+      grad.addColorStop(0, "hsla(142, 72%, 46%, 0.15)");
+      grad.addColorStop(1, "hsla(142, 72%, 46%, 0)");
 
       ctx.beginPath();
       data.forEach((val, i) => {
@@ -119,9 +119,9 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
       ctx.fill();
 
       const lineGrad = ctx.createLinearGradient(0, 0, w, 0);
-      lineGrad.addColorStop(0, "hsla(185, 85%, 50%, 0.3)");
-      lineGrad.addColorStop(0.7, "hsla(185, 85%, 50%, 0.9)");
-      lineGrad.addColorStop(1, "hsla(185, 85%, 50%, 1)");
+      lineGrad.addColorStop(0, "hsla(142, 72%, 46%, 0.3)");
+      lineGrad.addColorStop(0.7, "hsla(142, 72%, 46%, 0.9)");
+      lineGrad.addColorStop(1, "hsla(142, 72%, 46%, 1)");
 
       ctx.beginPath();
       data.forEach((val, i) => {
@@ -140,8 +140,8 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
 
       const pulseSize = 8 + Math.sin(frameRef.current * 0.04) * 3;
       const glowGrad = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, pulseSize);
-      glowGrad.addColorStop(0, "hsla(185, 85%, 50%, 0.6)");
-      glowGrad.addColorStop(1, "hsla(185, 85%, 50%, 0)");
+      glowGrad.addColorStop(0, "hsla(142, 72%, 46%, 0.6)");
+      glowGrad.addColorStop(1, "hsla(142, 72%, 46%, 0)");
       ctx.beginPath();
       ctx.arc(dotX, dotY, pulseSize, 0, Math.PI * 2);
       ctx.fillStyle = glowGrad;
@@ -149,14 +149,14 @@ function LiveChart({ basePrice, promoPrice, index }: { basePrice: number; promoP
 
       ctx.beginPath();
       ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "hsl(185, 85%, 50%)";
+      ctx.fillStyle = "hsl(142, 72%, 46%)";
       ctx.fill();
 
       const scanY = (frameRef.current * 0.5) % h;
       const scanGrad = ctx.createLinearGradient(0, scanY - 2, 0, scanY + 2);
-      scanGrad.addColorStop(0, "hsla(185, 85%, 50%, 0)");
-      scanGrad.addColorStop(0.5, "hsla(185, 85%, 50%, 0.04)");
-      scanGrad.addColorStop(1, "hsla(185, 85%, 50%, 0)");
+      scanGrad.addColorStop(0, "hsla(142, 72%, 46%, 0)");
+      scanGrad.addColorStop(0.5, "hsla(142, 72%, 46%, 0.04)");
+      scanGrad.addColorStop(1, "hsla(142, 72%, 46%, 0)");
       ctx.fillStyle = scanGrad;
       ctx.fillRect(0, scanY - 2, w, 4);
 
@@ -205,8 +205,8 @@ function HistoryChart({ route }: { route: RouteData }) {
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto">
       <defs>
         <linearGradient id="natlevaFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="hsl(185, 85%, 50%)" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="hsl(185, 85%, 50%)" stopOpacity="0" />
+          <stop offset="0%" stopColor="hsl(142, 72%, 46%)" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="hsl(142, 72%, 46%)" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -216,7 +216,7 @@ function HistoryChart({ route }: { route: RouteData }) {
         const val = maxVal - (i / 4) * range;
         return (
           <g key={i}>
-            <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="hsl(185, 85%, 50%)" strokeOpacity="0.08" strokeWidth="0.5" />
+            <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="hsl(142, 72%, 46%)" strokeOpacity="0.08" strokeWidth="0.5" />
             <text x={padL - 8} y={y + 4} textAnchor="end" fill="hsl(40, 20%, 60%)" fontSize="9" fontFamily="monospace">
               {Math.round(val / 1000)}k
             </text>
@@ -241,14 +241,14 @@ function HistoryChart({ route }: { route: RouteData }) {
       <path d={marketPath} fill="none" stroke="hsl(0, 0%, 55%)" strokeWidth="2" strokeDasharray="6 3" opacity="0.6" />
 
       {/* NatLeva line */}
-      <path d={natlevaPath} fill="none" stroke="hsl(185, 85%, 50%)" strokeWidth="2.5" />
+      <path d={natlevaPath} fill="none" stroke="hsl(142, 72%, 46%)" strokeWidth="2.5" />
 
       {/* Dots */}
       {history.market.map((v, i) => (
         <circle key={`m-${i}`} cx={getX(i)} cy={getY(v)} r="3" fill="hsl(0, 0%, 55%)" opacity="0.5" />
       ))}
       {history.natleva.map((v, i) => (
-        <circle key={`n-${i}`} cx={getX(i)} cy={getY(v)} r="3.5" fill="hsl(185, 85%, 50%)" />
+        <circle key={`n-${i}`} cx={getX(i)} cy={getY(v)} r="3.5" fill="hsl(142, 72%, 46%)" />
       ))}
     </svg>
   );
@@ -374,8 +374,8 @@ export default function PriceDropChartSection() {
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
           backgroundImage: `
-            linear-gradient(hsl(185 85% 50% / 0.3) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(185 85% 50% / 0.3) 1px, transparent 1px)
+            linear-gradient(hsl(142 72% 46% / 0.3) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(142 72% 46% / 0.3) 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
         }}

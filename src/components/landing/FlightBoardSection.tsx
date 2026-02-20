@@ -1,7 +1,7 @@
 import ScrollReveal from "@/components/ScrollReveal";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Plane, Radar } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Plane, Radar, X, MapPin } from "lucide-react";
 
 type FlightStatus = "NO HORÁRIO" | "EMBARQUE" | "DECOLOU" | "ALERTA PROMO";
 
@@ -10,6 +10,7 @@ interface Flight {
   time: string;
   code: string;
   destination: string;
+  destinationCode: string;
   gate: string;
   status: FlightStatus;
   promo?: string;
@@ -18,24 +19,40 @@ interface Flight {
 }
 
 const initialFlights: Flight[] = [
-  { id: "1", time: "06:15", code: "LA8084", destination: "PARIS CDG", gate: "A12", terminal: "T3", status: "DECOLOU", airline: "LATAM", promo: "R$ 2.970" },
-  { id: "2", time: "07:30", code: "EK261", destination: "DUBAI DXB", gate: "B04", terminal: "T3", status: "DECOLOU", airline: "EMIRATES" },
-  { id: "3", time: "08:45", code: "AA930", destination: "NEW YORK JFK", gate: "C21", terminal: "T1", status: "ALERTA PROMO", promo: "R$ 1.990", airline: "AMERICAN" },
-  { id: "4", time: "09:20", code: "AF457", destination: "LISBON LIS", gate: "A08", terminal: "T3", status: "EMBARQUE", airline: "AIR FRANCE" },
-  { id: "5", time: "10:00", code: "TP092", destination: "LONDON LHR", gate: "B15", terminal: "T3", status: "ALERTA PROMO", promo: "R$ 2.490", airline: "TAP" },
-  { id: "6", time: "10:55", code: "LH507", destination: "FRANKFURT FRA", gate: "C03", terminal: "T1", status: "NO HORÁRIO", airline: "LUFTHANSA" },
-  { id: "7", time: "11:40", code: "QR774", destination: "TOKYO NRT", gate: "A19", terminal: "T3", status: "NO HORÁRIO", airline: "QATAR" },
-  { id: "8", time: "12:10", code: "KL792", destination: "AMSTERDAM AMS", gate: "B22", terminal: "T3", status: "ALERTA PROMO", promo: "R$ 3.190", airline: "KLM" },
-  { id: "9", time: "13:30", code: "DL063", destination: "MIAMI MIA", gate: "C11", terminal: "T1", status: "NO HORÁRIO", airline: "DELTA" },
-  { id: "10", time: "14:15", code: "BA248", destination: "BARCELONA BCN", gate: "A05", terminal: "T3", status: "NO HORÁRIO", airline: "BRITISH" },
-  { id: "11", time: "15:00", code: "AZ681", destination: "ROME FCO", gate: "B09", terminal: "T3", status: "NO HORÁRIO", airline: "ITA" },
-  { id: "12", time: "16:20", code: "SQ027", destination: "SINGAPORE SIN", gate: "C17", terminal: "T1", status: "NO HORÁRIO", airline: "SINGAPORE" },
+  { id: "1", time: "06:15", code: "LA8084", destination: "PARIS CDG", destinationCode: "CDG", gate: "A12", terminal: "T3", status: "DECOLOU", airline: "LATAM", promo: "R$ 2.970" },
+  { id: "2", time: "07:30", code: "EK261", destination: "DUBAI DXB", destinationCode: "DXB", gate: "B04", terminal: "T3", status: "DECOLOU", airline: "EMIRATES" },
+  { id: "3", time: "08:45", code: "AA930", destination: "NEW YORK JFK", destinationCode: "JFK", gate: "C21", terminal: "T1", status: "ALERTA PROMO", promo: "R$ 1.990", airline: "AMERICAN" },
+  { id: "4", time: "09:20", code: "AF457", destination: "LISBON LIS", destinationCode: "LIS", gate: "A08", terminal: "T3", status: "EMBARQUE", airline: "AIR FRANCE" },
+  { id: "5", time: "10:00", code: "TP092", destination: "LONDON LHR", destinationCode: "LHR", gate: "B15", terminal: "T3", status: "ALERTA PROMO", promo: "R$ 2.490", airline: "TAP" },
+  { id: "6", time: "10:55", code: "LH507", destination: "FRANKFURT FRA", destinationCode: "FRA", gate: "C03", terminal: "T1", status: "NO HORÁRIO", airline: "LUFTHANSA" },
+  { id: "7", time: "11:40", code: "QR774", destination: "TOKYO NRT", destinationCode: "NRT", gate: "A19", terminal: "T3", status: "NO HORÁRIO", airline: "QATAR" },
+  { id: "8", time: "12:10", code: "KL792", destination: "AMSTERDAM AMS", destinationCode: "AMS", gate: "B22", terminal: "T3", status: "ALERTA PROMO", promo: "R$ 3.190", airline: "KLM" },
+  { id: "9", time: "13:30", code: "DL063", destination: "MIAMI MIA", destinationCode: "MIA", gate: "C11", terminal: "T1", status: "NO HORÁRIO", airline: "DELTA" },
+  { id: "10", time: "14:15", code: "BA248", destination: "BARCELONA BCN", destinationCode: "BCN", gate: "A05", terminal: "T3", status: "NO HORÁRIO", airline: "BRITISH" },
+  { id: "11", time: "15:00", code: "AZ681", destination: "ROME FCO", destinationCode: "FCO", gate: "B09", terminal: "T3", status: "NO HORÁRIO", airline: "ITA" },
+  { id: "12", time: "16:20", code: "SQ027", destination: "SINGAPORE SIN", destinationCode: "SIN", gate: "C17", terminal: "T1", status: "NO HORÁRIO", airline: "SINGAPORE" },
 ];
 
 const statusFlow: FlightStatus[] = ["NO HORÁRIO", "EMBARQUE", "DECOLOU"];
 const promos = ["R$ 1.990", "R$ 2.290", "R$ 2.490", "R$ 2.970", "R$ 3.190", "R$ 1.590"];
 
-// Split-flap character with enhanced styling
+// Airport coordinates for route display [x%, y%] on a world map projection
+const airportCoords: Record<string, [number, number]> = {
+  GRU: [32, 72],
+  CDG: [49, 28],
+  DXB: [63, 38],
+  JFK: [27, 30],
+  LIS: [45, 32],
+  LHR: [48, 25],
+  FRA: [51, 26],
+  NRT: [85, 30],
+  AMS: [50, 24],
+  MIA: [24, 38],
+  BCN: [49, 31],
+  FCO: [52, 31],
+  SIN: [76, 55],
+};
+
 function SplitFlapChar({ char, delay = 0 }: { char: string; delay?: number }) {
   if (char === " ") return <span className="inline-block" style={{ width: "0.25ch" }}>&nbsp;</span>;
   return (
@@ -72,18 +89,13 @@ function StatusBadge({ status, promo }: { status: FlightStatus; promo?: string }
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/30 relative overflow-hidden"
         animate={{
           boxShadow: [
-            "0 0 0px hsl(185 85% 50% / 0)",
-            "0 0 15px hsl(185 85% 50% / 0.25)",
-            "0 0 0px hsl(185 85% 50% / 0)",
+            "0 0 0px hsl(var(--primary) / 0)",
+            "0 0 15px hsl(var(--primary) / 0.25)",
+            "0 0 0px hsl(var(--primary) / 0)",
           ],
         }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        {/* Internal scanline */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(transparent 50%, hsl(185 85% 50% / 0.03) 50%)", backgroundSize: "100% 4px" }}
-        />
         <span className="text-primary font-bold text-xs font-mono relative z-10">{promo}</span>
         <motion.span
           className="w-1.5 h-1.5 rounded-full bg-primary relative z-10"
@@ -95,8 +107,8 @@ function StatusBadge({ status, promo }: { status: FlightStatus; promo?: string }
   }
 
   const config: Record<string, { bg: string; text: string; dot: string }> = {
-    "NO HORÁRIO": { bg: "bg-emerald-500/8 border-emerald-500/20", text: "text-emerald-400", dot: "bg-emerald-400" },
-    "EMBARQUE": { bg: "bg-amber-500/8 border-amber-500/20", text: "text-amber-400", dot: "bg-amber-400" },
+    "NO HORÁRIO": { bg: "bg-signal-green/8 border-signal-green/20", text: "text-signal-green", dot: "bg-signal-green" },
+    "EMBARQUE": { bg: "bg-signal-amber/8 border-signal-amber/20", text: "text-signal-amber", dot: "bg-signal-amber" },
     "DECOLOU": { bg: "bg-muted/20 border-border/20", text: "text-muted-foreground/70", dot: "bg-muted-foreground/50" },
   };
 
@@ -112,7 +124,131 @@ function StatusBadge({ status, promo }: { status: FlightStatus; promo?: string }
   );
 }
 
-// HUD-style radar animation
+// Route popup when a flight row is clicked
+function FlightRoutePopup({ flight, onClose }: { flight: Flight; onClose: () => void }) {
+  const from = airportCoords.GRU;
+  const to = airportCoords[flight.destinationCode] || [50, 50];
+
+  // SVG arc path
+  const midX = (from[0] + to[0]) / 2;
+  const midY = Math.min(from[1], to[1]) - 15;
+  const arcPath = `M ${from[0]} ${from[1]} Q ${midX} ${midY} ${to[0]} ${to[1]}`;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div className="absolute inset-0 bg-background/85 backdrop-blur-md" onClick={onClose} />
+      <motion.div
+        className="relative z-10 w-full max-w-2xl glass-card-highlight p-6 sm:p-8 overflow-hidden"
+        initial={{ scale: 0.9, y: 30 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 30 }}
+        transition={{ type: "spring", damping: 25 }}
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10">
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-2">
+          <Plane className="w-5 h-5 text-primary" />
+          <div>
+            <h3 className="font-display text-xl font-bold">{flight.code} — {flight.airline}</h3>
+            <span className="font-mono text-sm text-muted-foreground">GRU → {flight.destinationCode}</span>
+          </div>
+          <div className="ml-auto">
+            <StatusBadge status={flight.status} promo={flight.promo} />
+          </div>
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-6">
+          Rota real: Guarulhos (GRU) → {flight.destination}
+        </p>
+
+        {/* Mini world map with route */}
+        <div className="border border-border/30 rounded-lg bg-background/60 p-4 relative overflow-hidden">
+          <svg viewBox="0 0 100 80" className="w-full h-auto" style={{ maxHeight: 300 }}>
+            <defs>
+              <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(142, 72%, 46%)" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="hsl(142, 72%, 46%)" stopOpacity="1" />
+                <stop offset="100%" stopColor="hsl(38, 92%, 55%)" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="dotGlow">
+                <feGaussianBlur stdDeviation="0.8" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+
+            {/* Simplified continent outlines */}
+            <path d="M 15,15 L 25,12 35,18 38,30 35,40 30,42 20,38 15,28 Z" fill="hsl(142, 72%, 46%)" fillOpacity="0.06" stroke="hsl(142, 72%, 46%)" strokeOpacity="0.15" strokeWidth="0.3" />
+            <path d="M 25,50 L 35,48 38,55 37,70 32,75 28,70 25,60 Z" fill="hsl(142, 72%, 46%)" fillOpacity="0.06" stroke="hsl(142, 72%, 46%)" strokeOpacity="0.15" strokeWidth="0.3" />
+            <path d="M 43,10 L 55,8 58,20 55,35 48,40 42,35 40,20 Z" fill="hsl(142, 72%, 46%)" fillOpacity="0.06" stroke="hsl(142, 72%, 46%)" strokeOpacity="0.15" strokeWidth="0.3" />
+            <path d="M 55,30 L 65,25 75,28 80,35 78,45 70,50 60,48 55,40 Z" fill="hsl(142, 72%, 46%)" fillOpacity="0.06" stroke="hsl(142, 72%, 46%)" strokeOpacity="0.15" strokeWidth="0.3" />
+            <path d="M 78,15 L 90,12 95,25 92,35 85,38 80,30 Z" fill="hsl(142, 72%, 46%)" fillOpacity="0.06" stroke="hsl(142, 72%, 46%)" strokeOpacity="0.15" strokeWidth="0.3" />
+
+            {/* Grid */}
+            {[20, 40, 60].map((y) => (
+              <line key={y} x1="5" y1={y} x2="95" y2={y} stroke="hsl(142, 72%, 46%)" strokeOpacity="0.05" strokeWidth="0.2" strokeDasharray="2 2" />
+            ))}
+
+            {/* Route arc */}
+            <path d={arcPath} fill="none" stroke="hsl(142, 72%, 46%)" strokeWidth="0.2" strokeOpacity="0.15" />
+            <motion.path
+              d={arcPath}
+              fill="none"
+              stroke="url(#routeGrad)"
+              strokeWidth="0.6"
+              strokeLinecap="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2, ease: "easeInOut" }}
+            />
+
+            {/* Traveling dot */}
+            <motion.circle
+              r="1"
+              fill="hsl(142, 72%, 46%)"
+              filter="url(#dotGlow)"
+              initial={{ offsetDistance: "0%" }}
+              animate={{ offsetDistance: "100%" }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              style={{ offsetPath: `path("${arcPath}")` }}
+            />
+
+            {/* Origin dot */}
+            <circle cx={from[0]} cy={from[1]} r="1.5" fill="hsl(142, 72%, 46%)" filter="url(#dotGlow)" />
+            <text x={from[0]} y={from[1] - 3} textAnchor="middle" fill="hsl(142, 72%, 46%)" fontSize="3" fontFamily="monospace" fontWeight="bold">GRU</text>
+
+            {/* Destination dot */}
+            <circle cx={to[0]} cy={to[1]} r="1.5" fill="hsl(38, 92%, 55%)" filter="url(#dotGlow)" />
+            <text x={to[0]} y={to[1] - 3} textAnchor="middle" fill="hsl(38, 92%, 55%)" fontSize="3" fontFamily="monospace" fontWeight="bold">{flight.destinationCode}</text>
+          </svg>
+        </div>
+
+        {/* Flight details */}
+        <div className="grid grid-cols-4 gap-4 mt-5 pt-4 border-t border-border/20">
+          {[
+            { label: "Partida", value: flight.time },
+            { label: "Terminal", value: flight.terminal },
+            { label: "Portão", value: flight.gate },
+            { label: "Status", value: flight.status },
+          ].map((d, i) => (
+            <div key={i} className="text-center">
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1 font-mono">{d.label}</p>
+              <p className="font-mono text-sm font-bold text-foreground">{d.value}</p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function HudRadar() {
   return (
     <div className="relative w-10 h-10 flex items-center justify-center">
@@ -120,11 +256,6 @@ function HudRadar() {
         className="absolute inset-0 border border-primary/20 rounded-full"
         animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
         transition={{ duration: 3, repeat: Infinity }}
-      />
-      <motion.div
-        className="absolute inset-1 border border-primary/15 rounded-full"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }}
-        transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
       />
       <Radar className="w-5 h-5 text-primary" />
     </div>
@@ -136,6 +267,7 @@ export default function FlightBoardSection() {
   const [currentTime, setCurrentTime] = useState("");
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [flashRow, setFlashRow] = useState<string | null>(null);
+  const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
 
   useEffect(() => {
     const tick = () => setCurrentTime(new Date().toLocaleTimeString("pt-BR"));
@@ -182,40 +314,15 @@ export default function FlightBoardSection() {
 
   return (
     <section className="relative py-24 px-4 overflow-hidden">
-      {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse at 50% 30%, hsl(185 85% 50% / 0.03) 0%, transparent 60%)",
+        background: "radial-gradient(ellipse at 50% 30%, hsl(var(--primary) / 0.03) 0%, transparent 60%)",
       }} />
 
-      {/* Multiple scanlines */}
       <motion.div
         className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent pointer-events-none z-20"
         animate={{ top: ["0%", "100%"] }}
         transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
       />
-      <motion.div
-        className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent pointer-events-none z-20"
-        animate={{ top: ["100%", "0%"] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
-      />
-
-      {/* HUD corner marks */}
-      <div className="absolute top-8 left-8 w-8 h-8 pointer-events-none hidden lg:block">
-        <div className="absolute top-0 left-0 w-full h-px bg-primary/20" />
-        <div className="absolute top-0 left-0 h-full w-px bg-primary/20" />
-      </div>
-      <div className="absolute top-8 right-8 w-8 h-8 pointer-events-none hidden lg:block">
-        <div className="absolute top-0 right-0 w-full h-px bg-primary/20" />
-        <div className="absolute top-0 right-0 h-full w-px bg-primary/20" />
-      </div>
-      <div className="absolute bottom-8 left-8 w-8 h-8 pointer-events-none hidden lg:block">
-        <div className="absolute bottom-0 left-0 w-full h-px bg-primary/20" />
-        <div className="absolute bottom-0 left-0 h-full w-px bg-primary/20" />
-      </div>
-      <div className="absolute bottom-8 right-8 w-8 h-8 pointer-events-none hidden lg:block">
-        <div className="absolute bottom-0 right-0 w-full h-px bg-primary/20" />
-        <div className="absolute bottom-0 right-0 h-full w-px bg-primary/20" />
-      </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
         <ScrollReveal>
@@ -229,16 +336,16 @@ export default function FlightBoardSection() {
             Terminal de monitoramento <span className="text-gradient-primary">PromoCéu</span>
           </h2>
           <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-            Dados atualizados em tempo real. Quando uma oportunidade aparece, ela pisca no seu painel instantaneamente.
+            Clique em qualquer voo para ver a rota real no mapa interativo.
           </p>
         </ScrollReveal>
 
         <ScrollReveal delay={0.15}>
           <div className="rounded-xl overflow-hidden border border-primary/10 bg-card/60 backdrop-blur-md shadow-2xl shadow-primary/5 relative">
-            {/* Holographic scanline overlay on the board */}
+            {/* Scanline overlay */}
             <div className="absolute inset-0 pointer-events-none z-10"
               style={{
-                background: "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(185 85% 50% / 0.008) 2px, hsl(185 85% 50% / 0.008) 4px)",
+                background: "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(var(--primary) / 0.008) 2px, hsl(var(--primary) / 0.008) 4px)",
               }}
             />
 
@@ -249,22 +356,18 @@ export default function FlightBoardSection() {
                   className="w-2.5 h-2.5 rounded-full bg-primary"
                   animate={{
                     boxShadow: [
-                      "0 0 0px hsl(185 85% 50% / 0)",
-                      "0 0 12px hsl(185 85% 50% / 0.6)",
-                      "0 0 0px hsl(185 85% 50% / 0)",
+                      "0 0 0px hsl(var(--primary) / 0)",
+                      "0 0 12px hsl(var(--primary) / 0.6)",
+                      "0 0 0px hsl(var(--primary) / 0)",
                     ],
                   }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
                 <div className="flex items-center gap-2">
                   <Plane className="w-4 h-4 text-primary/60" />
-                  <span className="font-mono text-sm font-bold text-foreground tracking-[0.15em]">
-                    DEPARTURES
-                  </span>
+                  <span className="font-mono text-sm font-bold text-foreground tracking-[0.15em]">DEPARTURES</span>
                 </div>
-                <span className="font-mono text-[10px] text-muted-foreground/70 hidden sm:inline tracking-widest">
-                  GRU — GUARULHOS INTL
-                </span>
+                <span className="font-mono text-[10px] text-muted-foreground/70 hidden sm:inline tracking-widest">GRU — GUARULHOS INTL</span>
               </div>
               <div className="flex items-center gap-4">
                 {activeAlerts > 0 && (
@@ -278,9 +381,7 @@ export default function FlightBoardSection() {
                 )}
                 <div className="flex items-center gap-2 bg-background/50 px-3 py-1 rounded-sm border border-border/30">
                   <span className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-widest">BRT</span>
-                  <span className="font-mono text-sm font-bold text-primary tabular-nums tracking-[0.1em]">
-                    {currentTime}
-                  </span>
+                  <span className="font-mono text-sm font-bold text-primary tabular-nums tracking-[0.1em]">{currentTime}</span>
                 </div>
               </div>
             </div>
@@ -300,12 +401,10 @@ export default function FlightBoardSection() {
                 <motion.div
                   key={flight.id}
                   layout
-                  className={`grid grid-cols-7 gap-0 px-4 sm:px-6 py-3 items-center transition-all duration-500 ${
-                    flight.status === "ALERTA PROMO"
-                      ? "bg-primary/[0.03]"
-                      : flight.status === "DECOLOU"
-                      ? "opacity-40"
-                      : ""
+                  onClick={() => setSelectedFlight(flight)}
+                  className={`grid grid-cols-7 gap-0 px-4 sm:px-6 py-3 items-center transition-all duration-500 cursor-pointer hover:bg-primary/[0.05] ${
+                    flight.status === "ALERTA PROMO" ? "bg-primary/[0.03]"
+                      : flight.status === "DECOLOU" ? "opacity-40" : ""
                   } ${flashRow === flight.id ? "!bg-primary/[0.08]" : ""}`}
                 >
                   <span className="font-mono text-sm font-semibold text-foreground tabular-nums tracking-wider">
@@ -314,18 +413,13 @@ export default function FlightBoardSection() {
                   <span className="font-mono text-sm text-foreground/80 tracking-wider">
                     <SplitFlapText text={flight.code} />
                   </span>
-                  <span className="font-mono text-[10px] text-muted-foreground/70 tracking-wider">
-                    {flight.airline}
-                  </span>
-                  <span className="font-mono text-sm font-semibold text-foreground tracking-wider">
+                  <span className="font-mono text-[10px] text-muted-foreground/70 tracking-wider">{flight.airline}</span>
+                  <span className="font-mono text-sm font-semibold text-foreground tracking-wider flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-primary/40 hidden sm:inline" />
                     <SplitFlapText text={flight.destination} />
                   </span>
-                  <span className="font-mono text-xs text-muted-foreground/50 tabular-nums">
-                    {flight.terminal}
-                  </span>
-                  <span className="font-mono text-sm text-foreground/60 tabular-nums">
-                    {flight.gate}
-                  </span>
+                  <span className="font-mono text-xs text-muted-foreground/50 tabular-nums">{flight.terminal}</span>
+                  <span className="font-mono text-sm text-foreground/60 tabular-nums">{flight.gate}</span>
                   <div className="text-right">
                     <StatusBadge status={flight.status} promo={flight.promo} />
                   </div>
@@ -333,35 +427,30 @@ export default function FlightBoardSection() {
               ))}
             </div>
 
-            {/* Footer — telemetry bar */}
+            {/* Footer */}
             <div className="bg-background/60 border-t border-primary/10 px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 relative z-20">
               <div className="flex items-center gap-6">
-                <span className="text-[10px] text-muted-foreground/50 font-mono tracking-wider">
-                  {flights.length} VOOS
+                <span className="text-[10px] text-muted-foreground/50 font-mono tracking-wider">{flights.length} VOOS</span>
+                <span className="text-[10px] text-muted-foreground/50 font-mono tracking-wider">SYS: ONLINE</span>
+                <span className="text-[10px] text-muted-foreground/50 font-mono tracking-wider hidden sm:inline">
+                  CLIQUE PARA VER ROTA
                 </span>
-                <span className="text-[10px] text-muted-foreground/50 font-mono tracking-wider">
-                  SYS: ONLINE
-                </span>
-                {lastUpdate && (
-                  <span className="text-[10px] text-muted-foreground/50 font-mono tracking-wider">
-                    UPD: {lastUpdate}
-                  </span>
-                )}
               </div>
-              <motion.div
-                className="flex items-center gap-2"
-                animate={{ opacity: [1, 0.4, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
+              <motion.div className="flex items-center gap-2" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                <span className="text-[10px] text-primary font-bold font-mono tracking-[0.2em]">
-                  LIVE FEED
-                </span>
+                <span className="text-[10px] text-primary font-bold font-mono tracking-[0.2em]">LIVE FEED</span>
               </motion.div>
             </div>
           </div>
         </ScrollReveal>
       </div>
+
+      {/* Flight route popup */}
+      <AnimatePresence>
+        {selectedFlight && (
+          <FlightRoutePopup flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

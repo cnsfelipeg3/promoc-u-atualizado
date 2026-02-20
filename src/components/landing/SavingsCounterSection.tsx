@@ -70,7 +70,7 @@ export default function SavingsCounterSection() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, hsl(185 85% 50% / 0.04) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse at center, hsl(var(--primary) / 0.04) 0%, transparent 60%)",
         }}
       />
 
@@ -114,9 +114,9 @@ export default function SavingsCounterSection() {
                 className="w-2 h-2 rounded-full bg-primary"
                 animate={{
                   boxShadow: [
-                    "0 0 0px hsl(185 85% 50% / 0)",
-                    "0 0 8px hsl(185 85% 50% / 0.5)",
-                    "0 0 0px hsl(185 85% 50% / 0)",
+                    "0 0 0px hsl(var(--primary) / 0)",
+                    "0 0 8px hsl(var(--primary) / 0.5)",
+                    "0 0 0px hsl(var(--primary) / 0)",
                   ],
                 }}
                 transition={{ duration: 1.5, repeat: Infinity }}

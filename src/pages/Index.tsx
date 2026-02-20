@@ -6,7 +6,6 @@ import PriceDropChartSection from "@/components/landing/PriceDropChartSection";
 import FlightBoardSection from "@/components/landing/FlightBoardSection";
 import GlobalMapSection from "@/components/landing/GlobalMapSection";
 import SavingsCounterSection from "@/components/landing/SavingsCounterSection";
-
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import InspirationSection from "@/components/landing/InspirationSection";
 import ExecutiveSection from "@/components/landing/ExecutiveSection";
@@ -14,11 +13,14 @@ import PlansSection from "@/components/landing/PlansSection";
 import GuaranteeSection from "@/components/landing/GuaranteeSection";
 import FAQSection from "@/components/landing/FAQSection";
 import FinalCTASection from "@/components/landing/FinalCTASection";
-import logo from "@/assets/logo-promoceu.png";
+import BrazilStatesSection from "@/components/landing/BrazilStatesSection";
+import HolographicParticles from "@/components/landing/HolographicParticles";
+import PromoCeuLogo from "@/components/landing/PromoCeuLogo";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <HolographicParticles count={25} />
       <HeroSection />
       <PainSection />
       <MechanismSection />
@@ -27,6 +29,7 @@ const Index = () => {
       <SavingsCounterSection />
       <FlightBoardSection />
       <GlobalMapSection />
+      <BrazilStatesSection />
       <HowItWorksSection />
       <InspirationSection />
       <ExecutiveSection />
@@ -39,7 +42,7 @@ const Index = () => {
       <footer className="border-t border-border/50 py-12 px-4">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="PromoCéu" className="w-8 h-8 invert opacity-70" />
+            <PromoCeuLogo size={32} />
             <span className="font-display font-semibold text-muted-foreground">PromoCéu</span>
           </div>
           <p className="text-muted-foreground/50 text-sm">
