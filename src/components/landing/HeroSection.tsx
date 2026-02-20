@@ -20,7 +20,7 @@ function MarqueeRow({ items, reverse = false }: { items: string[]; reverse?: boo
         {doubled.map((name, i) => (
           <span
             key={i}
-            className="text-muted-foreground/60 text-sm font-medium tracking-widest uppercase whitespace-nowrap select-none"
+            className="text-muted-foreground/40 text-sm font-medium tracking-widest uppercase whitespace-nowrap select-none"
           >
             {name}
           </span>
@@ -41,21 +41,15 @@ export default function HeroSection() {
           className="w-full h-full object-cover"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background" />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/75 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-transparent to-accent/3" />
       </div>
 
-      {/* Floating light orbs */}
+      {/* Subtle geometric light */}
       <motion.div
         className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%)" }}
-        animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-1/3 right-1/4 w-72 h-72 rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(var(--neon-accent) / 0.04) 0%, transparent 70%)" }}
-        animate={{ y: [0, 15, 0], x: [0, -15, 0] }}
+        style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.04) 0%, transparent 70%)" }}
+        animate={{ y: [0, -15, 0], x: [0, 8, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
 
@@ -66,7 +60,7 @@ export default function HeroSection() {
         className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto"
       >
         {/* Logo */}
-        <PromoCeuLogo size={80} className="mb-8" />
+        <PromoCeuLogo size={72} className="mb-8" />
 
         <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-balance">
           Viaje pagando menos.{" "}
@@ -80,13 +74,13 @@ export default function HeroSection() {
         <motion.a
           href="#planos"
           className="glow-button text-base sm:text-lg"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           Quero fazer parte do PromoCéu
         </motion.a>
 
-        <p className="text-muted-foreground/50 text-sm mt-4">
+        <p className="text-muted-foreground/40 text-sm mt-4 font-mono tracking-wider">
           +2.000 membros monitorando oportunidades
         </p>
       </motion.div>

@@ -11,21 +11,21 @@ interface Particle {
   color: string;
 }
 
-export default function HolographicParticles({ count = 30 }: { count?: number }) {
+export default function HolographicParticles({ count = 20 }: { count?: number }) {
   const particles = useMemo<Particle[]>(() => {
     const colors = [
-      "hsl(142, 72%, 46%)",
-      "hsl(199, 89%, 48%)",
-      "hsl(38, 92%, 55%)",
-      "hsl(142, 72%, 60%)",
+      "hsl(217, 91%, 60%)",
+      "hsl(217, 91%, 70%)",
+      "hsl(45, 70%, 58%)",
+      "hsl(220, 14%, 50%)",
     ];
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: 1 + Math.random() * 3,
-      duration: 6 + Math.random() * 10,
-      delay: Math.random() * 8,
+      size: 1 + Math.random() * 2,
+      duration: 8 + Math.random() * 12,
+      delay: Math.random() * 10,
       color: colors[Math.floor(Math.random() * colors.length)],
     }));
   }, [count]);
@@ -42,13 +42,13 @@ export default function HolographicParticles({ count = 30 }: { count?: number })
             width: p.size,
             height: p.size,
             background: p.color,
-            boxShadow: `0 0 ${p.size * 4}px ${p.color}`,
+            boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
           }}
           animate={{
-            y: [0, -60, -120, -60, 0],
-            x: [0, 20, -10, 15, 0],
-            opacity: [0, 0.6, 0.3, 0.7, 0],
-            scale: [0.5, 1.2, 0.8, 1, 0.5],
+            y: [0, -40, -80, -40, 0],
+            x: [0, 15, -8, 10, 0],
+            opacity: [0, 0.4, 0.2, 0.5, 0],
+            scale: [0.5, 1, 0.7, 0.9, 0.5],
           }}
           transition={{
             duration: p.duration,
