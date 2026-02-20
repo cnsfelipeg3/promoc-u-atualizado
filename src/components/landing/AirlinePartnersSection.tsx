@@ -42,9 +42,12 @@ function AirlinePopup({ airline, onClose }: { airline: Airline; onClose: () => v
       >
         <div className="bg-primary/5 border-b border-primary/15 p-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-mono font-bold text-primary text-lg">
-              {airline.code}
-            </div>
+            <img
+              src={`https://images.kiwi.com/airlines/64/${airline.code}.png`}
+              alt={airline.name}
+              className="w-12 h-12 rounded-xl object-contain bg-white/10 p-1.5"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
             <div>
               <h3 className="font-display font-bold">{airline.name}</h3>
               <div className="flex items-center gap-2 mt-1">
@@ -113,9 +116,12 @@ export default function AirlinePartnersSection() {
                 className="glass-card p-5 cursor-pointer group hover:border-primary/20 hover:shadow-md transition-all"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-mono font-bold text-primary text-sm">
-                    {a.code}
-                  </div>
+                  <img
+                    src={`https://images.kiwi.com/airlines/64/${a.code}.png`}
+                    alt={a.name}
+                    className="w-10 h-10 rounded-lg object-contain bg-white/10 p-1"
+                    onError={(e) => { e.currentTarget.src = ""; e.currentTarget.className = "w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"; }}
+                  />
                   <div>
                     <p className="font-display font-semibold text-sm">{a.name}</p>
                     <p className="text-xs text-muted-foreground">{a.alliance}</p>
