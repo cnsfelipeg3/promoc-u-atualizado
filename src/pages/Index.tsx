@@ -1,5 +1,6 @@
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
+import FlightSearchSection from "@/components/landing/FlightSearchSection";
 import PainSection from "@/components/landing/PainSection";
 import MechanismSection from "@/components/landing/MechanismSection";
 import TechnologySection from "@/components/landing/TechnologySection";
@@ -31,6 +32,9 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       
+      {/* Simulador de passagens */}
+      <FlightSearchSection />
+
       {/* Bloco 1: Problema + Solução */}
       <PainSection />
       <MechanismSection />
