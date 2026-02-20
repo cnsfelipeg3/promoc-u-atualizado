@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import ScrollReveal from "@/components/ScrollReveal";
 import {
@@ -423,7 +425,16 @@ function PromoResultCard({ result, index, onFavorite, isFav }: { result: PromoRe
         {/* Header row */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+            <img
+              src={`https://images.kiwi.com/airlines/64/${result.airlineCode}.png`}
+              alt={result.airline}
+              className="w-11 h-11 rounded-xl object-contain bg-white/10 p-1"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                (e.currentTarget.nextElementSibling as HTMLElement)?.classList.remove("hidden");
+              }}
+            />
+            <div className="hidden w-11 h-11 rounded-xl bg-primary/10 items-center justify-center font-bold text-primary text-xs">
               {result.airlineCode}
             </div>
             <div>
@@ -627,6 +638,7 @@ export default function FlightSearchSection() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [searchPhase, setSearchPhase] = useState(0);
+  const [dataSource, setDataSource] = useState<"amadeus" | "simulated">("simulated");
 
   const handleSwap = () => {
     const temp = origin;
@@ -642,45 +654,59 @@ export default function FlightSearchSection() {
     });
   }, []);
 
-  const handleSearch = () => {
-    if (!origin || !destination) return;
+  const cabinClassMap: Record<CabinClass, string> = {
+    economy: "ECONOMY", premium: "PREMIUM_ECONOMY", business: "BUSINESS", first: "FIRST",
+  };
+
+  const runSearch = useCallback(async (orig: string, dest: string, depDate: string) => {
     setSearching(true);
     setResults(null);
     setSearchPhase(0);
 
-    const phases = [
-      "Conectando a 47 fontes de dados...",
-      "Analisando 12.000+ tarifas em tempo real...",
-      "Comparando preços de mercado...",
-      "Filtrando melhores oportunidades...",
-      "Calculando economia potencial...",
-    ];
-
     let phase = 0;
     const phaseInterval = setInterval(() => {
       phase++;
-      if (phase < phases.length) setSearchPhase(phase);
+      if (phase < 5) setSearchPhase(phase);
     }, 500);
 
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke("search-flights", {
+        body: {
+          originCode: orig,
+          destCode: dest,
+          departureDate: depDate || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+          adults: passengers,
+          travelClass: cabinClassMap[cabinClass],
+        },
+      });
+
       clearInterval(phaseInterval);
-      setResults(generatePromos(origin, destination, date, passengers, cabinClass));
+
+      if (!error && data?.results?.length > 0 && !data?.fallback) {
+        setResults(data.results);
+        setDataSource("amadeus");
+      } else {
+        setResults(generatePromos(orig, dest, depDate, passengers, cabinClass));
+        setDataSource("simulated");
+      }
+    } catch {
+      clearInterval(phaseInterval);
+      setResults(generatePromos(orig, dest, depDate, passengers, cabinClass));
+      setDataSource("simulated");
+    } finally {
       setSearching(false);
-    }, 2800);
+    }
+  }, [passengers, cabinClass]);
+
+  const handleSearch = () => {
+    if (!origin || !destination) return;
+    runSearch(origin, destination, date);
   };
 
   const handleQuickSearch = (qs: typeof quickSearches[0]) => {
     setOrigin(qs.origin);
     setDestination(qs.dest);
-    setTimeout(() => {
-      setSearching(true);
-      setResults(null);
-      setSearchPhase(0);
-      setTimeout(() => {
-        setResults(generatePromos(qs.origin, qs.dest, "", passengers, cabinClass));
-        setSearching(false);
-      }, 2000);
-    }, 100);
+    setTimeout(() => runSearch(qs.origin, qs.dest, ""), 100);
   };
 
   const sortedResults = useMemo(() => {
@@ -706,12 +732,13 @@ export default function FlightSearchSection() {
   const directCount = results ? results.filter(r => r.stops === 0).length : 0;
 
   const searchPhases = [
-    "Conectando a 47 fontes de dados...",
+    "Conectando à API Amadeus...",
     "Analisando 12.000+ tarifas em tempo real...",
     "Comparando preços de mercado...",
     "Filtrando melhores oportunidades...",
     "Calculando economia potencial...",
   ];
+
 
   return (
     <section id="simulador" className="relative py-24 px-4">
@@ -914,6 +941,22 @@ export default function FlightSearchSection() {
 
           {sortedResults && !searching && (
             <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+
+              {/* Data source badge */}
+              <div className="flex items-center gap-2 mb-4">
+                {dataSource === "amadeus" ? (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-signal-green/10 text-signal-green border border-signal-green/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-signal-green animate-pulse" />
+                    ✅ Dados reais — API Amadeus
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                    Dados simulados (cadastre credenciais para dados reais)
+                  </span>
+                )}
+              </div>
+
               {/* Summary stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 <div className="glass-card p-3 text-center">
@@ -952,7 +995,7 @@ export default function FlightSearchSection() {
                     <option value="departure">Horário de partida</option>
                   </select>
                   <button
-                    onClick={() => { setSearching(true); setResults(null); setSearchPhase(0); setTimeout(() => { setResults(generatePromos(origin, destination, date, passengers, cabinClass)); setSearching(false); }, 1500); }}
+                    onClick={() => runSearch(origin, destination, date)}
                     className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -960,6 +1003,7 @@ export default function FlightSearchSection() {
                   </button>
                 </div>
               </div>
+
 
               {/* Result cards */}
               {sortedResults.length > 0 ? (
