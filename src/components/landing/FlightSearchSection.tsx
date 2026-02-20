@@ -7,7 +7,7 @@ import {
   Search, Plane, Calendar, MapPin, TrendingDown, ArrowRight, ArrowLeftRight,
   Sparkles, X, Clock, AlertTriangle, ChevronDown, Users, Briefcase, Filter,
   ArrowUpDown, Bell, Heart, Share2, BarChart3, Luggage, Wifi, UtensilsCrossed,
-  Zap, Eye, Star, Shield, ChevronRight, RefreshCw
+  Zap, Eye, Star, Shield, ChevronRight, RefreshCw, CheckCircle2, ArrowLeft
 } from "lucide-react";
 
 // ─── Real airline route data with IATA codes ───
@@ -177,6 +177,7 @@ interface PromoResult {
   returnTime: string;
   stops: number;
   stopCity?: string;
+  stopDuration?: string;
   seats: number;
   type: string;
   duration: string;
@@ -242,7 +243,8 @@ function generatePromos(
     
     const stops = isDomestic ? (i % 3 === 0 ? 0 : 1) : (i % 5 === 0 ? 0 : i % 4 === 0 ? 2 : 1);
     const baseHours = routeData ? parseInt(routeData.baseTime) : (isDomestic ? 2 + (hash + i) % 3 : 8 + (hash + i) % 14);
-    const extraMinutes = stops * (40 + (hash + i) % 60);
+    const stopLayoverMins = stops > 0 ? (60 + (hash + i * 13) % 180) : 0; // 1h a 4h de escala
+    const extraMinutes = stops * stopLayoverMins;
     const totalMinutes = baseHours * 60 + extraMinutes + ((hash + i * 5) % 40);
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
@@ -252,6 +254,11 @@ function generatePromos(
     const arrivalMinutes = departHour * 60 + departMin + totalMinutes;
     const arrHour = Math.floor(arrivalMinutes / 60) % 24;
     const arrMin = arrivalMinutes % 60;
+
+    // Layover duration string
+    const layoverH = Math.floor(stopLayoverMins / 60);
+    const layoverM = stopLayoverMins % 60;
+    const stopDuration = stops > 0 ? `${layoverH}h${String(layoverM).padStart(2, "0")}min` : undefined;
 
     const types = ["⚡ Promoção relâmpago", "🔥 Erro tarifário", "📉 Tarifa especial", "🌸 Oferta sazonal", "⏰ Último minuto", "🎯 Tarifa negociada", "✈️ Rota inaugural"];
     const lastSeenOptions = ["Há 3 min", "Há 12 min", "Há 28 min", "Há 1 hora", "Há 2 horas"];
@@ -285,6 +292,7 @@ function generatePromos(
       returnTime: `${String(arrHour).padStart(2, "0")}:${String(arrMin).padStart(2, "0")}`,
       stops,
       stopCity: stops > 0 ? airports.find(a => a.code === stopCities[(hash + i) % stopCities.length])?.city : undefined,
+      stopDuration,
       seats: 1 + ((hash + i) % 7),
       type: types[(hash + i) % types.length],
       duration: `${hours}h${String(mins).padStart(2, "0")}min`,
@@ -409,7 +417,15 @@ function MiniPriceChart({ data, currentPrice }: { data: number[]; currentPrice: 
   );
 }
 
-function PromoResultCard({ result, index, onFavorite, isFav }: { result: PromoResult; index: number; onFavorite: (id: string) => void; isFav: boolean }) {
+function PromoResultCard({ result, index, onFavorite, isFav, onSelect, isSelected, selectionLabel }: {
+  result: PromoResult;
+  index: number;
+  onFavorite: (id: string) => void;
+  isFav: boolean;
+  onSelect?: (result: PromoResult) => void;
+  isSelected?: boolean;
+  selectionLabel?: string;
+}) {
   const [expanded, setExpanded] = useState(false);
   const savings = result.marketPrice - result.promoPrice;
   const savingsPerPerson = savings;
@@ -419,7 +435,7 @@ function PromoResultCard({ result, index, onFavorite, isFav }: { result: PromoRe
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={`glass-card overflow-hidden transition-shadow ${expanded ? "shadow-lg ring-1 ring-primary/20" : "hover:shadow-md"}`}
+      className={`glass-card overflow-hidden transition-shadow ${isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : expanded ? "shadow-lg ring-1 ring-primary/20" : "hover:shadow-md"}`}
     >
       <div className="p-4 sm:p-5">
         {/* Header row */}
@@ -479,7 +495,9 @@ function PromoResultCard({ result, index, onFavorite, isFav }: { result: PromoRe
               <Plane className="w-3.5 h-3.5 text-primary" />
             </div>
             <p className="text-[10px] text-muted-foreground">
-              {result.stops === 0 ? "Voo direto" : `${result.stops} parada${result.stops > 1 ? "s" : ""}${result.stopCity ? ` (${result.stopCity})` : ""}`}
+              {result.stops === 0
+                ? "Voo direto"
+                : `${result.stops} parada${result.stops > 1 ? "s" : ""}${result.stopCity ? ` em ${result.stopCity}` : ""}${result.stopDuration ? ` · ⏱ ${result.stopDuration} de escala` : ""}`}
             </p>
           </div>
           <div className="text-center">
@@ -517,7 +535,7 @@ function PromoResultCard({ result, index, onFavorite, isFav }: { result: PromoRe
                 <Eye className="w-3 h-3" /> {result.lastSeen}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">{result.departDate} — {result.returnDate}</p>
+            <p className="text-xs text-muted-foreground">{result.departDate}</p>
           </div>
           <div className="text-right">
             <span className="text-muted-foreground line-through text-sm block">R$ {result.marketPrice.toLocaleString("pt-BR")}</span>
@@ -526,14 +544,32 @@ function PromoResultCard({ result, index, onFavorite, isFav }: { result: PromoRe
         </div>
       </div>
 
-      {/* Expand toggle */}
-      <button 
-        onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-2.5 bg-muted/30 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:bg-muted/50 transition-colors"
-      >
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-        {expanded ? "Ocultar detalhes" : "Detalhes completos"}
-      </button>
+      {/* Select + Expand footer */}
+      <div className="flex border-t border-border">
+        {onSelect && (
+          <button
+            onClick={() => onSelect(result)}
+            className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors ${
+              isSelected
+                ? "bg-primary text-primary-foreground"
+                : "bg-primary/5 text-primary hover:bg-primary/10"
+            }`}
+          >
+            {isSelected ? (
+              <><CheckCircle2 className="w-4 h-4" /> {selectionLabel || "Selecionado"}</>
+            ) : (
+              <><CheckCircle2 className="w-4 h-4" /> {selectionLabel || "Selecionar este voo"}</>
+            )}
+          </button>
+        )}
+        <button 
+          onClick={() => setExpanded(!expanded)}
+          className="px-4 py-3 bg-muted/30 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:bg-muted/50 transition-colors border-l border-border"
+        >
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+          {expanded ? "Ocultar" : "Detalhes"}
+        </button>
+      </div>
 
       {/* Expanded details */}
       <AnimatePresence>
@@ -633,12 +669,18 @@ export default function FlightSearchSection() {
   const [cabinClass, setCabinClass] = useState<CabinClass>("economy");
   const [directOnly, setDirectOnly] = useState(false);
   const [results, setResults] = useState<PromoResult[] | null>(null);
+  const [returnResults, setReturnResults] = useState<PromoResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("price");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [searchPhase, setSearchPhase] = useState(0);
   const [dataSource, setDataSource] = useState<"amadeus" | "simulated">("simulated");
+
+  // Two-step selection: outbound → return
+  const [selectionStep, setSelectionStep] = useState<"idle" | "selecting-outbound" | "selecting-return" | "complete">("idle");
+  const [selectedOutbound, setSelectedOutbound] = useState<PromoResult | null>(null);
+  const [selectedReturn, setSelectedReturn] = useState<PromoResult | null>(null);
 
   const handleSwap = () => {
     const temp = origin;
@@ -658,17 +700,7 @@ export default function FlightSearchSection() {
     economy: "ECONOMY", premium: "PREMIUM_ECONOMY", business: "BUSINESS", first: "FIRST",
   };
 
-  const runSearch = useCallback(async (orig: string, dest: string, depDate: string) => {
-    setSearching(true);
-    setResults(null);
-    setSearchPhase(0);
-
-    let phase = 0;
-    const phaseInterval = setInterval(() => {
-      phase++;
-      if (phase < 5) setSearchPhase(phase);
-    }, 500);
-
+  const runSearchInternal = useCallback(async (orig: string, dest: string, depDate: string): Promise<PromoResult[]> => {
     try {
       const { data, error } = await supabase.functions.invoke("search-flights", {
         body: {
@@ -679,24 +711,41 @@ export default function FlightSearchSection() {
           travelClass: cabinClassMap[cabinClass],
         },
       });
-
-      clearInterval(phaseInterval);
-
       if (!error && data?.results?.length > 0 && !data?.fallback) {
-        setResults(data.results);
         setDataSource("amadeus");
-      } else {
-        setResults(generatePromos(orig, dest, depDate, passengers, cabinClass));
-        setDataSource("simulated");
+        return data.results;
       }
-    } catch {
-      clearInterval(phaseInterval);
-      setResults(generatePromos(orig, dest, depDate, passengers, cabinClass));
-      setDataSource("simulated");
-    } finally {
-      setSearching(false);
-    }
+    } catch {}
+    setDataSource("simulated");
+    return generatePromos(orig, dest, depDate, passengers, cabinClass);
   }, [passengers, cabinClass]);
+
+  const runSearch = useCallback(async (orig: string, dest: string, depDate: string) => {
+    setSearching(true);
+    setResults(null);
+    setReturnResults(null);
+    setSelectedOutbound(null);
+    setSelectedReturn(null);
+    setSelectionStep("idle");
+    setSearchPhase(0);
+
+    let phase = 0;
+    const phaseInterval = setInterval(() => {
+      phase++;
+      if (phase < 5) setSearchPhase(phase);
+    }, 500);
+
+    const outbound = await runSearchInternal(orig, dest, depDate);
+    // Generate return flights (dest → orig, returnDate or +7d)
+    const retDate = returnDate || new Date(Date.now() + 37 * 86400000).toISOString().slice(0, 10);
+    const ret = await runSearchInternal(dest, orig, retDate);
+
+    clearInterval(phaseInterval);
+    setResults(outbound);
+    setReturnResults(ret);
+    setSelectionStep("selecting-outbound");
+    setSearching(false);
+  }, [runSearchInternal, returnDate]);
 
   const handleSearch = () => {
     if (!origin || !destination) return;
@@ -709,9 +758,32 @@ export default function FlightSearchSection() {
     setTimeout(() => runSearch(qs.origin, qs.dest, ""), 100);
   };
 
-  const sortedResults = useMemo(() => {
-    if (!results) return null;
-    let sorted = [...results];
+  const handleSelectOutbound = (result: PromoResult) => {
+    setSelectedOutbound(result);
+    setSelectionStep("selecting-return");
+    // Scroll to return section
+    setTimeout(() => {
+      document.getElementById("return-flights")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const handleSelectReturn = (result: PromoResult) => {
+    setSelectedReturn(result);
+    setSelectionStep("complete");
+    setTimeout(() => {
+      document.getElementById("selection-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const handleResetSelection = () => {
+    setSelectedOutbound(null);
+    setSelectedReturn(null);
+    setSelectionStep("selecting-outbound");
+  };
+
+  const sortResults = useCallback((list: PromoResult[] | null) => {
+    if (!list) return null;
+    let sorted = [...list];
     if (directOnly) sorted = sorted.filter(r => r.stops === 0);
     sorted.sort((a, b) => {
       switch (sortBy) {
@@ -723,13 +795,17 @@ export default function FlightSearchSection() {
       }
     });
     return sorted;
-  }, [results, sortBy, directOnly]);
+  }, [sortBy, directOnly]);
+
+  const sortedResults = useMemo(() => sortResults(results), [results, sortResults]);
+  const sortedReturnResults = useMemo(() => sortResults(returnResults), [returnResults, sortResults]);
 
   const originAirport = airports.find(a => a.code === origin);
   const destAirport = airports.find(a => a.code === destination);
   const avgSavings = sortedResults ? Math.round(sortedResults.reduce((s, r) => s + r.marketPrice - r.promoPrice, 0) / sortedResults.length) : 0;
   const bestDiscount = sortedResults ? Math.max(...sortedResults.map(r => r.discount)) : 0;
   const directCount = results ? results.filter(r => r.stops === 0).length : 0;
+  const totalSelected = (selectedOutbound?.promoPrice || 0) + (selectedReturn?.promoPrice || 0);
 
   const searchPhases = [
     "Conectando à API Amadeus...",
@@ -952,16 +1028,35 @@ export default function FlightSearchSection() {
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border">
                     <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                    Dados simulados (cadastre credenciais para dados reais)
+                    Dados simulados
                   </span>
                 )}
+              </div>
+
+              {/* Step indicator */}
+              <div className="flex items-center gap-3 mb-6 p-3 rounded-lg bg-muted/30 border border-border">
+                <div className={`flex items-center gap-2 flex-1 ${selectionStep === "selecting-outbound" ? "text-primary" : selectedOutbound ? "text-signal-green" : "text-muted-foreground"}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 ${selectedOutbound ? "bg-signal-green/20 border-signal-green text-signal-green" : selectionStep === "selecting-outbound" ? "bg-primary/10 border-primary text-primary" : "border-muted-foreground/30 text-muted-foreground"}`}>
+                    {selectedOutbound ? "✓" : "1"}
+                  </div>
+                  <span className="text-sm font-semibold">Voo de ida</span>
+                  {selectedOutbound && <span className="text-xs text-signal-green">{selectedOutbound.departTime} · {selectedOutbound.airline}</span>}
+                </div>
+                <div className="h-px flex-1 bg-border max-w-[40px]" />
+                <div className={`flex items-center gap-2 flex-1 ${selectionStep === "selecting-return" ? "text-primary" : selectedReturn ? "text-signal-green" : "text-muted-foreground"}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 ${selectedReturn ? "bg-signal-green/20 border-signal-green text-signal-green" : selectionStep === "selecting-return" ? "bg-primary/10 border-primary text-primary" : "border-muted-foreground/30 text-muted-foreground"}`}>
+                    {selectedReturn ? "✓" : "2"}
+                  </div>
+                  <span className="text-sm font-semibold">Voo de volta</span>
+                  {selectedReturn && <span className="text-xs text-signal-green">{selectedReturn.departTime} · {selectedReturn.airline}</span>}
+                </div>
               </div>
 
               {/* Summary stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 <div className="glass-card p-3 text-center">
                   <p className="text-2xl font-bold text-primary font-display">{sortedResults.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Promoções encontradas</p>
+                  <p className="text-[11px] text-muted-foreground">Opções de ida</p>
                 </div>
                 <div className="glass-card p-3 text-center">
                   <p className="text-2xl font-bold text-signal-green font-display">-{bestDiscount}%</p>
@@ -1004,27 +1099,132 @@ export default function FlightSearchSection() {
                 </div>
               </div>
 
+              {/* ─── OUTBOUND FLIGHTS ─── */}
+              <div className="mb-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">1</span>
+                  </div>
+                  <h3 className="font-display font-bold text-foreground">
+                    Selecione o voo de ida — {originAirport?.city} → {destAirport?.city}
+                  </h3>
+                  {selectedOutbound && (
+                    <button onClick={handleResetSelection} className="ml-auto text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+                      <ArrowLeft className="w-3 h-3" /> Trocar seleção
+                    </button>
+                  )}
+                </div>
+                {sortedResults.length > 0 ? (
+                  <div className="grid gap-4">
+                    {sortedResults.map((result, i) => (
+                      <PromoResultCard
+                        key={result.id}
+                        result={result}
+                        index={i}
+                        onFavorite={toggleFavorite}
+                        isFav={favorites.has(result.id)}
+                        onSelect={handleSelectOutbound}
+                        isSelected={selectedOutbound?.id === result.id}
+                        selectionLabel="Selecionar ida"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 glass-card">
+                    <Plane className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-foreground font-semibold mb-1">Nenhum voo direto encontrado</p>
+                    <p className="text-sm text-muted-foreground">Desative o filtro "Apenas voos diretos".</p>
+                  </div>
+                )}
+              </div>
 
-              {/* Result cards */}
-              {sortedResults.length > 0 ? (
-                <div className="grid gap-4">
-                  {sortedResults.map((result, i) => (
-                    <PromoResultCard
-                      key={result.id}
-                      result={result}
-                      index={i}
-                      onFavorite={toggleFavorite}
-                      isFav={favorites.has(result.id)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 glass-card">
-                  <Plane className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-foreground font-semibold mb-1">Nenhum voo direto encontrado</p>
-                  <p className="text-sm text-muted-foreground">Desative o filtro "Apenas voos diretos" para ver todas as opções.</p>
-                </div>
-              )}
+              {/* ─── RETURN FLIGHTS ─── */}
+              <AnimatePresence>
+                {selectionStep !== "selecting-outbound" && sortedReturnResults && (
+                  <motion.div
+                    id="return-flights"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-10"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-primary">2</span>
+                      </div>
+                      <h3 className="font-display font-bold text-foreground">
+                        Selecione o voo de volta — {destAirport?.city} → {originAirport?.city}
+                      </h3>
+                    </div>
+                    <div className="grid gap-4">
+                      {sortedReturnResults.map((result, i) => (
+                        <PromoResultCard
+                          key={result.id}
+                          result={result}
+                          index={i}
+                          onFavorite={toggleFavorite}
+                          isFav={favorites.has(result.id)}
+                          onSelect={handleSelectReturn}
+                          isSelected={selectedReturn?.id === result.id}
+                          selectionLabel="Selecionar volta"
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* ─── SELECTION SUMMARY ─── */}
+              <AnimatePresence>
+                {selectionStep === "complete" && selectedOutbound && selectedReturn && (
+                  <motion.div
+                    id="selection-summary"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-10 glass-card-highlight p-6"
+                  >
+                    <div className="flex items-center gap-2 mb-4">
+                      <CheckCircle2 className="w-5 h-5 text-signal-green" />
+                      <h3 className="font-display font-bold text-foreground">Combinação selecionada</h3>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4 mb-5">
+                      <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Ida — {originAirport?.city} → {destAirport?.city}</p>
+                        <p className="font-semibold text-foreground text-sm">{selectedOutbound.airline} · {selectedOutbound.departTime}</p>
+                        <p className="text-xs text-muted-foreground">{selectedOutbound.duration} · {selectedOutbound.stops === 0 ? "Direto" : `${selectedOutbound.stops} escala${selectedOutbound.stopDuration ? ` (${selectedOutbound.stopDuration})` : ""}`}</p>
+                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {selectedOutbound.promoPrice.toLocaleString("pt-BR")}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Volta — {destAirport?.city} → {originAirport?.city}</p>
+                        <p className="font-semibold text-foreground text-sm">{selectedReturn.airline} · {selectedReturn.departTime}</p>
+                        <p className="text-xs text-muted-foreground">{selectedReturn.duration} · {selectedReturn.stops === 0 ? "Direto" : `${selectedReturn.stops} escala${selectedReturn.stopDuration ? ` (${selectedReturn.stopDuration})` : ""}`}</p>
+                        <p className="text-primary font-bold text-lg font-display mt-1">R$ {selectedReturn.promoPrice.toLocaleString("pt-BR")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mb-5 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <span className="font-semibold text-foreground">Total da viagem</span>
+                      <span className="text-primary font-bold text-2xl font-display">R$ {totalSelected.toLocaleString("pt-BR")}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <motion.a
+                        href="#planos"
+                        className="glow-button flex-1 inline-flex items-center justify-center gap-2 text-sm"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Bell className="w-4 h-4" />
+                        Ativar alerta para esta combinação
+                      </motion.a>
+                      <button
+                        onClick={handleResetSelection}
+                        className="px-4 py-3 border border-border rounded-lg text-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Recomeçar seleção
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* CTA */}
               <div className="mt-8 glass-card-highlight p-6 text-center">
@@ -1033,7 +1233,7 @@ export default function FlightSearchSection() {
                   <p className="font-display font-bold text-foreground">Quer receber alertas desta rota?</p>
                 </div>
                 <p className="text-muted-foreground text-sm mb-5 max-w-lg mx-auto">
-                  Membros PromoCéu recebem notificações instantâneas quando tarifas como essas são detectadas — até 4 horas antes da publicação em sites de busca. Em média, nossos alertas duram apenas 47 minutos.
+                  Membros PromoCéu recebem notificações instantâneas quando tarifas como essas são detectadas — até 4 horas antes da publicação em sites de busca.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <motion.a
