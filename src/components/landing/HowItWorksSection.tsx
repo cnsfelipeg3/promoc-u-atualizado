@@ -35,14 +35,10 @@ export default function HowItWorksSection() {
                   className="neon-card p-6 text-center flex-1 relative"
                 >
                   <div className="relative mx-auto mb-4 w-fit">
-                    <div className="w-14 h-14 rounded-full flex items-center justify-center"
-                      style={{ background: "hsl(193 76% 38% / 0.1)", border: "1px solid hsl(193 76% 38% / 0.2)" }}
-                    >
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center bg-primary/10 border border-primary/20">
                       <step.icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
                     </div>
-                    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold font-display"
-                      style={{ boxShadow: "0 0 10px hsl(193 76% 38% / 0.3)" }}
-                    >
+                    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold font-display shadow-lg">
                       {i + 1}
                     </span>
                   </div>

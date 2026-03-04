@@ -18,13 +18,13 @@ export default function MidCTASection() {
             <p className="text-muted-foreground max-w-xl mx-auto mb-8 relative z-10">
               Enquanto você lê isso, nosso sistema já detectou novas oportunidades de economia.
             </p>
-            <div className="flex flex-wrap justify-center gap-6 mb-8 relative z-10">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8 relative z-10">
               {[
                 { icon: Zap, text: "Alertas em < 5 min" },
                 { icon: Shield, text: "Sem intermediários" },
                 { icon: Clock, text: "Cancele quando quiser" },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-foreground/60">
+                <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <item.icon className="w-4 h-4 text-primary" />
                   <span>{item.text}</span>
                 </div>

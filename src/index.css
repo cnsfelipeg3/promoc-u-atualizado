@@ -5,8 +5,80 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @layer base {
+  /* ===== LIGHT THEME (default) ===== */
   :root {
-    /* Galactic Dark palette */
+    --background: 210 20% 98%;
+    --foreground: 210 30% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 30% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 30% 12%;
+
+    --primary: 193 76% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 15% 93%;
+    --secondary-foreground: 210 20% 30%;
+
+    --muted: 210 15% 93%;
+    --muted-foreground: 210 10% 45%;
+
+    --accent: 28 80% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 15% 88%;
+    --input: 210 15% 88%;
+    --ring: 193 76% 38%;
+
+    --radius: 0.625rem;
+
+    /* Custom tokens */
+    --glow-primary: 193 76% 38%;
+    --surface-glass: 210 15% 96%;
+    --highlight: 28 80% 52%;
+    --gold: 38 72% 50%;
+    --neon-accent: 193 76% 45%;
+    --signal-red: 0 72% 51%;
+    --signal-green: 152 55% 40%;
+    --signal-amber: 38 85% 50%;
+
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 210 30% 12%;
+    --sidebar-primary: 193 76% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 93%;
+    --sidebar-accent-foreground: 210 30% 12%;
+    --sidebar-border: 210 15% 88%;
+    --sidebar-ring: 193 76% 38%;
+
+    /* Glass tokens for light */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 210 15% 80% / 0.5;
+    --glass-highlight-bg: 0 0% 100% / 0.85;
+    --glass-highlight-border: 193 76% 38% / 0.15;
+    --neon-border: 193 76% 38% / 0.2;
+    --neon-shadow: 193 76% 38% / 0.06;
+    --neon-inner: 193 76% 38% / 0.02;
+    --overlay-bg: 0 0% 100% / 0.85;
+    --modal-bg: 0 0% 100% / 0.95;
+    --urgency-bg: 193 76% 38% / 0.95;
+    --icon-box-bg: 193 76% 38% / 0.08;
+    --icon-box-border: 193 76% 38% / 0.15;
+    --stat-badge-bg: 193 76% 38% / 0.06;
+    --stat-badge-border: 193 76% 38% / 0.12;
+    --divider-color: 210 15% 88% / 0.6;
+    --table-header-bg: 210 15% 96% / 0.8;
+    --table-col-highlight: 193 76% 38% / 0.04;
+    --table-col-border: 193 76% 38% / 0.1;
+  }
+
+  /* ===== DARK THEME ===== */
+  .dark {
     --background: 199 95% 8%;
     --foreground: 0 0% 96%;
 
@@ -35,8 +107,6 @@
     --input: 199 30% 20%;
     --ring: 193 76% 38%;
 
-    --radius: 0.625rem;
-
     /* Custom tokens */
     --glow-primary: 193 76% 38%;
     --surface-glass: 199 40% 14%;
@@ -55,6 +125,26 @@
     --sidebar-accent-foreground: 0 0% 96%;
     --sidebar-border: 199 30% 20%;
     --sidebar-ring: 193 76% 38%;
+
+    /* Glass tokens for dark */
+    --glass-bg: 199 60% 12% / 0.6;
+    --glass-border: 193 76% 38% / 0.12;
+    --glass-highlight-bg: 199 60% 12% / 0.7;
+    --glass-highlight-border: 193 76% 38% / 0.25;
+    --neon-border: 193 76% 38% / 0.3;
+    --neon-shadow: 193 76% 38% / 0.08;
+    --neon-inner: 193 76% 38% / 0.03;
+    --overlay-bg: 199 95% 8% / 0.8;
+    --modal-bg: 199 60% 12% / 0.95;
+    --urgency-bg: 193 76% 38% / 0.85;
+    --icon-box-bg: 193 76% 38% / 0.1;
+    --icon-box-border: 193 76% 38% / 0.2;
+    --stat-badge-bg: 193 76% 38% / 0.05;
+    --stat-badge-border: 193 76% 38% / 0.15;
+    --divider-color: 193 76% 38% / 0.2;
+    --table-header-bg: 199 60% 12% / 0.7;
+    --table-col-highlight: 193 76% 38% / 0.08;
+    --table-col-border: 193 76% 38% / 0.2;
   }
 }
 
@@ -70,9 +160,13 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  .dark body,
+  body.dark {
     background: linear-gradient(180deg, hsl(199 95% 8%) 0%, hsl(193 50% 18%) 50%, hsl(193 76% 25%) 100%);
     background-attachment: fixed;
-    min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -83,19 +177,19 @@
 @layer components {
   .glass-card {
     @apply rounded-xl;
-    background: hsl(199 60% 12% / 0.6);
+    background: hsl(var(--glass-bg));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid hsl(193 76% 38% / 0.12);
+    border: 1px solid hsl(var(--glass-border));
   }
 
   .glass-card-highlight {
     @apply rounded-xl;
-    background: hsl(199 60% 12% / 0.7);
+    background: hsl(var(--glass-highlight-bg));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsl(193 76% 38% / 0.25);
-    box-shadow: 0 4px 24px hsl(193 76% 38% / 0.08);
+    border: 1px solid hsl(var(--glass-highlight-border));
+    box-shadow: 0 4px 24px hsl(var(--neon-shadow));
   }
 
   .glow-button {
@@ -115,7 +209,7 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, hsl(0 0% 100%), hsl(193 76% 55%), hsl(193 76% 70%), hsl(0 0% 100%));
+    background-image: linear-gradient(90deg, hsl(var(--foreground)), hsl(193 76% 55%), hsl(193 76% 70%), hsl(var(--foreground)));
     background-size: 300% 100%;
     animation: gradient-shift 8s ease-in-out infinite;
   }
@@ -129,7 +223,7 @@
   }
 
   .section-divider {
-    background: linear-gradient(90deg, transparent, hsl(193 76% 38% / 0.2) 50%, transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--divider-color)) 50%, transparent);
     height: 1px;
   }
 
@@ -156,7 +250,6 @@
   /* Border glow animation for annual plan */
   .border-glow {
     position: relative;
-    overflow: hidden;
   }
 
   .border-glow::before {
@@ -179,7 +272,7 @@
     left: 1px;
     right: 1px;
     bottom: 1px;
-    background: hsl(199 60% 12% / 0.9);
+    background: hsl(var(--card));
     border-radius: inherit;
     z-index: -1;
   }
@@ -199,16 +292,16 @@
 
   .dest-card .overlay {
     @apply absolute inset-0;
-    background: linear-gradient(to top, hsl(199 95% 8% / 0.95) 0%, hsl(199 95% 8% / 0.5) 40%, hsl(199 95% 8% / 0.2) 100%);
+    background: linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.5) 40%, hsl(var(--background) / 0.2) 100%);
   }
 
   /* Neon border card */
   .neon-card {
     @apply rounded-xl;
-    background: hsl(199 60% 12% / 0.6);
+    background: hsl(var(--glass-bg));
     backdrop-filter: blur(16px);
-    border: 1px solid hsl(193 76% 38% / 0.3);
-    box-shadow: 0 0 15px hsl(193 76% 38% / 0.08), inset 0 0 15px hsl(193 76% 38% / 0.03);
+    border: 1px solid hsl(var(--neon-border));
+    box-shadow: 0 0 15px hsl(var(--neon-shadow)), inset 0 0 15px hsl(var(--neon-inner));
   }
 
   /* Neon pulse tag */

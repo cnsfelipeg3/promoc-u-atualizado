@@ -18,14 +18,7 @@ export default function UrgencyBar() {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] h-9 flex items-center justify-center overflow-hidden"
-      style={{
-        background: "hsl(193 76% 38% / 0.85)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "1px solid hsl(193 76% 50% / 0.3)",
-      }}
-    >
+    <div className="fixed top-0 left-0 right-0 z-[60] h-9 flex items-center justify-center overflow-hidden bg-primary/90 backdrop-blur-md border-b border-primary/30">
       <AnimatePresence mode="wait">
         <motion.p
           key={index}
@@ -33,7 +26,7 @@ export default function UrgencyBar() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.4 }}
-          className="text-white text-xs sm:text-sm font-medium tracking-wide text-center px-4"
+          className="text-primary-foreground text-xs sm:text-sm font-medium tracking-wide text-center px-4"
         >
           {messages[index]}
         </motion.p>

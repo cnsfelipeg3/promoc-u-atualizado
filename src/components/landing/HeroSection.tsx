@@ -26,7 +26,7 @@ function AirlineLogoMarquee() {
             key={i}
             src={`https://images.kiwi.com/airlines/64x64/${a.code}.png`}
             alt={a.name}
-            className="h-8 sm:h-10 object-contain opacity-50 hover:opacity-80 transition-opacity brightness-0 invert"
+            className="h-8 sm:h-10 object-contain opacity-50 hover:opacity-80 transition-opacity dark:brightness-0 dark:invert"
             loading="lazy"
             style={{ background: "transparent" }}
             onError={(e) => {
@@ -42,15 +42,21 @@ function AirlineLogoMarquee() {
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 pt-24">
-      <div className="absolute inset-0">
+      {/* Dark theme: show bg image */}
+      <div className="absolute inset-0 dark:block hidden">
         <img src={heroPlane} alt="" className="w-full h-full object-cover opacity-50" loading="eager" />
-        <div className="absolute inset-0" style={{
-          background: "linear-gradient(180deg, hsl(199 95% 8% / 0.8) 0%, hsl(199 95% 8% / 0.6) 50%, hsl(199 95% 8% / 0.9) 100%)",
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+      </div>
+      {/* Light theme: subtle tech pattern */}
+      <div className="absolute inset-0 dark:hidden block">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, hsl(var(--primary)) 1px, transparent 0)`,
+          backgroundSize: "32px 32px",
         }} />
       </div>
 
-      {/* Star particles */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Star particles (dark only) */}
+      <div className="absolute inset-0 pointer-events-none dark:block hidden">
         {Array.from({ length: 40 }).map((_, i) => (
           <motion.div
             key={i}
@@ -68,17 +74,13 @@ export default function HeroSection() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto"
       >
-        <img src={logoWhite} alt="PromoCéu" className="h-16 w-auto mb-6" />
+        <img src={logoWhite} alt="PromoCéu" className="h-12 sm:h-16 w-auto mb-6 dark:brightness-100 brightness-0" />
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
-          style={{
-            background: "hsl(193 76% 38% / 0.1)",
-            border: "1px solid hsl(193 76% 38% / 0.25)",
-          }}
+          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 bg-primary/10 border border-primary/25"
         >
           <span className="w-2 h-2 rounded-full bg-signal-green animate-pulse" />
           <span className="text-xs font-medium text-primary tracking-wider uppercase">
@@ -86,16 +88,16 @@ export default function HeroSection() {
           </span>
         </motion.div>
 
-        <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-balance text-white leading-[1.1]">
+        <h1 className="font-display text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-balance leading-[1.1]">
           Passagens aéreas com{" "}
           <span className="text-gradient-primary">inteligência de mercado.</span>
         </h1>
 
-        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mb-5 text-balance leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-5 text-balance leading-relaxed px-2">
           Monitoramos milhares de rotas diariamente para você acessar tarifas promocionais antes que esgotem. Sem intermediários. Sem taxas escondidas. Compra direta na companhia aérea.
         </p>
 
-        <div className="flex flex-wrap justify-center gap-6 mb-8">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8">
           {[
             { icon: TrendingDown, text: "Até 70% de economia" },
             { icon: Shield, text: "Compra direta e segura" },
@@ -106,7 +108,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + i * 0.1 }}
-              className="flex items-center gap-2 text-sm text-foreground/60"
+              className="flex items-center gap-2 text-sm text-muted-foreground"
             >
               <item.icon className="w-4 h-4 text-primary" />
               <span>{item.text}</span>
@@ -114,11 +116,11 @@ export default function HeroSection() {
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <motion.a href="#planos" className="glow-button text-base sm:text-lg" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
+          <motion.a href="#planos" className="glow-button text-base sm:text-lg w-full sm:w-auto text-center" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             Começar a economizar
           </motion.a>
-          <motion.a href="#como-funciona" className="px-6 py-4 text-sm font-semibold text-foreground/70 hover:text-primary transition-colors border border-border rounded-lg hover:border-primary/30" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.a href="#como-funciona" className="px-6 py-4 text-sm font-semibold text-foreground/70 hover:text-primary transition-colors border border-border rounded-lg hover:border-primary/30 w-full sm:w-auto text-center" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             Como funciona →
           </motion.a>
         </div>

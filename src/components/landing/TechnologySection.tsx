@@ -17,66 +17,42 @@ const features: TechFeature[] = [
     title: "Inteligência Artificial Preditiva",
     desc: "Algoritmos de machine learning analisam padrões históricos e preveem quedas de preço antes que aconteçam.",
     detail: "Nossos modelos de IA são treinados com mais de 50 milhões de registros históricos de tarifas aéreas. Eles identificam padrões sazonais, correlações com eventos globais e anomalias de precificação que indicam quedas iminentes.",
-    stats: [
-      { label: "Registros analisados", value: "50M+" },
-      { label: "Precisão preditiva", value: "92%" },
-      { label: "Modelos ativos", value: "340+" },
-    ],
+    stats: [{ label: "Registros analisados", value: "50M+" }, { label: "Precisão preditiva", value: "92%" }, { label: "Modelos ativos", value: "340+" }],
   },
   {
     icon: Zap,
     title: "Monitoramento em Tempo Real",
     desc: "Verificações a cada 3 minutos em mais de 50 companhias aéreas e 12.000 rotas simultaneamente.",
-    detail: "Nossa infraestrutura de monitoramento opera em nuvem distribuída com servidores em 4 continentes. Cada companhia aérea é verificada a cada 3 minutos, 24 horas por dia.",
-    stats: [
-      { label: "Verificações/dia", value: "480K" },
-      { label: "Companhias", value: "50+" },
-      { label: "Velocidade de Detecção", value: "< 60s" },
-    ],
+    detail: "Nossa infraestrutura de monitoramento opera em nuvem distribuída com servidores em 4 continentes.",
+    stats: [{ label: "Verificações/dia", value: "480K" }, { label: "Companhias", value: "50+" }, { label: "Velocidade de Detecção", value: "< 60s" }],
   },
   {
     icon: Shield,
     title: "Validação Anti-Fraude",
     desc: "Cada tarifa é validada contra múltiplas fontes antes de virar alerta, eliminando falsos positivos.",
-    detail: "Antes de enviar um alerta, nosso sistema faz uma tríplice validação: confirma a tarifa diretamente no GDS, cruza com agregadores independentes e verifica disponibilidade.",
-    stats: [
-      { label: "Taxa de validação", value: "98%" },
-      { label: "Fontes cruzadas", value: "3+" },
-      { label: "Falsos positivos", value: "< 2%" },
-    ],
+    detail: "Antes de enviar um alerta, nosso sistema faz uma tríplice validação.",
+    stats: [{ label: "Taxa de validação", value: "98%" }, { label: "Fontes cruzadas", value: "3+" }, { label: "Falsos positivos", value: "< 2%" }],
   },
   {
     icon: BarChart3,
     title: "Análise Comparativa de Mercado",
     desc: "Cada preço é contextualizado com médias históricas, sazonais e projeções de tendência.",
-    detail: "Nosso sistema calcula a média ponderada de 30, 60 e 90 dias para cada rota, ajustada por sazonalidade. Um alerta só é disparado quando o preço está pelo menos 35% abaixo da média ajustada.",
-    stats: [
-      { label: "Janela de análise", value: "90 dias" },
-      { label: "Desconto mínimo", value: "35%" },
-      { label: "Rotas com histórico", value: "12K+" },
-    ],
+    detail: "Nosso sistema calcula a média ponderada de 30, 60 e 90 dias para cada rota, ajustada por sazonalidade.",
+    stats: [{ label: "Janela de análise", value: "90 dias" }, { label: "Desconto mínimo", value: "35%" }, { label: "Rotas com histórico", value: "12K+" }],
   },
   {
     icon: Bell,
     title: "Sistema de Notificação Inteligente",
     desc: "Alertas priorizados por relevância pessoal, com informações completas para decisão rápida.",
-    detail: "Cada alerta inclui: rota completa, companhia aérea, preço atual vs. histórico, janela de datas, link direto para compra e tempo estimado de disponibilidade.",
-    stats: [
-      { label: "Tempo médio decisão", value: "12 min" },
-      { label: "Taxa de aproveitamento", value: "34%" },
-      { label: "Alertas/dia", value: "5-15" },
-    ],
+    detail: "Cada alerta inclui: rota completa, companhia aérea, preço atual vs. histórico, janela de datas e link direto para compra.",
+    stats: [{ label: "Tempo médio decisão", value: "12 min" }, { label: "Taxa de aproveitamento", value: "34%" }, { label: "Alertas/dia", value: "5-15" }],
   },
   {
     icon: Database,
     title: "Oportunidades Catalogadas por IA",
     desc: "O maior banco de dados de tarifas aéreas do Brasil, com atualizações em tempo real.",
-    detail: "Mantemos um repositório proprietário com mais de 2 bilhões de registros de tarifas, cobrindo 12.000+ combinações de origem/destino.",
-    stats: [
-      { label: "Registros totais", value: "2B+" },
-      { label: "Crescimento/mês", value: "180M" },
-      { label: "Rotas cobertas", value: "12K+" },
-    ],
+    detail: "Mantemos um repositório proprietário com mais de 2 bilhões de registros de tarifas.",
+    stats: [{ label: "Registros totais", value: "2B+" }, { label: "Crescimento/mês", value: "180M" }, { label: "Rotas cobertas", value: "12K+" }],
   },
 ];
 
@@ -86,13 +62,12 @@ function TechPopup({ feature, onClose }: { feature: TechFeature; onClose: () => 
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
       <motion.div
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl"
-        style={{ background: "hsl(199 60% 12% / 0.9)", backdropFilter: "blur(20px)", border: "1px solid hsl(193 76% 38% / 0.2)" }}
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl glass-card-highlight"
         initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
         transition={{ type: "spring", damping: 25 }}
       >
-        <div className="p-6 flex items-center gap-4" style={{ borderBottom: "1px solid hsl(193 76% 38% / 0.15)" }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "hsl(193 76% 38% / 0.1)" }}>
+        <div className="p-6 flex items-center gap-4 border-b border-primary/15">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/10">
             <Icon className="w-6 h-6 text-primary" />
           </div>
           <h3 className="font-display font-bold text-lg text-foreground">{feature.title}</h3>
@@ -147,7 +122,7 @@ export default function TechnologySection() {
                   onClick={() => setSelected(f)}
                   className="neon-card p-6 cursor-pointer group h-full"
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: "hsl(193 76% 38% / 0.1)" }}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-primary/10">
                     <Icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
                   </div>
                   <h3 className="font-display text-lg font-semibold mb-2 text-foreground">{f.title}</h3>

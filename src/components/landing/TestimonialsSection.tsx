@@ -37,9 +37,9 @@ function TestimonialCard({ t, onClick }: { t: Testimonial; onClick: () => void }
       className="relative overflow-hidden rounded-xl cursor-pointer group h-full flex flex-col"
       style={{ minHeight: "280px" }}
     >
-      <img src={t.bgImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, hsl(199 60% 12% / 0.85) 0%, hsl(199 60% 12% / 0.95) 100%)" }} />
-      <div className="relative z-10 p-6 flex flex-col h-full" style={{ backdropFilter: "blur(8px)", border: "1px solid hsl(193 76% 38% / 0.12)", borderRadius: "0.75rem" }}>
+      <img src={t.bgImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-10 dark:opacity-20 group-hover:opacity-20 dark:group-hover:opacity-30 transition-opacity" />
+      <div className="absolute inset-0 bg-gradient-to-b from-card/85 to-card/95" />
+      <div className="relative z-10 p-6 flex flex-col h-full glass-card">
         <div className="flex gap-0.5 mb-4">
           {Array.from({ length: t.rating }).map((_, i) => (
             <Star key={i} className="w-4 h-4 fill-accent text-accent" />
@@ -47,7 +47,7 @@ function TestimonialCard({ t, onClick }: { t: Testimonial; onClick: () => void }
         </div>
         <Quote className="w-6 h-6 text-primary/20 mb-2" />
         <p className="text-foreground/80 leading-relaxed flex-1 text-sm">"{t.text}"</p>
-        <div className="mt-5 pt-4" style={{ borderTop: "1px solid hsl(193 76% 38% / 0.1)" }}>
+        <div className="mt-5 pt-4 border-t border-border/30">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-display font-semibold text-sm text-foreground">{t.name}</p>
@@ -73,13 +73,12 @@ function TestimonialPopup({ t, onClose }: { t: Testimonial; onClose: () => void 
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
       <motion.div
-        className="relative z-10 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden"
-        style={{ background: "hsl(199 60% 12% / 0.95)", border: "1px solid hsl(193 76% 38% / 0.2)" }}
+        className="relative z-10 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden glass-card-highlight"
         initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
       >
         <div className="relative h-32 overflow-hidden">
           <img src={t.bgImage} alt="" className="w-full h-full object-cover opacity-40" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent, hsl(199 60% 12%))" }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
           <button onClick={onClose} className="absolute top-3 right-3 text-foreground/60 hover:text-foreground"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6 -mt-8 relative">
@@ -90,7 +89,7 @@ function TestimonialPopup({ t, onClose }: { t: Testimonial; onClose: () => void 
           </div>
           <h3 className="font-display font-bold text-lg">{t.name}</h3>
           <p className="text-muted-foreground text-sm">{t.role} · {t.location}</p>
-          <div className="flex items-center gap-4 my-5 pb-5" style={{ borderBottom: "1px solid hsl(193 76% 38% / 0.1)" }}>
+          <div className="flex items-center gap-4 my-5 pb-5 border-b border-border/30">
             <div>
               <p className="text-xs text-muted-foreground">Economia total</p>
               <p className="text-primary font-bold text-2xl font-display">{t.savings}</p>

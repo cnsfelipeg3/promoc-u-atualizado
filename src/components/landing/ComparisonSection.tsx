@@ -46,49 +46,51 @@ export default function ComparisonSection() {
         </ScrollReveal>
 
         <ScrollReveal delay={0.1}>
-          <div className="glass-card overflow-hidden" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-            <div className="grid grid-cols-4 gap-0 border-b border-primary/15" style={{ background: "hsl(199 60% 12% / 0.7)" }}>
-              <div className="p-4 text-xs font-semibold text-foreground/60 uppercase tracking-wider">Feature</div>
-              <div className="p-4 text-center" style={{ background: "hsl(193 76% 38% / 0.08)", borderLeft: "1px solid hsl(193 76% 38% / 0.2)", borderRight: "1px solid hsl(193 76% 38% / 0.2)", boxShadow: "inset 0 0 20px hsl(193 76% 38% / 0.05)" }}>
-                <p className="text-primary font-bold text-xs tracking-wider">PROMOCÉU</p>
+          <div className="glass-card overflow-hidden overflow-x-auto" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <div className="min-w-[500px]">
+              <div className="grid grid-cols-4 gap-0 border-b border-primary/15 bg-card/70">
+                <div className="p-3 sm:p-4 text-xs font-semibold text-foreground/60 uppercase tracking-wider">Feature</div>
+                <div className="p-3 sm:p-4 text-center bg-primary/5 border-l border-r border-primary/15">
+                  <p className="text-primary font-bold text-xs tracking-wider">PROMOCÉU</p>
+                </div>
+                <div className="p-3 sm:p-4 text-center">
+                  <p className="text-muted-foreground text-xs">MANUAL</p>
+                </div>
+                <div className="p-3 sm:p-4 text-center">
+                  <p className="text-muted-foreground text-xs">AGÊNCIAS</p>
+                </div>
               </div>
-              <div className="p-4 text-center">
-                <p className="text-muted-foreground text-xs">MANUAL</p>
-              </div>
-              <div className="p-4 text-center">
-                <p className="text-muted-foreground text-xs">AGÊNCIAS</p>
-              </div>
-            </div>
 
-            <div className="divide-y divide-border/10">
-              {rows.map((row, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.03 }}
-                  className="grid grid-cols-4 gap-0 hover:bg-primary/[0.03] transition-colors"
-                >
-                  <div className="p-4 text-xs text-foreground/70">{row.feature}</div>
-                  <div className="p-4" style={{ background: "hsl(193 76% 38% / 0.03)", borderLeft: "1px solid hsl(193 76% 38% / 0.1)", borderRight: "1px solid hsl(193 76% 38% / 0.1)" }}>
-                    <CellIcon value={row.promoceu} animate />
-                  </div>
-                  <div className="p-4"><CellIcon value={row.manual} /></div>
-                  <div className="p-4"><CellIcon value={row.agencia} /></div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-4 gap-0 border-t border-primary/15" style={{ background: "hsl(199 60% 12% / 0.7)" }}>
-              <div className="p-4" />
-              <div className="p-4 text-center" style={{ background: "hsl(193 76% 38% / 0.08)", borderLeft: "1px solid hsl(193 76% 38% / 0.2)", borderRight: "1px solid hsl(193 76% 38% / 0.2)" }}>
-                <motion.a href="#planos" className="inline-flex items-center gap-1 text-primary text-xs font-semibold hover:underline" whileHover={{ x: 4 }}>
-                  Assinar <ArrowRight className="w-3 h-3" />
-                </motion.a>
+              <div className="divide-y divide-border/10">
+                {rows.map((row, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.03 }}
+                    className="grid grid-cols-4 gap-0 hover:bg-primary/[0.03] transition-colors"
+                  >
+                    <div className="p-3 sm:p-4 text-xs text-foreground/70">{row.feature}</div>
+                    <div className="p-3 sm:p-4 bg-primary/[0.03] border-l border-r border-primary/10">
+                      <CellIcon value={row.promoceu} animate />
+                    </div>
+                    <div className="p-3 sm:p-4"><CellIcon value={row.manual} /></div>
+                    <div className="p-3 sm:p-4"><CellIcon value={row.agencia} /></div>
+                  </motion.div>
+                ))}
               </div>
-              <div className="p-4" />
-              <div className="p-4" />
+
+              <div className="grid grid-cols-4 gap-0 border-t border-primary/15 bg-card/70">
+                <div className="p-3 sm:p-4" />
+                <div className="p-3 sm:p-4 text-center bg-primary/5 border-l border-r border-primary/15">
+                  <motion.a href="#planos" className="inline-flex items-center gap-1 text-primary text-xs font-semibold hover:underline" whileHover={{ x: 4 }}>
+                    Assinar <ArrowRight className="w-3 h-3" />
+                  </motion.a>
+                </div>
+                <div className="p-3 sm:p-4" />
+                <div className="p-3 sm:p-4" />
+              </div>
             </div>
           </div>
         </ScrollReveal>

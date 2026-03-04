@@ -35,7 +35,6 @@ export default function SocialProofNotifications() {
     return () => clearTimeout(timer);
   }, [idx, showNext]);
 
-  // Show first one after 8 seconds
   useEffect(() => {
     const initial = setTimeout(showNext, 8000);
     return () => clearTimeout(initial);
@@ -51,14 +50,7 @@ export default function SocialProofNotifications() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.4 }}
-            className="max-w-sm px-4 py-3 rounded-xl text-sm text-foreground"
-            style={{
-              background: "hsl(199 60% 12% / 0.8)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid hsl(193 76% 38% / 0.3)",
-              boxShadow: "0 0 20px hsl(193 76% 38% / 0.1)",
-            }}
+            className="max-w-[280px] sm:max-w-sm px-4 py-3 rounded-xl text-sm text-foreground glass-card border border-primary/20 shadow-lg"
           >
             {current}
           </motion.div>
