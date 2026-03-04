@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Plane } from "lucide-react";
-import PromoCeuLogo from "./PromoCeuLogo";
+import logoWhite from "@/assets/logo-promoceu-branco.png";
 
 const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
@@ -46,10 +46,7 @@ export default function Navbar() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           <a href="#" className="flex items-center gap-2.5 group">
-            <PromoCeuLogo size={28} />
-            <span className="font-display font-bold text-foreground text-lg tracking-tight">
-              PromoCéu
-            </span>
+            <img src={logoWhite} alt="PromoCéu" className="h-8 w-auto" />
           </a>
 
           <div className="hidden lg:flex items-center gap-1">
