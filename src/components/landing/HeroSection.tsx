@@ -1,30 +1,37 @@
 import { motion } from "framer-motion";
-import heroBg from "@/assets/hero-airport.jpg";
+import bgGalactic from "@/assets/bg-galactic.jpg";
 import PromoCeuLogo from "@/components/landing/PromoCeuLogo";
 import { ArrowDown, Shield, Clock, TrendingDown } from "lucide-react";
 
-const airlines = [
-  "LATAM", "Emirates", "Air France", "Lufthansa", "Qatar Airways",
-  "American Airlines", "TAP", "KLM", "Delta", "British Airways",
+const airlineLogos = [
+  { name: "LATAM", code: "LA" },
+  { name: "GOL", code: "G3" },
+  { name: "Azul", code: "AD" },
+  { name: "American Airlines", code: "AA" },
+  { name: "Iberia", code: "IB" },
+  { name: "TAP", code: "TP" },
+  { name: "Emirates", code: "EK" },
+  { name: "Air France", code: "AF" },
+  { name: "Copa Airlines", code: "CM" },
+  { name: "United Airlines", code: "UA" },
 ];
 
-const airlines2 = [
-  "Azul", "GOL", "Turkish Airlines", "Singapore Airlines", "Iberia",
-  "Swiss", "United", "Copa Airlines", "Avianca", "Ethiopian",
-];
-
-function MarqueeRow({ items, reverse = false }: { items: string[]; reverse?: boolean }) {
-  const doubled = [...items, ...items];
+function AirlineLogoMarquee() {
+  const doubled = [...airlineLogos, ...airlineLogos];
   return (
-    <div className="marquee-fade overflow-hidden py-3">
-      <div className={reverse ? "marquee-track-reverse" : "marquee-track"}>
-        {doubled.map((name, i) => (
-          <span
+    <div className="marquee-fade overflow-hidden py-4">
+      <div className="marquee-track" style={{ gap: "2.5rem" }}>
+        {doubled.map((a, i) => (
+          <img
             key={i}
-            className="text-foreground/20 text-sm font-medium tracking-widest uppercase whitespace-nowrap select-none"
-          >
-            {name}
-          </span>
+            src={`https://images.kiwi.com/airlines/64/${a.code}.png`}
+            alt={a.name}
+            className="h-8 sm:h-10 object-contain opacity-50 hover:opacity-80 transition-opacity brightness-0 invert"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
         ))}
       </div>
     </div>
@@ -33,10 +40,25 @@ function MarqueeRow({ items, reverse = false }: { items: string[]; reverse?: boo
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 pt-16">
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 pt-24">
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-15" loading="eager" />
-        <div className="absolute inset-0 bg-background" />
+        <img src={bgGalactic} alt="" className="w-full h-full object-cover opacity-40" loading="eager" />
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(180deg, hsl(199 95% 8% / 0.8) 0%, hsl(199 95% 8% / 0.6) 50%, hsl(199 95% 8% / 0.9) 100%)",
+        }} />
+      </div>
+
+      {/* Star particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {Array.from({ length: 40 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-[2px] h-[2px] rounded-full bg-white"
+            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+            animate={{ opacity: [0.1, 0.6, 0.1] }}
+            transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: Math.random() * 3 }}
+          />
+        ))}
       </div>
 
       <motion.div
@@ -51,7 +73,11 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="inline-flex items-center gap-2 bg-primary/5 border border-primary/15 rounded-full px-4 py-1.5 mb-6"
+          className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+          style={{
+            background: "hsl(193 76% 38% / 0.1)",
+            border: "1px solid hsl(193 76% 38% / 0.25)",
+          }}
         >
           <span className="w-2 h-2 rounded-full bg-signal-green animate-pulse" />
           <span className="text-xs font-medium text-primary tracking-wider uppercase">
@@ -59,7 +85,7 @@ export default function HeroSection() {
           </span>
         </motion.div>
 
-        <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-balance text-foreground leading-[1.1]">
+        <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-balance text-white leading-[1.1]">
           Passagens aéreas com{" "}
           <span className="text-gradient-primary">inteligência de mercado.</span>
         </h1>
@@ -68,7 +94,6 @@ export default function HeroSection() {
           Monitoramos milhares de rotas diariamente para você acessar tarifas promocionais antes que esgotem. Sem intermediários. Sem taxas escondidas. Compra direta na companhia aérea.
         </p>
 
-        {/* Trust indicators */}
         <div className="flex flex-wrap justify-center gap-6 mb-8">
           {[
             { icon: TrendingDown, text: "Até 70% de economia" },
@@ -89,20 +114,10 @@ export default function HeroSection() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <motion.a
-            href="#planos"
-            className="glow-button text-base sm:text-lg"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.a href="#planos" className="glow-button text-base sm:text-lg" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             Começar a economizar
           </motion.a>
-          <motion.a
-            href="#tecnologia"
-            className="px-6 py-4 text-sm font-semibold text-foreground/70 hover:text-primary transition-colors border border-border rounded-lg hover:border-primary/30"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.a href="#como-funciona" className="px-6 py-4 text-sm font-semibold text-foreground/70 hover:text-primary transition-colors border border-border rounded-lg hover:border-primary/30" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             Como funciona →
           </motion.a>
         </div>
@@ -112,17 +127,11 @@ export default function HeroSection() {
         </p>
       </motion.div>
 
-      <div className="relative z-10 w-full max-w-5xl mt-12 space-y-1">
-        <MarqueeRow items={airlines} />
-        <MarqueeRow items={airlines2} reverse />
+      <div className="relative z-10 w-full max-w-5xl mt-12">
+        <AirlineLogoMarquee />
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 z-10"
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
+      <motion.div className="absolute bottom-8 z-10" animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
         <ArrowDown className="w-5 h-5 text-muted-foreground/40" />
       </motion.div>
     </section>

@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: "Vocês garantem que vou encontrar passagem barata?",
-    a: "Não garantimos uma passagem específica, mas garantimos acesso estratégico e antecipado às melhores oportunidades do mercado. Quanto mais tempo como membro, maior a probabilidade de aproveitar uma tarifa excepcional. Em média, membros com 6+ meses aproveitam 3-4 promoções significativas.",
+    a: "Não garantimos uma passagem específica, mas garantimos acesso estratégico e antecipado às melhores oportunidades do mercado. Quanto mais tempo como membro, maior a probabilidade de aproveitar uma tarifa excepcional.",
   },
   {
     q: "Posso cancelar a assinatura quando quiser?",
@@ -33,19 +33,19 @@ const faqs = [
   },
   {
     q: "Qual a diferença entre a PromoCéu e blogs de promoções?",
-    a: "Blogs publicam promoções com atraso de horas (às vezes a promoção já expirou). A PromoCéu detecta e notifica em menos de 5 minutos. Além disso, cada alerta é validado contra múltiplas fontes e contextualizado com dados históricos — não é apenas um preço baixo, é uma análise completa.",
+    a: "Blogs publicam promoções com atraso de horas (às vezes a promoção já expirou). A PromoCéu detecta e notifica em menos de 5 minutos. Além disso, cada alerta é validado contra múltiplas fontes e contextualizado com dados históricos.",
   },
   {
     q: "Funciona para voos nacionais também?",
-    a: "Sim! Monitoramos todas as rotas nacionais das principais companhias (LATAM, GOL, Azul). Já detectamos passagens como São Paulo → Salvador por R$ 99, Rio → Recife por R$ 149 e muito mais. Voos nacionais são incluídos em todos os planos.",
+    a: "Sim! Monitoramos todas as rotas nacionais das principais companhias (LATAM, GOL, Azul). Já detectamos passagens como São Paulo → Salvador por R$ 99, Rio → Recife por R$ 149 e muito mais.",
   },
   {
     q: "Como funciona a tecnologia de monitoramento?",
-    a: "Utilizamos uma stack proprietária de inteligência artificial que combina machine learning, big data e monitoramento distribuído em nuvem. São mais de 480 mil verificações de preço por dia, em 50+ companhias aéreas e 150+ destinos. Os dados alimentam modelos preditivos que antecipam quedas de preço com 92% de precisão.",
+    a: "Utilizamos uma stack proprietária de inteligência artificial que combina machine learning, big data e monitoramento distribuído em nuvem. São mais de 480 mil verificações de preço por dia, em 50+ companhias aéreas e 150+ destinos.",
   },
   {
-    q: "Quanto tempo leva para o serviço se pagar?",
-    a: "A maioria dos membros recupera o valor da assinatura na primeira viagem aproveitada. A economia média por passagem é de R$ 2.400. Considerando que a assinatura anual custa R$ 238,80, o retorno sobre o investimento é superior a 10x.",
+    q: "Uma viagem já paga a assinatura?",
+    a: "Na maioria dos casos, sim. Uma única passagem encontrada pelo PromoCéu já cobre meses ou até o ano inteiro de assinatura. Nossos membros relatam economias médias de R$ 800 a R$ 2.000 por viagem.",
   },
 ];
 
@@ -55,25 +55,17 @@ export default function FAQSection() {
       <div className="section-divider w-full absolute top-0" />
       <div className="max-w-3xl mx-auto">
         <ScrollReveal>
-          <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">
-            Perguntas frequentes
-          </p>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-4">
-            Tire suas dúvidas
-          </h2>
+          <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">Perguntas frequentes</p>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-4">Tire suas dúvidas</h2>
           <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-            Reunimos as perguntas mais comuns dos nossos membros e potenciais assinantes. Se não encontrar sua dúvida, entre em contato.
+            Reunimos as perguntas mais comuns dos nossos membros e potenciais assinantes.
           </p>
         </ScrollReveal>
 
         <ScrollReveal delay={0.1}>
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, i) => (
-              <AccordionItem
-                key={i}
-                value={`faq-${i}`}
-                className="glass-card px-6 border-none"
-              >
+              <AccordionItem key={i} value={`faq-${i}`} className="glass-card px-6 border-none">
                 <AccordionTrigger className="font-display font-semibold text-left hover:no-underline py-5 text-foreground text-sm sm:text-base">
                   {faq.q}
                 </AccordionTrigger>
