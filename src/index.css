@@ -115,14 +115,14 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, hsl(0 0% 100%), hsl(193 76% 50%), hsl(199 80% 35%), hsl(0 0% 100%));
+    background-image: linear-gradient(90deg, hsl(0 0% 100%), hsl(193 76% 55%), hsl(193 76% 70%), hsl(0 0% 100%));
     background-size: 300% 100%;
     animation: gradient-shift 8s ease-in-out infinite;
   }
 
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, hsl(193 76% 50%), hsl(199 80% 30%), hsl(193 76% 65%), hsl(193 76% 50%));
+    background-image: linear-gradient(90deg, hsl(193 76% 55%), hsl(193 76% 70%), hsl(193 76% 60%), hsl(193 76% 55%));
     background-size: 300% 100%;
     animation: gradient-shift 8s ease-in-out infinite;
     filter: drop-shadow(0 0 6px hsl(193 76% 50% / 0.3));
