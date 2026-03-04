@@ -1,6 +1,6 @@
 import ScrollReveal from "@/components/ScrollReveal";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Zap, Shield, BarChart3, Bell, Clock, Cpu, Database, ChevronRight, X } from "lucide-react";
+import { Brain, Zap, Shield, BarChart3, Bell, Database, Cpu, X } from "lucide-react";
 import { useState } from "react";
 
 interface TechFeature {
@@ -16,7 +16,7 @@ const features: TechFeature[] = [
     icon: Brain,
     title: "Inteligência Artificial Preditiva",
     desc: "Algoritmos de machine learning analisam padrões históricos e preveem quedas de preço antes que aconteçam.",
-    detail: "Nossos modelos de IA são treinados com mais de 50 milhões de registros históricos de tarifas aéreas. Eles identificam padrões sazonais, correlações com eventos globais e anomalias de precificação que indicam quedas iminentes. Quando a probabilidade de queda supera 85%, um pré-alerta é preparado para disparo imediato.",
+    detail: "Nossos modelos de IA são treinados com mais de 50 milhões de registros históricos de tarifas aéreas. Eles identificam padrões sazonais, correlações com eventos globais e anomalias de precificação que indicam quedas iminentes.",
     stats: [
       { label: "Registros analisados", value: "50M+" },
       { label: "Precisão preditiva", value: "92%" },
@@ -27,18 +27,18 @@ const features: TechFeature[] = [
     icon: Zap,
     title: "Monitoramento em Tempo Real",
     desc: "Verificações a cada 3 minutos em mais de 50 companhias aéreas e 12.000 rotas simultaneamente.",
-    detail: "Nossa infraestrutura de monitoramento opera em nuvem distribuída com servidores em 4 continentes. Cada companhia aérea é verificada a cada 3 minutos, 24 horas por dia. Quando detectamos uma variação significativa (acima de 30% de desconto em relação à média de 90 dias), o alerta é disparado em menos de 60 segundos.",
+    detail: "Nossa infraestrutura de monitoramento opera em nuvem distribuída com servidores em 4 continentes. Cada companhia aérea é verificada a cada 3 minutos, 24 horas por dia.",
     stats: [
       { label: "Verificações/dia", value: "480K" },
       { label: "Companhias", value: "50+" },
-      { label: "Tempo de alerta", value: "< 60s" },
+      { label: "Velocidade de Detecção", value: "< 60s" },
     ],
   },
   {
     icon: Shield,
     title: "Validação Anti-Fraude",
     desc: "Cada tarifa é validada contra múltiplas fontes antes de virar alerta, eliminando falsos positivos.",
-    detail: "Antes de enviar um alerta, nosso sistema faz uma tríplice validação: (1) confirma a tarifa diretamente no GDS da companhia, (2) cruza com agregadores independentes e (3) verifica se a rota está efetivamente disponível para compra. Isso garante que 98% dos alertas enviados são efetivamente compráveis.",
+    detail: "Antes de enviar um alerta, nosso sistema faz uma tríplice validação: confirma a tarifa diretamente no GDS, cruza com agregadores independentes e verifica disponibilidade.",
     stats: [
       { label: "Taxa de validação", value: "98%" },
       { label: "Fontes cruzadas", value: "3+" },
@@ -49,7 +49,7 @@ const features: TechFeature[] = [
     icon: BarChart3,
     title: "Análise Comparativa de Mercado",
     desc: "Cada preço é contextualizado com médias históricas, sazonais e projeções de tendência.",
-    detail: "Não basta um preço baixo — ele precisa ser excepcionalmente baixo em contexto. Nosso sistema calcula a média ponderada de 30, 60 e 90 dias para cada rota, ajustada por sazonalidade. Um alerta só é disparado quando o preço atual está pelo menos 35% abaixo da média ajustada.",
+    detail: "Nosso sistema calcula a média ponderada de 30, 60 e 90 dias para cada rota, ajustada por sazonalidade. Um alerta só é disparado quando o preço está pelo menos 35% abaixo da média ajustada.",
     stats: [
       { label: "Janela de análise", value: "90 dias" },
       { label: "Desconto mínimo", value: "35%" },
@@ -60,7 +60,7 @@ const features: TechFeature[] = [
     icon: Bell,
     title: "Sistema de Notificação Inteligente",
     desc: "Alertas priorizados por relevância pessoal, com informações completas para decisão rápida.",
-    detail: "Cada alerta inclui: rota completa, companhia aérea, preço atual vs. histórico, janela de datas, link direto para compra e tempo estimado de disponibilidade. Os alertas são priorizados com base no seu perfil de preferências, garantindo que você veja primeiro o que é mais relevante.",
+    detail: "Cada alerta inclui: rota completa, companhia aérea, preço atual vs. histórico, janela de datas, link direto para compra e tempo estimado de disponibilidade.",
     stats: [
       { label: "Tempo médio decisão", value: "12 min" },
       { label: "Taxa de aproveitamento", value: "34%" },
@@ -69,9 +69,9 @@ const features: TechFeature[] = [
   },
   {
     icon: Database,
-    title: "Big Data Aéreo Proprietário",
+    title: "Oportunidades Catalogadas por IA",
     desc: "O maior banco de dados de tarifas aéreas do Brasil, com atualizações em tempo real.",
-    detail: "Mantemos um data lake proprietário com mais de 2 bilhões de registros de tarifas, cobrindo 12.000+ combinações de origem/destino. Esses dados alimentam nossos modelos preditivos e permitem contextualizações precisas em cada alerta enviado. É a base que diferencia a PromoCéu de qualquer concorrente.",
+    detail: "Mantemos um repositório proprietário com mais de 2 bilhões de registros de tarifas, cobrindo 12.000+ combinações de origem/destino.",
     stats: [
       { label: "Registros totais", value: "2B+" },
       { label: "Crescimento/mês", value: "180M" },
@@ -83,53 +83,34 @@ const features: TechFeature[] = [
 function TechPopup({ feature, onClose }: { feature: TechFeature; onClose: () => void }) {
   const Icon = feature.icon;
   return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div className="absolute inset-0 bg-foreground/30 backdrop-blur-sm" onClick={onClose} />
+    <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
       <motion.div
-        className="relative z-10 w-full max-w-lg bg-card rounded-xl shadow-2xl overflow-hidden"
-        initial={{ scale: 0.9, y: 30 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 30 }}
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl"
+        style={{ background: "hsl(199 60% 12% / 0.9)", backdropFilter: "blur(20px)", border: "1px solid hsl(193 76% 38% / 0.2)" }}
+        initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
         transition={{ type: "spring", damping: 25 }}
       >
-        <div className="bg-primary/5 border-b border-primary/15 p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+        <div className="p-6 flex items-center gap-4" style={{ borderBottom: "1px solid hsl(193 76% 38% / 0.15)" }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "hsl(193 76% 38% / 0.1)" }}>
             <Icon className="w-6 h-6 text-primary" />
           </div>
-          <div>
-            <h3 className="font-display font-bold text-lg">{feature.title}</h3>
-          </div>
+          <h3 className="font-display font-bold text-lg text-foreground">{feature.title}</h3>
           <button onClick={onClose} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-
         <div className="p-6">
           <p className="text-foreground/80 leading-relaxed mb-6">{feature.detail}</p>
-
           <div className="grid grid-cols-3 gap-3">
             {feature.stats.map((s, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.1 }}
-                className="text-center glass-card p-3"
-              >
+              <div key={i} className="text-center neon-card p-3">
                 <p className="text-primary font-bold font-display text-lg">{s.value}</p>
                 <p className="text-muted-foreground text-[10px] uppercase tracking-wider mt-1">{s.label}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
-
-          <button onClick={onClose} className="w-full mt-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Fechar
-          </button>
+          <button onClick={onClose} className="w-full mt-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Fechar</button>
         </div>
       </motion.div>
     </motion.div>
@@ -146,15 +127,13 @@ export default function TechnologySection() {
         <ScrollReveal>
           <div className="flex items-center justify-center gap-2 mb-4">
             <Cpu className="w-5 h-5 text-primary" />
-            <p className="text-primary font-semibold text-sm uppercase tracking-widest">
-              Infraestrutura tecnológica
-            </p>
+            <p className="text-primary font-semibold text-sm uppercase tracking-widest">Infraestrutura tecnológica</p>
           </div>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-4">
             A tecnologia por trás dos <span className="text-gradient-primary">melhores alertas</span>
           </h2>
           <p className="text-muted-foreground text-center mb-16 max-w-2xl mx-auto">
-            Uma stack proprietária de inteligência de dados que combina machine learning, big data e monitoramento distribuído em tempo real. Clique em cada tecnologia para saber mais.
+            Uma stack proprietária de inteligência de dados que combina machine learning, big data e monitoramento distribuído em tempo real.
           </p>
         </ScrollReveal>
 
@@ -166,31 +145,26 @@ export default function TechnologySection() {
                 <motion.div
                   whileHover={{ y: -4 }}
                   onClick={() => setSelected(f)}
-                  className="glass-card p-6 cursor-pointer group hover:shadow-md hover:border-primary/20 transition-all h-full"
+                  className="neon-card p-6 cursor-pointer group h-full"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: "hsl(193 76% 38% / 0.1)" }}>
                     <Icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-display text-lg font-semibold mb-2">{f.title}</h3>
+                  <h3 className="font-display text-lg font-semibold mb-2 text-foreground">{f.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
-                  <div className="flex items-center gap-1 mt-4 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span>Ver detalhes</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
                 </motion.div>
               </ScrollReveal>
             );
           })}
         </div>
 
-        {/* Tech metrics strip */}
         <ScrollReveal delay={0.3}>
           <div className="mt-16 glass-card-highlight p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: "99.97%", label: "Uptime do sistema" },
+              { value: "99.97%", label: "Sistema Online 24/7" },
               { value: "< 3min", label: "Intervalo de verificação" },
               { value: "4", label: "Continentes com servidores" },
-              { value: "2B+", label: "Registros no data lake" },
+              { value: "2B+", label: "Oportunidades Catalogadas por IA" },
             ].map((s, i) => (
               <div key={i} className="text-center">
                 <p className="text-primary font-bold font-display text-2xl sm:text-3xl">{s.value}</p>

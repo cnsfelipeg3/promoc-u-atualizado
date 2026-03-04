@@ -15,9 +15,16 @@ const rows = [
   { feature: "Módulo de classe executiva", promoceu: true, manual: false, agencia: false },
 ];
 
-function CellIcon({ value }: { value: boolean }) {
+function CellIcon({ value, animate }: { value: boolean; animate?: boolean }) {
   return value ? (
-    <Check className="w-5 h-5 text-signal-green mx-auto" />
+    <motion.div
+      initial={animate ? { scale: 0, opacity: 0 } : undefined}
+      whileInView={animate ? { scale: 1, opacity: 1 } : undefined}
+      viewport={{ once: true }}
+      transition={{ type: "spring", damping: 15 }}
+    >
+      <Check className="w-5 h-5 text-signal-green mx-auto" />
+    </motion.div>
   ) : (
     <X className="w-5 h-5 text-signal-red/50 mx-auto" />
   );
@@ -29,9 +36,7 @@ export default function ComparisonSection() {
       <div className="section-divider w-full absolute top-0" />
       <div className="max-w-4xl mx-auto">
         <ScrollReveal>
-          <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">
-            Comparativo
-          </p>
+          <p className="text-primary font-semibold text-sm uppercase tracking-widest mb-4 text-center">Comparativo</p>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-4">
             Por que a PromoCéu é diferente?
           </h2>
@@ -41,23 +46,21 @@ export default function ComparisonSection() {
         </ScrollReveal>
 
         <ScrollReveal delay={0.1}>
-          <div className="glass-card overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-4 gap-0 bg-background/60 border-b border-border">
-              <div className="p-4 text-sm font-semibold text-foreground">Funcionalidade</div>
-              <div className="p-4 text-center bg-primary/5 border-x border-primary/15">
-                <p className="text-primary font-bold font-display text-sm">PromoCéu</p>
+          <div className="glass-card overflow-hidden" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <div className="grid grid-cols-4 gap-0 border-b border-primary/15" style={{ background: "hsl(199 60% 12% / 0.7)" }}>
+              <div className="p-4 text-xs font-semibold text-foreground/60 uppercase tracking-wider">Feature</div>
+              <div className="p-4 text-center" style={{ background: "hsl(193 76% 38% / 0.08)", borderLeft: "1px solid hsl(193 76% 38% / 0.2)", borderRight: "1px solid hsl(193 76% 38% / 0.2)", boxShadow: "inset 0 0 20px hsl(193 76% 38% / 0.05)" }}>
+                <p className="text-primary font-bold text-xs tracking-wider">PROMOCÉU</p>
               </div>
               <div className="p-4 text-center">
-                <p className="text-muted-foreground text-sm font-medium">Busca manual</p>
+                <p className="text-muted-foreground text-xs">MANUAL</p>
               </div>
               <div className="p-4 text-center">
-                <p className="text-muted-foreground text-sm font-medium">Agências</p>
+                <p className="text-muted-foreground text-xs">AGÊNCIAS</p>
               </div>
             </div>
 
-            {/* Rows */}
-            <div className="divide-y divide-border/30">
+            <div className="divide-y divide-border/10">
               {rows.map((row, i) => (
                 <motion.div
                   key={i}
@@ -65,32 +68,23 @@ export default function ComparisonSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.03 }}
-                  className="grid grid-cols-4 gap-0 hover:bg-primary/[0.02] transition-colors"
+                  className="grid grid-cols-4 gap-0 hover:bg-primary/[0.03] transition-colors"
                 >
-                  <div className="p-4 text-sm text-foreground/80">{row.feature}</div>
-                  <div className="p-4 bg-primary/[0.02] border-x border-primary/10">
-                    <CellIcon value={row.promoceu} />
+                  <div className="p-4 text-xs text-foreground/70">{row.feature}</div>
+                  <div className="p-4" style={{ background: "hsl(193 76% 38% / 0.03)", borderLeft: "1px solid hsl(193 76% 38% / 0.1)", borderRight: "1px solid hsl(193 76% 38% / 0.1)" }}>
+                    <CellIcon value={row.promoceu} animate />
                   </div>
-                  <div className="p-4">
-                    <CellIcon value={row.manual} />
-                  </div>
-                  <div className="p-4">
-                    <CellIcon value={row.agencia} />
-                  </div>
+                  <div className="p-4"><CellIcon value={row.manual} /></div>
+                  <div className="p-4"><CellIcon value={row.agencia} /></div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Footer */}
-            <div className="grid grid-cols-4 gap-0 bg-background/60 border-t border-border">
+            <div className="grid grid-cols-4 gap-0 border-t border-primary/15" style={{ background: "hsl(199 60% 12% / 0.7)" }}>
               <div className="p-4" />
-              <div className="p-4 text-center bg-primary/5 border-x border-primary/15">
-                <motion.a
-                  href="#planos"
-                  className="inline-flex items-center gap-1 text-primary text-sm font-semibold hover:underline"
-                  whileHover={{ x: 4 }}
-                >
-                  Assinar agora <ArrowRight className="w-4 h-4" />
+              <div className="p-4 text-center" style={{ background: "hsl(193 76% 38% / 0.08)", borderLeft: "1px solid hsl(193 76% 38% / 0.2)", borderRight: "1px solid hsl(193 76% 38% / 0.2)" }}>
+                <motion.a href="#planos" className="inline-flex items-center gap-1 text-primary text-xs font-semibold hover:underline" whileHover={{ x: 4 }}>
+                  Assinar <ArrowRight className="w-3 h-3" />
                 </motion.a>
               </div>
               <div className="p-4" />
