@@ -382,7 +382,7 @@ export default function PriceDropChartSection() {
                     <span className="text-lg">{r.flag}</span>
                     <div>
                       <span className="font-mono text-sm font-bold text-foreground">{r.route}</span>
-                      <p className="text-xs text-muted-foreground">{r.label}</p>
+                      <p className="text-xs text-foreground/60">{r.label}</p>
                     </div>
                   </div>
                   <span className="flex items-center gap-1 text-primary text-sm font-bold font-mono">
@@ -397,13 +397,13 @@ export default function PriceDropChartSection() {
 
                 <div className="flex justify-between items-end mt-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Tarifa comum</p>
-                    <p className="text-muted-foreground line-through text-sm font-mono">
+                    <p className="text-[10px] uppercase tracking-wider text-foreground/50 mb-0.5">Tarifa comum</p>
+                    <p className="text-foreground/60 line-through text-sm font-mono">
                       R$ {r.basePrice.toLocaleString("pt-BR")}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Alerta PromoCéu</p>
+                    <p className="text-[10px] uppercase tracking-wider text-foreground/50 mb-0.5">Alerta PromoCéu</p>
                     <p className="text-primary font-bold text-xl font-display">
                       R$ {r.promoPrice.toLocaleString("pt-BR")}
                     </p>

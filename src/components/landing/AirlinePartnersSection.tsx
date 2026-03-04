@@ -25,10 +25,11 @@ function LogoMarquee({ reverse = false }: { reverse?: boolean }) {
         {doubled.map((a, i) => (
           <div key={i} className="flex items-center gap-3 shrink-0">
             <img
-              src={`https://images.kiwi.com/airlines/64/${a.code}.png`}
+              src={`https://images.kiwi.com/airlines/64x64/${a.code}.png`}
               alt={a.name}
               className="h-8 sm:h-10 object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-opacity"
               loading="lazy"
+              style={{ background: "transparent" }}
               onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
             <span className="text-foreground/30 text-sm font-medium tracking-wider uppercase whitespace-nowrap hidden sm:inline">

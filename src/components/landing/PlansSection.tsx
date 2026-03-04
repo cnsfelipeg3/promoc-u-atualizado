@@ -121,11 +121,12 @@ export default function PlansSection() {
                   backdropFilter: "blur(16px)",
                   border: plan.highlight ? "1px solid hsl(193 76% 38% / 0.4)" : "1px solid hsl(193 76% 38% / 0.12)",
                   boxShadow: plan.highlight ? "0 0 30px hsl(193 76% 38% / 0.1)" : "none",
+                  overflow: "visible",
                 }}
               >
                 {plan.badge && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap"
-                    style={{ boxShadow: "0 0 15px hsl(193 76% 38% / 0.3)" }}
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-[30] bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap"
+                    style={{ boxShadow: "0 0 15px hsl(193 76% 38% / 0.5)", position: "relative" }}
                   >
                     <Crown className="w-3 h-3" />{plan.badge}
                   </span>

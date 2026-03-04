@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import bgGalactic from "@/assets/bg-galactic.jpg";
-import PromoCeuLogo from "@/components/landing/PromoCeuLogo";
+import logoWhite from "@/assets/logo-promoceu-branco.png";
 import { ArrowDown, Shield, Clock, TrendingDown } from "lucide-react";
 
 const airlineLogos = [
@@ -24,10 +24,11 @@ function AirlineLogoMarquee() {
         {doubled.map((a, i) => (
           <img
             key={i}
-            src={`https://images.kiwi.com/airlines/64/${a.code}.png`}
+            src={`https://images.kiwi.com/airlines/64x64/${a.code}.png`}
             alt={a.name}
             className="h-8 sm:h-10 object-contain opacity-50 hover:opacity-80 transition-opacity brightness-0 invert"
             loading="lazy"
+            style={{ background: "transparent" }}
             onError={(e) => {
               e.currentTarget.style.display = "none";
             }}
@@ -67,7 +68,7 @@ export default function HeroSection() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto"
       >
-        <PromoCeuLogo size={64} className="mb-6" />
+        <img src={logoWhite} alt="PromoCéu" className="h-16 w-auto mb-6" />
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
