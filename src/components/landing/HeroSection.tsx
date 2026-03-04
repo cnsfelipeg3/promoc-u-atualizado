@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import bgGalactic from "@/assets/bg-galactic.jpg";
+import heroPlane from "@/assets/hero-plane-bg.jpg";
 import logoWhite from "@/assets/logo-promoceu-branco.png";
 import { ArrowDown, Shield, Clock, TrendingDown } from "lucide-react";
 
@@ -43,7 +43,7 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 pt-24">
       <div className="absolute inset-0">
-        <img src={bgGalactic} alt="" className="w-full h-full object-cover opacity-40" loading="eager" />
+        <img src={heroPlane} alt="" className="w-full h-full object-cover opacity-50" loading="eager" />
         <div className="absolute inset-0" style={{
           background: "linear-gradient(180deg, hsl(199 95% 8% / 0.8) 0%, hsl(199 95% 8% / 0.6) 50%, hsl(199 95% 8% / 0.9) 100%)",
         }} />
