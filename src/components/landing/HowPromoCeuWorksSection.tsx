@@ -65,12 +65,7 @@ export default function HowPromoCeuWorksSection() {
                 whileHover={{ y: -4 }}
                 className="neon-card p-6 h-full group"
               >
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
-                  style={{
-                    background: "hsl(193 76% 38% / 0.1)",
-                    border: "1px solid hsl(193 76% 38% / 0.2)",
-                  }}
-                >
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-primary/10 border border-primary/20">
                   <step.icon className="w-7 h-7 text-primary" strokeWidth={1.5} />
                 </div>
                 <h3 className="font-display text-lg font-semibold mb-2 text-foreground">{step.title}</h3>

@@ -39,18 +39,17 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
       <motion.div
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl"
-        style={{ background: "hsl(199 60% 12% / 0.95)", border: "1px solid hsl(193 76% 38% / 0.2)" }}
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl glass-card-highlight"
         initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
       >
-        <div className="px-6 py-3 flex items-center justify-center gap-2" style={{ borderBottom: "1px solid hsl(193 76% 38% / 0.15)", background: "hsl(193 76% 38% / 0.05)" }}>
+        <div className="px-6 py-3 flex items-center justify-center gap-2 border-b border-primary/15 bg-primary/5">
           <Sparkles className="w-4 h-4 text-primary" />
           <span className="text-primary text-xs font-bold tracking-widest uppercase">Oferta exclusiva — apenas no checkout</span>
         </div>
         <div className="p-6 sm:p-8">
           <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors z-20"><X className="w-5 h-5" /></button>
           <div className="flex justify-center mb-5">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "hsl(193 76% 38% / 0.1)", border: "1px solid hsl(193 76% 38% / 0.2)" }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-primary/10 border border-primary/20">
               <Plane className="w-8 h-8 text-primary" />
             </div>
           </div>
@@ -68,7 +67,7 @@ function OrderBumpPopup({ plan, onClose, onContinue }: { plan: Plan; onClose: ()
                 </li>
               ))}
             </ul>
-            <div className="mt-4 pt-4 flex items-center justify-between" style={{ borderTop: "1px solid hsl(193 76% 38% / 0.15)" }}>
+            <div className="mt-4 pt-4 flex items-center justify-between border-t border-primary/15">
               <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">Módulo Executivo</span>
               <div className="text-right">
                 <span className="text-primary font-display text-xl font-bold">+R$ 14,90</span>
@@ -115,18 +114,14 @@ export default function PlansSection() {
             <ScrollReveal key={i} delay={i * 0.1}>
               <motion.div
                 whileHover={{ y: -4 }}
-                className={`relative rounded-xl p-8 h-full flex flex-col ${plan.highlight ? "border-glow" : ""}`}
+                className={`relative rounded-xl p-8 h-full flex flex-col glass-card ${plan.highlight ? "border-glow !border-primary/40" : ""}`}
                 style={{
-                  background: "hsl(199 60% 12% / 0.6)",
-                  backdropFilter: "blur(16px)",
-                  border: plan.highlight ? "1px solid hsl(193 76% 38% / 0.4)" : "1px solid hsl(193 76% 38% / 0.12)",
-                  boxShadow: plan.highlight ? "0 0 30px hsl(193 76% 38% / 0.1)" : "none",
                   overflow: "visible",
+                  boxShadow: plan.highlight ? "0 0 30px hsl(193 76% 38% / 0.1)" : "none",
                 }}
               >
                 {plan.badge && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-[30] bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap"
-                    style={{ boxShadow: "0 0 15px hsl(193 76% 38% / 0.5)", position: "relative" }}
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-[30] bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap shadow-lg"
                   >
                     <Crown className="w-3 h-3" />{plan.badge}
                   </span>
@@ -159,7 +154,7 @@ export default function PlansSection() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedPlan(plan)}
                   className={`w-full py-3.5 rounded-lg font-semibold transition-all duration-300 ${
-                    plan.highlight ? "glow-button" : "bg-secondary text-foreground hover:bg-secondary/80"
+                    plan.highlight ? "glow-button" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                   }`}
                 >
                   Assinar agora

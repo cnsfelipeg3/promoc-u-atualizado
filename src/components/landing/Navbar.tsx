@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Plane } from "lucide-react";
 import logoWhite from "@/assets/logo-promoceu-branco.png";
@@ -24,6 +24,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -36,17 +37,21 @@ export default function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed left-0 right-0 z-50 transition-all duration-300`}
+      className="fixed left-0 right-0 z-50 transition-all duration-300"
       style={{ top: "36px" }}
     >
       <div className={`transition-all duration-300 ${
         scrolled
-          ? "bg-background/80 backdrop-blur-lg border-b border-border/50"
+          ? "bg-background/80 backdrop-blur-lg border-b border-border/50 shadow-sm"
           : "bg-transparent"
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           <a href="#" className="flex items-center gap-2.5 group">
-            <img src={logoWhite} alt="PromoCéu" className="h-8 w-auto" />
+            <img
+              src={logoWhite}
+              alt="PromoCéu"
+              className={`h-8 w-auto ${isDark ? "" : "brightness-0"}`}
+            />
           </a>
 
           <div className="hidden lg:flex items-center gap-1">
@@ -71,12 +76,7 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-1 w-48 rounded-xl shadow-lg overflow-hidden"
-                      style={{
-                        background: "hsl(199 60% 12% / 0.9)",
-                        backdropFilter: "blur(16px)",
-                        border: "1px solid hsl(193 76% 38% / 0.15)",
-                      }}
+                      className="absolute top-full left-0 mt-1 w-48 rounded-xl shadow-lg overflow-hidden glass-card"
                     >
                       {link.sub.map((sub) => (
                         <a
@@ -114,12 +114,7 @@ export default function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="lg:hidden overflow-hidden"
-            style={{
-              background: "hsl(199 60% 10% / 0.95)",
-              backdropFilter: "blur(16px)",
-              borderBottom: "1px solid hsl(193 76% 38% / 0.15)",
-            }}
+            className="lg:hidden overflow-hidden bg-background/95 backdrop-blur-lg border-b border-border/50"
           >
             <div className="px-4 py-4 space-y-1">
               {navLinks.map((link) => (

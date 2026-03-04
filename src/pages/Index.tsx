@@ -21,57 +21,53 @@ import GuaranteeSection from "@/components/landing/GuaranteeSection";
 import FAQSection from "@/components/landing/FAQSection";
 import FinalCTASection from "@/components/landing/FinalCTASection";
 import HolographicParticles from "@/components/landing/HolographicParticles";
-import PromoCeuLogo from "@/components/landing/PromoCeuLogo";
+import logoWhite from "@/assets/logo-promoceu-branco.png";
+import { useTheme } from "@/hooks/useTheme";
 
 const Index = () => {
+  useTheme(); // auto-detect system preference
+
   return (
-    <div className="min-h-screen text-foreground overflow-x-hidden">
-      <HolographicParticles count={15} />
+    <div className="min-h-screen text-foreground overflow-x-hidden bg-background">
+      <div className="dark:block hidden">
+        <HolographicParticles count={15} />
+      </div>
       <UrgencyBar />
       <SocialProofNotifications />
       <Navbar />
       <HeroSection />
 
-      {/* Como funciona (unified Pain + Mechanism) */}
       <HowPromoCeuWorksSection />
       <TechnologySection />
 
-      {/* Números + Dados */}
       <NumbersSection />
       <PriceDropChartSection />
       <SavingsCounterSection />
 
-      {/* CTA intermediário */}
       <MidCTASection />
 
-      {/* Destinos + Rotas */}
       <ProofSection />
       <FlightBoardSection />
       <GlobalMapSection />
       <BrazilStatesSection />
 
-      {/* Companhias + Depoimentos */}
       <AirlinePartnersSection />
       <TestimonialsSection />
 
-      {/* Como funciona + Comparativo */}
       <HowItWorksSection />
       <ComparisonSection />
 
-      {/* Conversão */}
       <PlansSection />
       <GuaranteeSection />
       <FAQSection />
       <FinalCTASection />
 
-      {/* Footer */}
-      <footer className="py-12 px-4" style={{ borderTop: "1px solid hsl(193 76% 38% / 0.15)" }}>
+      <footer className="py-12 px-4 border-t border-border/30">
         <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <PromoCeuLogo size={28} />
-                <span className="font-display font-bold text-foreground">PromoCéu</span>
+                <img src={logoWhite} alt="PromoCéu" className="h-6 w-auto dark:brightness-100 brightness-0" />
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Plataforma de inteligência de mercado para passagens aéreas. Monitoramento 24/7, alertas em tempo real e compra direta na companhia.
@@ -103,7 +99,7 @@ const Index = () => {
               </div>
             </div>
           </div>
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: "1px solid hsl(193 76% 38% / 0.1)" }}>
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/30">
             <p className="text-muted-foreground text-xs">
               © {new Date().getFullYear()} PromoCéu. Todos os direitos reservados.
             </p>

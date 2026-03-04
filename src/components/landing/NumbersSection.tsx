@@ -50,11 +50,10 @@ function StatModal({ stat, onClose }: { stat: StatData; onClose: () => void }) {
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
       <motion.div
-        className="relative z-10 w-full max-w-md rounded-xl overflow-hidden"
-        style={{ background: "hsl(199 60% 12% / 0.9)", backdropFilter: "blur(20px)", border: "1px solid hsl(193 76% 38% / 0.25)" }}
+        className="relative z-10 w-full max-w-md rounded-xl overflow-hidden glass-card-highlight"
         initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
       >
-        <div className="p-6 flex items-center gap-4" style={{ borderBottom: "1px solid hsl(193 76% 38% / 0.15)" }}>
+        <div className="p-6 flex items-center gap-4 border-b border-primary/15">
           <Icon className="w-8 h-8 text-primary" />
           <h3 className="font-display font-bold text-lg flex-1">{stat.label}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>

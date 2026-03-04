@@ -27,7 +27,7 @@ function LogoMarquee({ reverse = false }: { reverse?: boolean }) {
             <img
               src={`https://images.kiwi.com/airlines/64x64/${a.code}.png`}
               alt={a.name}
-              className="h-8 sm:h-10 object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-opacity"
+              className="h-8 sm:h-10 object-contain dark:brightness-0 dark:invert opacity-60 hover:opacity-100 transition-opacity"
               loading="lazy"
               style={{ background: "transparent" }}
               onError={(e) => { e.currentTarget.style.display = "none"; }}

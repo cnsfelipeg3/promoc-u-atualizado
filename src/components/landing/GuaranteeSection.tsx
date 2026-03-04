@@ -7,16 +7,10 @@ export default function GuaranteeSection() {
   return (
     <section className="relative py-24 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* 7-Day Guarantee */}
         <ScrollReveal>
           <div className="glass-card-highlight p-8 sm:p-12 text-center mb-16 relative overflow-hidden">
             <motion.div
-              className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center relative"
-              style={{
-                background: "hsl(193 76% 38% / 0.1)",
-                border: "2px solid hsl(193 76% 38% / 0.3)",
-                boxShadow: "0 0 40px hsl(193 76% 38% / 0.15), inset 0 0 20px hsl(193 76% 38% / 0.05)",
-              }}
+              className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center relative bg-primary/10 border-2 border-primary/30"
               animate={{
                 boxShadow: [
                   "0 0 40px hsl(193 76% 38% / 0.15), inset 0 0 20px hsl(193 76% 38% / 0.05)",
@@ -41,7 +35,6 @@ export default function GuaranteeSection() {
           </div>
         </ScrollReveal>
 
-        {/* Certificate */}
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <ScrollReveal>
             <div className="text-center lg:text-left">
@@ -69,7 +62,7 @@ export default function GuaranteeSection() {
 
           <ScrollReveal delay={0.15}>
             <div className="flex justify-center">
-              <img src={certificado} alt="Certificado Tourism Industry Awards 2024" className="rounded-xl shadow-lg max-w-sm w-full" style={{ border: "1px solid hsl(193 76% 38% / 0.15)" }} loading="lazy" />
+              <img src={certificado} alt="Certificado Tourism Industry Awards 2024" className="rounded-xl shadow-lg max-w-sm w-full border border-border/30" loading="lazy" />
             </div>
           </ScrollReveal>
         </div>
