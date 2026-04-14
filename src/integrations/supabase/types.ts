@@ -14,7 +14,215 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      config_agentes: {
+        Row: {
+          agente: string
+          ativo: boolean | null
+          config: Json | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          agente: string
+          ativo?: boolean | null
+          config?: Json | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          agente?: string
+          ativo?: boolean | null
+          config?: Json | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      logs_agentes: {
+        Row: {
+          agente: string
+          created_at: string | null
+          id: string
+          mensagem: string
+          payload: Json | null
+          tipo: string | null
+        }
+        Insert: {
+          agente: string
+          created_at?: string | null
+          id?: string
+          mensagem: string
+          payload?: Json | null
+          tipo?: string | null
+        }
+        Update: {
+          agente?: string
+          created_at?: string | null
+          id?: string
+          mensagem?: string
+          payload?: Json | null
+          tipo?: string | null
+        }
+        Relationships: []
+      }
+      metricas: {
+        Row: {
+          created_at: string | null
+          dados: Json | null
+          id: string
+          periodo: string | null
+          tipo: string
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          dados?: Json | null
+          id?: string
+          periodo?: string | null
+          tipo: string
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          dados?: Json | null
+          id?: string
+          periodo?: string | null
+          tipo?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
+      promocoes: {
+        Row: {
+          bagagem: string | null
+          cia_aerea: string | null
+          classe: string | null
+          created_at: string | null
+          dados_extras: Json | null
+          destino: string
+          escalas: string | null
+          fonte: string | null
+          id: string
+          margem_pct: number | null
+          origem: string
+          pct_desconto: number | null
+          preco: number
+          preco_cliente: number | null
+          preco_normal: number | null
+          score: number | null
+          score_justificativa: string | null
+          status: string | null
+          tipo_voo: string | null
+          updated_at: string | null
+          url_fonte: string | null
+          validade: string | null
+        }
+        Insert: {
+          bagagem?: string | null
+          cia_aerea?: string | null
+          classe?: string | null
+          created_at?: string | null
+          dados_extras?: Json | null
+          destino: string
+          escalas?: string | null
+          fonte?: string | null
+          id?: string
+          margem_pct?: number | null
+          origem: string
+          pct_desconto?: number | null
+          preco: number
+          preco_cliente?: number | null
+          preco_normal?: number | null
+          score?: number | null
+          score_justificativa?: string | null
+          status?: string | null
+          tipo_voo?: string | null
+          updated_at?: string | null
+          url_fonte?: string | null
+          validade?: string | null
+        }
+        Update: {
+          bagagem?: string | null
+          cia_aerea?: string | null
+          classe?: string | null
+          created_at?: string | null
+          dados_extras?: Json | null
+          destino?: string
+          escalas?: string | null
+          fonte?: string | null
+          id?: string
+          margem_pct?: number | null
+          origem?: string
+          pct_desconto?: number | null
+          preco?: number
+          preco_cliente?: number | null
+          preco_normal?: number | null
+          score?: number | null
+          score_justificativa?: string | null
+          status?: string | null
+          tipo_voo?: string | null
+          updated_at?: string | null
+          url_fonte?: string | null
+          validade?: string | null
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          arte_url: string | null
+          created_at: string | null
+          elevenlabs_request_id: string | null
+          erro_detalhes: string | null
+          higgsfield_request_id: string | null
+          id: string
+          narration_url: string | null
+          payload: Json | null
+          promocao_id: string | null
+          status: string | null
+          updated_at: string | null
+          video_final_url: string | null
+          video_url: string | null
+        }
+        Insert: {
+          arte_url?: string | null
+          created_at?: string | null
+          elevenlabs_request_id?: string | null
+          erro_detalhes?: string | null
+          higgsfield_request_id?: string | null
+          id?: string
+          narration_url?: string | null
+          payload?: Json | null
+          promocao_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          video_final_url?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          arte_url?: string | null
+          created_at?: string | null
+          elevenlabs_request_id?: string | null
+          erro_detalhes?: string | null
+          higgsfield_request_id?: string | null
+          id?: string
+          narration_url?: string | null
+          payload?: Json | null
+          promocao_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          video_final_url?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_promocao_id_fkey"
+            columns: ["promocao_id"]
+            isOneToOne: false
+            referencedRelation: "promocoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
