@@ -11,7 +11,7 @@ interface AgentConfig {
   id: string;
   agente: string;
   ativo: boolean;
-  config: Record<string, unknown>;
+  config: Record<string, unknown> | null;
   updated_at: string;
 }
 
@@ -36,7 +36,7 @@ const Agentes = () => {
 
   const fetchAgents = async () => {
     const { data } = await supabase.from("config_agentes").select("*");
-    if (data) setAgents(data);
+    if (data) setAgents(data.map(d => ({ ...d, config: (d.config || {}) as Record<string, unknown> })));
   };
 
   const fetchTodayLogs = async () => {

@@ -11,7 +11,7 @@ interface LogEntry {
   agente: string;
   mensagem: string;
   tipo: string;
-  payload: Record<string, unknown>;
+  payload: unknown;
   created_at: string;
 }
 
@@ -33,7 +33,7 @@ const Logs = () => {
     if (agenteFilter !== "all") query = query.eq("agente", agenteFilter);
     if (tipoFilter !== "all") query = query.eq("tipo", tipoFilter);
     const { data } = await query;
-    if (data) setLogs(data);
+    if (data) setLogs(data as unknown as LogEntry[]);
   };
 
   useEffect(() => {
