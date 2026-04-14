@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Download, RefreshCw, Play, Image as ImageIcon } from "lucide-react";
+import { Download, RefreshCw, Play, Image as ImageIcon, Search } from "lucide-react";
 
 interface VideoRecord {
   id: string;
@@ -67,24 +67,61 @@ const Videos = () => {
     toast.success("Regeneração de vídeo iniciada");
   };
 
+  const [checking, setChecking] = useState(false);
+
+  const handleCheckStatus = async () => {
+    setChecking(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-video-status`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+      });
+      const data = await res.json();
+      const prontos = data.results?.filter((r: any) => r.newStatus === "pronto").length || 0;
+      if (prontos > 0) {
+        toast.success(`${prontos} vídeo(s) ficaram prontos!`);
+      } else {
+        toast.info(`Verificados ${data.checked || 0} vídeos. Nenhum pronto ainda.`);
+      }
+      fetchVideos();
+    } catch {
+      toast.error("Erro ao verificar status");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Vídeos</h1>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#1e293b] border-white/10">
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="gerando_arte">Gerando Arte</SelectItem>
-            <SelectItem value="com_arte">Com Arte</SelectItem>
-            <SelectItem value="gerando_video">Gerando Vídeo</SelectItem>
-            <SelectItem value="pronto">Pronto</SelectItem>
-            <SelectItem value="erro">Erro</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckStatus}
+            disabled={checking}
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <Search className="h-4 w-4 mr-1" />
+            {checking ? "Verificando..." : "Verificar Status"}
+          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e293b] border-white/10">
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="gerando_arte">Gerando Arte</SelectItem>
+              <SelectItem value="com_arte">Com Arte</SelectItem>
+              <SelectItem value="gerando_video">Gerando Vídeo</SelectItem>
+              <SelectItem value="pronto">Pronto</SelectItem>
+              <SelectItem value="erro">Erro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

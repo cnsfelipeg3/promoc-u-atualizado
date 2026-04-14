@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const requestId = body.request_id || body.id;
     const status = body.status || body.state;
-    const videoUrl = body.videos?.[0]?.url || body.images?.[0]?.url || body.output?.video_url || body.output?.url || body.output?.[0]?.url || body.result?.url;
+    const videoUrl = body.video?.url || body.videos?.[0]?.url || body.images?.[0]?.url || body.output?.video_url || body.output?.url || body.output?.[0]?.url || body.result?.url;
 
     if (!requestId) {
       return new Response(JSON.stringify({ error: "No request_id" }), {
