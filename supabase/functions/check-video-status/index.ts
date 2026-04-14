@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
         const status = data.status || data.state;
 
         if (status === "completed") {
-          const videoUrl = data.videos?.[0]?.url || data.images?.[0]?.url ||
+          const videoUrl = data.video?.url || data.videos?.[0]?.url || data.images?.[0]?.url ||
             data.output?.video_url || data.output?.url || data.output?.[0]?.url || data.result?.url;
 
           if (videoUrl) {
