@@ -111,6 +111,7 @@ export type Database = {
           preco: number
           preco_cliente: number | null
           preco_normal: number | null
+          prompt_variations: Json | null
           score: number | null
           score_justificativa: string | null
           status: string | null
@@ -138,6 +139,7 @@ export type Database = {
           preco: number
           preco_cliente?: number | null
           preco_normal?: number | null
+          prompt_variations?: Json | null
           score?: number | null
           score_justificativa?: string | null
           status?: string | null
@@ -165,6 +167,7 @@ export type Database = {
           preco?: number
           preco_cliente?: number | null
           preco_normal?: number | null
+          prompt_variations?: Json | null
           score?: number | null
           score_justificativa?: string | null
           status?: string | null
@@ -189,6 +192,7 @@ export type Database = {
           promocao_id: string | null
           status: string | null
           updated_at: string | null
+          variation_label: string | null
           video_final_url: string | null
           video_url: string | null
         }
@@ -204,6 +208,7 @@ export type Database = {
           promocao_id?: string | null
           status?: string | null
           updated_at?: string | null
+          variation_label?: string | null
           video_final_url?: string | null
           video_url?: string | null
         }
@@ -219,6 +224,7 @@ export type Database = {
           promocao_id?: string | null
           status?: string | null
           updated_at?: string | null
+          variation_label?: string | null
           video_final_url?: string | null
           video_url?: string | null
         }
