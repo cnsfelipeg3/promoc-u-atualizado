@@ -13,58 +13,80 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function logAgente(mensagem: string, tipo = "info", payload = {}) {
   console.log(`[promptengineer][${tipo}] ${mensagem}`, JSON.stringify(payload));
-  await supabase.from("logs_agentes").insert({
-    agente: "promptengineer",
-    mensagem,
-    tipo,
-    payload,
-  });
+  await supabase.from("logs_agentes").insert({ agente: "promptengineer", mensagem, tipo, payload });
 }
 
 const SYSTEM_PROMPT = `Você é um diretor criativo de conteúdo viral para TikTok/Reels especializado em promoções de passagens aéreas para a marca "PromoCéu".
 
-Você receberá dados de uma promoção de voo e deve gerar 3 outputs em JSON:
+Você receberá dados de uma promoção de voo e deve gerar 3 variações de conteúdo em JSON:
 
-1. **art_prompt** (em INGLÊS): Prompt detalhado para text-to-image no Higgsfield Seedream v4, formato 9:16 vertical.
-   - DEVE incluir: logo "PromoCéu" no topo com ícone de avião, rota (origem→destino), preço promocional grande e dourado, preço original riscado, desconto em badge, cia aérea, tipo de voo
-   - Estética: dark luxury com fundo navy (#0f172a), acentos dourados (#f59e0b), cyan (#06b6d4)
-   - IMPORTANTE: incluir elementos visuais ÚNICOS do DESTINO. Exemplos:
-     - Orlando = castelo mágico, fogos de artifício, parques temáticos
-     - Lisboa = azulejos portugueses, Ponte 25 de Abril, bondes
-     - Paris = Torre Eiffel, luzes douradas, café parisiense
-     - Praias (Cancún, Maldivas) = águas cristalinas, palmeiras, pôr do sol
-     - Nova York = skyline, Times Square, luzes neon
-   - Cada destino deve ter identidade visual única e reconhecível
-   - Texto deve ser legível, preço como elemento visual dominante
-
-2. **video_prompt** (em INGLÊS): Prompt para image-to-video no Kling v2.1 Pro.
-   - Movimentos cinematográficos temáticos por destino:
-     - Praia = ondas suaves quebrando, brisa movendo palmeiras
-     - Cidade = luzes urbanas piscando, carros em movimento ao fundo
-     - Parque temático = fogos de artifício explodindo, luzes coloridas
-     - Europa = nuvens passando, reflexos na água
-   - Sempre incluir: zoom dramático no preço, partículas douradas flutuantes, efeito shimmer/brilho no texto do preço
-   - Duração: 10 segundos de animação fluida
-
-3. **narration_script** (em PORTUGUÊS BR): Script completo para TTS (ElevenLabs).
-   Estrutura OBRIGATÓRIA:
-   - HOOK (3s): Frase de impacto que faz parar o scroll. Ex: "Gente, isso é REAL?" ou "Para TUDO que essa promoção é ABSURDA!" ou "Você NÃO vai acreditar nesse preço!"
-   - PROMO (8-12s): Apresentar a promoção com entusiasmo — destino, preço, desconto, cia aérea. Contextualizar o destino (ex: "Imagina você passeando nos parques de Orlando com a família...")
-   - COMUNIDADE (5-8s): Falar da PromoCéu — "A gente monitora milhares de rotas todo dia pra achar promoções assim antes de todo mundo"
-   - CTA (3-5s): "Link na bio pra assinar o grupo VIP no WhatsApp! Promoções exclusivas todo dia direto no seu celular. Corre que vaga tá acabando!"
-
-Responda APENAS com JSON válido, sem markdown, sem explicações. Formato:
 {
-  "art_prompt": "...",
-  "video_prompt": "...",
-  "narration_script": "..."
-}`;
+  "variations": [
+    {
+      "label": "teaser",
+      "duration": 5,
+      "art_prompt": "...",
+      "video_prompt": "...",
+      "narration_script": "..."
+    },
+    {
+      "label": "promo",
+      "duration": 10,
+      "art_prompt": "...",
+      "video_prompt": "...",
+      "narration_script": "..."
+    },
+    {
+      "label": "viral",
+      "duration": 10,
+      "art_prompt": "...",
+      "video_prompt": "...",
+      "narration_script": "..."
+    }
+  ]
+}
 
-async function generatePrompts(promo: Record<string, unknown>): Promise<{
-  art_prompt: string;
-  video_prompt: string;
-  narration_script: string;
-} | null> {
+INSTRUÇÕES POR VARIAÇÃO:
+
+=== TEASER (5s) — Viral de scroll rápido ===
+
+art_prompt (INGLÊS): Arte IMPACTANTE minimalista. Preço GIGANTE dourado (#f59e0b) dominando 60% da imagem. Destino como background blur cinematográfico. Logo "PromoCéu" sutil no topo. Formato 9:16. Fundo navy (#0f172a). Poucos elementos mas ultra premium. O preço deve ser o herói visual. Incluir elementos visuais TEMÁTICOS do destino (Orlando=castelo mágico blur, Lisboa=ponte blur, Paris=Torre Eiffel blur, Praias=águas cristalinas blur).
+
+video_prompt (INGLÊS): Fast aggressive zoom into the golden price, explosive particle burst, quick flash transitions, energetic motion with speed lines, screen shake effect, cinematic lens flare on price reveal. 5 seconds of pure impact.
+
+narration_script (PORTUGUÊS BR): MÁXIMO 2 frases. Hook + preço + CTA. Ex: "PARA TUDO! [Destino] por apenas [preço] reais, ida e volta! Link na bio, CORRE!"
+
+=== PROMO (10s) — Promoção envolvente ===
+
+art_prompt (INGLÊS): Arte DETALHADA de promoção premium. Layout completo com: logo "PromoCéu" + ícone avião no topo, rota "ORIGEM → DESTINO" em badge, preço promocional dourado grande, preço original riscado, badge de desconto vermelho/laranja, cia aérea, tipo de voo. Background com elementos visuais TEMÁTICOS do destino (Orlando=castelo+fogos, Lisboa=azulejos+ponte, Paris=Torre Eiffel, Praias=águas cristalinas). Estética dark luxury, navy+dourado+cyan. Formato 9:16.
+
+video_prompt (INGLÊS): Smooth cinematic zoom revealing the promotion details, golden particles floating elegantly, destination-themed ambient motion (beach=gentle waves, city=twinkling lights, theme park=fireworks), shimmer effect sweeping across the price text, subtle parallax between layers. Professional motion graphics feel. 10 seconds.
+
+narration_script (PORTUGUÊS BR): Estrutura COMPLETA:
+- HOOK (3s): Frase viral de impacto. "Gente, OLHA essa promoção que a gente achou!"
+- PROMO (8-10s): Destino + preço + desconto + cia aérea com ENTUSIASMO. Contextualizar o destino. "Imagina você em [destino]... por apenas [preço] reais! Isso é [desconto]% de desconto!"
+- CTA (3s): "Link na bio! Corre que esgota RÁPIDO!"
+
+=== VIRAL (10s) — Conteúdo completo TikTok ===
+
+art_prompt (INGLÊS): Arte CINEMATOGRÁFICA épica. Composição de poster de cinema com o destino como cenário grandioso de fundo. Integração perfeita entre a paisagem/ícones do destino e os dados da promoção. Logo "PromoCéu" premium, rota, preço dourado com glow, desconto, cia, todas as infos. Visual storytelling — o viewer deve SENTIR o destino. Formato 9:16. Nível de detalhe MÁXIMO.
+
+video_prompt (INGLÊS): Epic slow cinematic reveal, dramatic camera movement through destination scenery melting into promotion card, volumetric golden light rays, atmospheric particles, destination-specific ambient animation (waterfalls, northern lights, city pulse, ocean waves), grand orchestral feel with the price as dramatic crescendo reveal. Immersive 10 seconds.
+
+narration_script (PORTUGUÊS BR): Script COMPLETO estilo creator TikTok viral:
+- HOOK (3s): Frase ABSURDA de impacto. "Gente, isso é SURREAL" ou "Para TUDO que eu acabei de achar!"
+- PROMO (12-15s): Apresentação EMPOLGADA com contexto do destino. "Sabe aquele sonho de conhecer [destino]? Então, a gente acabou de achar passagem de [origem] pra [destino] por apenas [preço] reais, ida e volta pela [cia]! Isso é quase [desconto] de desconto do preço normal! É promoção REAL, gente!"
+- COMUNIDADE (8-10s): Pitch da PromoCéu. "Aqui na PromoCéu a gente monitora MILHARES de rotas todos os dias pra achar promoções assim ANTES de todo mundo. Nossa equipe de inteligência artificial vasculha companhias aéreas 24 horas por dia."
+- CTA (5s): "Se você quer receber promoções como essa DIRETO no celular, entra no nosso grupo VIP do WhatsApp! Link na bio. Corre que vaga tá acabando!"
+
+REGRAS GERAIS:
+- art_prompt e video_prompt SEMPRE em INGLÊS
+- narration_script SEMPRE em PORTUGUÊS BR
+- Cada destino DEVE ter identidade visual ÚNICA e reconhecível
+- Preço deve ser SEMPRE o elemento visual mais impactante
+- Responda APENAS com JSON válido, sem markdown, sem explicações`;
+
+async function generatePrompts(promo: Record<string, unknown>) {
   const precoCliente = promo.preco_cliente || promo.preco;
   const precoNormal = promo.preco_normal || promo.preco;
   const desconto = promo.pct_desconto ? `${promo.pct_desconto}%` : "N/A";
@@ -84,53 +106,47 @@ async function generatePrompts(promo: Record<string, unknown>): Promise<{
 - Escalas: ${escalas}
 - Bagagem: ${bagagem}
 
-Gere os 3 prompts (art_prompt, video_prompt, narration_script) em JSON.`;
+Gere as 3 variações (teaser, promo, viral) em JSON.`;
 
   await logAgente(`Chamando Claude para promo ${promo.id}: ${promo.origem}→${promo.destino}`, "info");
 
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
-      }),
-    });
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": anthropicKey,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 6000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userMessage }],
+    }),
+  });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      await logAgente(`Claude API error: ${response.status} - ${errText}`, "error");
-      return null;
-    }
-
-    const data = await response.json();
-    const text = data.content?.[0]?.text;
-    if (!text) {
-      await logAgente("Claude retornou resposta vazia", "error");
-      return null;
-    }
-
-    await logAgente(`Claude response recebida (${text.length} chars)`, "info");
-
-    const parsed = JSON.parse(text);
-    if (!parsed.art_prompt || !parsed.video_prompt || !parsed.narration_script) {
-      await logAgente(`Claude retornou JSON incompleto: ${text.substring(0, 200)}`, "error");
-      return null;
-    }
-
-    return parsed;
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    await logAgente(`Erro ao chamar Claude: ${errMsg}`, "error");
+  if (!response.ok) {
+    const errText = await response.text();
+    await logAgente(`Claude API error: ${response.status} - ${errText}`, "error");
     return null;
   }
+
+  const data = await response.json();
+  const text = data.content?.[0]?.text;
+  if (!text) {
+    await logAgente("Claude retornou resposta vazia", "error");
+    return null;
+  }
+
+  await logAgente(`Claude response recebida (${text.length} chars)`, "info");
+
+  const parsed = JSON.parse(text);
+  if (!parsed.variations || parsed.variations.length !== 3) {
+    await logAgente(`Claude retornou JSON inválido: ${text.substring(0, 200)}`, "error");
+    return null;
+  }
+
+  return parsed;
 }
 
 Deno.serve(async (req) => {
@@ -148,7 +164,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    await logAgente("Iniciando PromptEngineer", "info");
+    await logAgente("Iniciando PromptEngineer v3 (3 variações)", "info");
 
     const { data: config } = await supabase
       .from("config_agentes")
@@ -189,7 +205,7 @@ Deno.serve(async (req) => {
 
     for (const promo of promos) {
       try {
-        await logAgente(`Gerando prompts para ${promo.origem}→${promo.destino}`, "info");
+        await logAgente(`Gerando 3 variações de prompts para ${promo.origem}→${promo.destino}`, "info");
 
         const result = await generatePrompts(promo);
         if (!result) {
@@ -197,19 +213,36 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Find "promo" variation for backward compatibility
+        const promoVariation = result.variations.find((v: { label: string }) => v.label === "promo") || result.variations[1];
+
         await supabase.from("promocoes").update({
-          art_prompt: result.art_prompt,
-          video_prompt: result.video_prompt,
-          narration_script: result.narration_script,
+          prompt_variations: result.variations,
+          art_prompt: promoVariation.art_prompt,
+          video_prompt: promoVariation.video_prompt,
+          narration_script: promoVariation.narration_script,
           status: "prompts_gerados",
         }).eq("id", promo.id);
 
-        await logAgente(`Prompts salvos para ${promo.origem}→${promo.destino}`, "success", {
+        await logAgente(`3 variações de prompts salvas para ${promo.origem}→${promo.destino}`, "success", {
           promoId: promo.id,
-          artPromptLength: result.art_prompt.length,
-          videoPromptLength: result.video_prompt.length,
-          narrationLength: result.narration_script.length,
+          labels: result.variations.map((v: { label: string }) => v.label),
         });
+
+        // Auto-trigger VideoMaker
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/agente-videomaker`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ promocao_id: promo.id }),
+          });
+          await logAgente(`VideoMaker disparado automaticamente para promo ${promo.id}`, "success");
+        } catch (chainErr) {
+          await logAgente(`Erro ao disparar VideoMaker: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}`, "error");
+        }
 
         processed++;
       } catch (err) {

@@ -7,238 +7,202 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const hfApiKey = Deno.env.get("HF_API_KEY");
-const hfApiSecret = Deno.env.get("HF_API_SECRET");
+const hfApiKey = Deno.env.get("HF_API_KEY")!;
+const hfApiSecret = Deno.env.get("HF_API_SECRET")!;
 const elevenLabsKey = Deno.env.get("ELEVENLABS_API_KEY");
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function logAgente(mensagem: string, tipo = "info", payload = {}) {
   console.log(`[videomaker][${tipo}] ${mensagem}`, JSON.stringify(payload));
-  await supabase.from("logs_agentes").insert({
-    agente: "videomaker",
-    mensagem,
-    tipo,
-    payload,
-  });
+  await supabase.from("logs_agentes").insert({ agente: "videomaker", mensagem, tipo, payload });
+}
+
+const hfHeaders = { "hf-api-key": hfApiKey, "hf-secret": hfApiSecret, "Content-Type": "application/json" };
+const hfPollHeaders = { "hf-api-key": hfApiKey, "hf-secret": hfApiSecret };
+
+// ── UPLOAD HELPER ─────────────────────────────────────────────
+async function uploadToStorage(url: string, path: string, contentType: string): Promise<string> {
+  const res = await fetch(url);
+  const buffer = new Uint8Array(await res.arrayBuffer());
+  const { error } = await supabase.storage.from("videos").upload(path, buffer, { contentType });
+  if (error) {
+    // Try creating bucket if it doesn't exist
+    await supabase.storage.createBucket("videos", { public: true });
+    const { error: retry } = await supabase.storage.from("videos").upload(path, buffer, { contentType });
+    if (retry) throw retry;
+  }
+  const { data } = supabase.storage.from("videos").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ── POLLING HELPER ────────────────────────────────────────────
+async function pollStatus(statusUrl: string, label: string, maxAttempts: number): Promise<Record<string, unknown> | null> {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    const res = await fetch(statusUrl, { headers: hfPollHeaders });
+    const data = JSON.parse(await res.text());
+    const status = data.status || data.state;
+    if (i % 6 === 0) await logAgente(`Polling ${label} tentativa ${i + 1}/${maxAttempts}`, "info");
+    if (status === "completed") return data;
+    if (status === "failed") { await logAgente(`${label} falhou`, "error"); return null; }
+  }
+  await logAgente(`Timeout: ${label}`, "error");
+  return null;
 }
 
 // ── GENERATE ART ──────────────────────────────────────────────
-async function generateArt(promo: Record<string, unknown>): Promise<string | null> {
-  // Use PromptEngineer's art_prompt if available, otherwise fallback
-  const prompt = (promo.art_prompt as string) || buildFallbackArtPrompt(promo);
-
-  const url = "https://platform.higgsfield.ai/bytedance/seedream/v4/text-to-image";
-  await logAgente(`Gerando arte via Higgsfield. Prompt personalizado: ${!!promo.art_prompt}`, "info");
-
+async function generateArt(prompt: string, label: string): Promise<string | null> {
+  await logAgente(`Gerando arte [${label}]`, "info");
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "hf-api-key": hfApiKey!,
-        "hf-secret": hfApiSecret!,
-        "Content-Type": "application/json",
-      },
+    const res = await fetch("https://platform.higgsfield.ai/bytedance/seedream/v4/text-to-image", {
+      method: "POST", headers: hfHeaders,
       body: JSON.stringify({ prompt, aspect_ratio: "9:16", resolution: "2K" }),
     });
-
-    const responseBody = await response.text();
-    await logAgente(`Higgsfield art response: status=${response.status}`, response.ok ? "info" : "error");
-
-    if (!response.ok) throw new Error(`Higgsfield image API error: ${response.status} - ${responseBody}`);
-
-    const data = JSON.parse(responseBody);
+    if (!res.ok) throw new Error(`Art API ${res.status}: ${await res.text()}`);
+    const data = JSON.parse(await res.text());
     const statusUrl = data.status_url || data.request_url;
-    if (!statusUrl) {
-      await logAgente(`Sem status_url na resposta: ${responseBody.substring(0, 300)}`, "error");
-      throw new Error("No status_url returned");
-    }
+    if (!statusUrl) throw new Error("No status_url for art");
 
-    await logAgente(`Polling arte: ${statusUrl}`, "info");
-
-    for (let i = 0; i < 60; i++) {
-      await new Promise((r) => setTimeout(r, 5000));
-      const statusRes = await fetch(statusUrl, {
-        headers: { "hf-api-key": hfApiKey!, "hf-secret": hfApiSecret! },
-      });
-      const statusBody = await statusRes.text();
-      if (i % 6 === 0) await logAgente(`Polling arte tentativa ${i + 1}/60`, "info");
-
-      const statusData = JSON.parse(statusBody);
-      if (statusData.status === "completed" || statusData.state === "completed") {
-        const result = statusData.images?.[0]?.url || statusData.output?.image_url || statusData.result?.url;
-        await logAgente(`Arte gerada! URL: ${result}`, "success");
-        return result;
-      }
-      if (statusData.status === "failed" || statusData.state === "failed") {
-        await logAgente(`Arte falhou: ${statusBody}`, "error");
-        throw new Error(`Image generation failed`);
-      }
-    }
-
-    await logAgente("Timeout: arte não ficou pronta após 5 min", "error");
-    return null;
+    const result = await pollStatus(statusUrl, `arte-${label}`, 60);
+    if (!result) return null;
+    const url = result.images?.[0]?.url || (result.output as Record<string, unknown>)?.image_url || (result.result as Record<string, unknown>)?.url;
+    await logAgente(`Arte [${label}] gerada: ${url}`, "success");
+    return url as string;
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    await logAgente(`Erro ao gerar arte: ${errMsg}`, "error");
+    await logAgente(`Erro arte [${label}]: ${err instanceof Error ? err.message : String(err)}`, "error");
     return null;
   }
 }
 
-function buildFallbackArtPrompt(promo: Record<string, unknown>): string {
+// ── GENERATE NARRATION ────────────────────────────────────────
+async function generateNarration(script: string, label: string): Promise<string | null> {
+  if (!elevenLabsKey) { await logAgente("ELEVENLABS_API_KEY não configurada", "error"); return null; }
+  await logAgente(`Gerando narração [${label}]: ${script.substring(0, 60)}...`, "info");
+  try {
+    const voiceId = "EXAVITQu4vr4xnSDxMaL";
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+      method: "POST",
+      headers: { "xi-api-key": elevenLabsKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: script,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: { stability: 0.45, similarity_boost: 0.85, style: 0.7, use_speaker_boost: true },
+      }),
+    });
+    if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
+    const buffer = new Uint8Array(await res.arrayBuffer());
+    const fileName = `narrations/${Date.now()}_${label}.mp3`;
+    const { error } = await supabase.storage.from("videos").upload(fileName, buffer, { contentType: "audio/mpeg" });
+    if (error) {
+      await supabase.storage.createBucket("videos", { public: true });
+      const { error: retry } = await supabase.storage.from("videos").upload(fileName, buffer, { contentType: "audio/mpeg" });
+      if (retry) throw retry;
+    }
+    const { data } = supabase.storage.from("videos").getPublicUrl(fileName);
+    await logAgente(`Narração [${label}] pronta: ${data.publicUrl}`, "success");
+    return data.publicUrl;
+  } catch (err) {
+    await logAgente(`Erro narração [${label}]: ${err instanceof Error ? err.message : String(err)}`, "error");
+    return null;
+  }
+}
+
+// ── GENERATE VIDEO ────────────────────────────────────────────
+async function generateVideo(arteUrl: string, prompt: string, duration: number, label: string): Promise<string | null> {
+  await logAgente(`Gerando vídeo [${label}] (${duration}s)`, "info");
+  try {
+    const res = await fetch("https://platform.higgsfield.ai/kling-video/v2.1/pro/image-to-video", {
+      method: "POST", headers: hfHeaders,
+      body: JSON.stringify({ image_url: arteUrl, prompt, duration }),
+    });
+    if (!res.ok) throw new Error(`Video API ${res.status}: ${await res.text()}`);
+    const data = JSON.parse(await res.text());
+    const statusUrl = data.status_url || data.request_url;
+    if (!statusUrl) { await logAgente(`Sem status_url para vídeo [${label}]`, "warn"); return null; }
+
+    const result = await pollStatus(statusUrl, `video-${label}`, 120);
+    if (!result) return null;
+    const videoUrl = (result.videos as Array<{url: string}>)?.[0]?.url || (result.video as Record<string, unknown>)?.url ||
+      (result.images as Array<{url: string}>)?.[0]?.url || (result.output as Record<string, unknown>)?.video_url ||
+      (result.output as Record<string, unknown>)?.url || (result.result as Record<string, unknown>)?.url ||
+      result.video_url || result.url;
+    await logAgente(`Vídeo [${label}] gerado: ${videoUrl}`, "success");
+    return videoUrl as string;
+  } catch (err) {
+    await logAgente(`Erro vídeo [${label}]: ${err instanceof Error ? err.message : String(err)}`, "error");
+    return null;
+  }
+}
+
+// ── FALLBACK PROMPTS ──────────────────────────────────────────
+function buildFallback(promo: Record<string, unknown>) {
   const precoCliente = promo.preco_cliente || promo.preco;
   const precoNormal = promo.preco_normal || promo.preco;
   const desconto = promo.pct_desconto ? `${promo.pct_desconto}%` : "";
   const ciaAerea = promo.cia_aerea || "";
-  const escalas = promo.escalas || "";
-  const bagagem = promo.bagagem || "";
-  const tipoVoo = promo.tipo_voo === "ida_volta" ? "ida e volta" : "só ida";
-
-  return `Ultra-professional premium travel promotion poster for Instagram Stories/Reels (9:16 vertical format).
-BRAND: "PromoCéu" logo text prominently displayed at the top with a small airplane icon. Clean modern sans-serif typography.
-COLOR PALETTE: Deep navy blue background (#0f172a), golden accents (#f59e0b), cyan (#06b6d4).
-LAYOUT: Top: "PromoCéu" brand logo. Route badge: "${promo.origem} → ${promo.destino}". Center: Large golden price "R$ ${precoCliente}" per person. Strike-through "R$ ${precoNormal}".
-${desconto ? `Discount badge: "-${desconto} OFF"` : ""}
-Info: "${ciaAerea}" • "${escalas}" • "${bagagem}" • "${tipoVoo}"
-STYLE: Dark luxury aesthetic, floating golden particles, subtle airplane silhouette, glass-morphism card effects. All text must be clearly legible. Price is dominant visual element.`;
+  return {
+    label: "promo",
+    duration: 10,
+    art_prompt: `Ultra-professional premium travel promotion poster 9:16. "PromoCéu" logo top. Route: "${promo.origem} → ${promo.destino}". Golden price "R$ ${precoCliente}". Strike-through "R$ ${precoNormal}". ${desconto ? `Discount badge "-${desconto}"` : ""} ${ciaAerea}. Dark navy #0f172a, gold #f59e0b, cyan #06b6d4. Floating particles, glass-morphism.`,
+    video_prompt: "Dramatic cinematic zoom, golden particles floating, price shimmer reveal, premium motion graphics",
+    narration_script: `Atenção viajantes! Promoção ABSURDA! Voo de ${promo.origem} pra ${promo.destino}, ida e volta, por apenas ${Math.floor(Number(precoCliente))} reais! ${desconto ? `Isso é ${desconto} de desconto!` : ""} Corre que vaga tá acabando! Link na bio!`,
+  };
 }
 
-// ── GENERATE NARRATION ────────────────────────────────────────
-async function generateNarration(promo: Record<string, unknown>): Promise<string | null> {
-  if (!elevenLabsKey) {
-    await logAgente("ELEVENLABS_API_KEY não configurada", "error");
-    return null;
+// ── PROCESS ONE VARIATION ─────────────────────────────────────
+async function processVariation(
+  promo: Record<string, unknown>,
+  variation: { label: string; duration: number; art_prompt: string; video_prompt: string; narration_script: string },
+) {
+  const { label, duration, art_prompt, video_prompt, narration_script } = variation;
+  const promoId = promo.id as string;
+  const ts = Date.now();
+
+  await logAgente(`=== Processando variação [${label}] para ${promo.origem}→${promo.destino} ===`, "info");
+
+  // Insert video record
+  const { data: videoRecord, error: insertErr } = await supabase
+    .from("videos")
+    .insert({ promocao_id: promoId, status: "gerando_arte", variation_label: label })
+    .select()
+    .single();
+  if (insertErr) throw insertErr;
+  const videoId = videoRecord.id;
+
+  // 1. ARTE
+  const arteUrl = await generateArt(art_prompt, label);
+  if (!arteUrl) {
+    await supabase.from("videos").update({ status: "erro", erro_detalhes: "Falha ao gerar arte" }).eq("id", videoId);
+    return false;
+  }
+  let storedArteUrl = arteUrl;
+  try { storedArteUrl = await uploadToStorage(arteUrl, `arts/${promoId}_${label}_${ts}.png`, "image/png"); } catch { /* use original */ }
+  await supabase.from("videos").update({ arte_url: storedArteUrl, status: "com_arte" }).eq("id", videoId);
+
+  // 2. NARRAÇÃO
+  const narrationUrl = await generateNarration(narration_script, label);
+  if (narrationUrl) {
+    await supabase.from("videos").update({ narration_url: narrationUrl, status: "com_narracao" }).eq("id", videoId);
   }
 
-  // Use PromptEngineer's narration_script if available
-  const text = (promo.narration_script as string) || buildFallbackNarration(promo);
+  // 3. VÍDEO
+  await supabase.from("videos").update({ status: "gerando_video" }).eq("id", videoId);
+  const videoUrl = await generateVideo(arteUrl, video_prompt, duration, label);
 
-  const voiceId = "EXAVITQu4vr4xnSDxMaL";
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`;
-
-  await logAgente(`TTS: ${text.substring(0, 80)}... Script personalizado: ${!!promo.narration_script}`, "info");
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "xi-api-key": elevenLabsKey, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.5, use_speaker_boost: true },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      await logAgente(`ElevenLabs error: ${response.status} - ${errText}`, "error");
-      throw new Error(`ElevenLabs error: ${response.status}`);
-    }
-
-    const audioBuffer = await response.arrayBuffer();
-    const uint8Array = new Uint8Array(audioBuffer);
-    const fileName = `narrations/${promo.id}_${Date.now()}.mp3`;
-
-    const { error: uploadError } = await supabase.storage.from("videos").upload(fileName, uint8Array, { contentType: "audio/mpeg" });
-    if (uploadError) {
-      await supabase.storage.createBucket("videos", { public: true });
-      const { error: retryError } = await supabase.storage.from("videos").upload(fileName, uint8Array, { contentType: "audio/mpeg" });
-      if (retryError) throw retryError;
-    }
-
-    const { data: urlData } = supabase.storage.from("videos").getPublicUrl(fileName);
-    await logAgente(`Narração uploaded: ${urlData.publicUrl}`, "success");
-    return urlData.publicUrl;
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    await logAgente(`Erro narração: ${errMsg}`, "error");
-    return null;
-  }
-}
-
-function buildFallbackNarration(promo: Record<string, unknown>): string {
-  const precoCliente = promo.preco_cliente || promo.preco;
-  const desconto = promo.pct_desconto ? `quase ${promo.pct_desconto}% de desconto` : "um preço incrível";
-  const escalas = promo.escalas ? String(promo.escalas).toLowerCase() : "";
-  const bagagem = promo.bagagem ? `, com ${String(promo.bagagem).toLowerCase()},` : "";
-  const ciaAerea = promo.cia_aerea ? ` com a ${promo.cia_aerea}` : "";
-  const isDirecto = escalas.includes("direto");
-  return `Atenção viajantes! Achamos uma promoção ABSURDA! ${isDirecto ? "Voo direto de" : "Voo de"} ${promo.origem} pra ${promo.destino}, ida e volta${bagagem}, por apenas ${Math.floor(Number(precoCliente))} reais! Isso é ${desconto}${ciaAerea}! Corre que vaga tá acabando! Link na bio!`;
-}
-
-// ── GENERATE VIDEO (WITH POLLING) ─────────────────────────────
-async function generateVideo(arteUrl: string, promo: Record<string, unknown>): Promise<{ requestId: string | null; videoUrl: string | null }> {
-  // Use PromptEngineer's video_prompt if available
-  const videoPrompt = (promo.video_prompt as string) || "Dramatic cinematic zoom in, golden particles floating, airplane silhouette flying across frame, price text revealing with shimmer effect, premium luxury feel, smooth professional motion graphics";
-
-  const url = "https://platform.higgsfield.ai/kling-video/v2.1/pro/image-to-video";
-  await logAgente(`Gerando vídeo via Higgsfield. Prompt personalizado: ${!!promo.video_prompt}`, "info");
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "hf-api-key": hfApiKey!,
-        "hf-secret": hfApiSecret!,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        image_url: arteUrl,
-        prompt: videoPrompt,
-        duration: 10,
-      }),
-    });
-
-    const responseBody = await response.text();
-    await logAgente(`Higgsfield video response: status=${response.status}`, response.ok ? "info" : "error");
-
-    if (!response.ok) throw new Error(`Higgsfield video API error: ${response.status} - ${responseBody}`);
-
-    const data = JSON.parse(responseBody);
-    const requestId = data.request_id || data.id || null;
-    const statusUrl = data.status_url || data.request_url;
-
-    if (!statusUrl) {
-      await logAgente(`Sem status_url para vídeo. request_id: ${requestId}`, "warn");
-      return { requestId, videoUrl: null };
-    }
-
-    await logAgente(`Polling vídeo: ${statusUrl} (request_id: ${requestId})`, "info");
-
-    // Poll every 5s, up to 120 attempts (10 min), log every 30s (6 attempts)
-    for (let i = 0; i < 120; i++) {
-      await new Promise((r) => setTimeout(r, 5000));
-      const statusRes = await fetch(statusUrl, {
-        headers: { "hf-api-key": hfApiKey!, "hf-secret": hfApiSecret! },
-      });
-      const statusBody = await statusRes.text();
-
-      if (i % 6 === 0) await logAgente(`Polling vídeo tentativa ${i + 1}/120`, "info");
-
-      const statusData = JSON.parse(statusBody);
-      const status = statusData.status || statusData.state;
-
-      if (status === "completed") {
-        const videoUrl = statusData.videos?.[0]?.url || statusData.video?.url ||
-          statusData.images?.[0]?.url || statusData.output?.video_url ||
-          statusData.output?.url || statusData.result?.url ||
-          statusData.video_url || statusData.url;
-        await logAgente(`Vídeo gerado! URL: ${videoUrl}`, "success");
-        return { requestId, videoUrl };
-      }
-
-      if (status === "failed") {
-        await logAgente(`Vídeo falhou: ${statusBody.substring(0, 300)}`, "error");
-        return { requestId, videoUrl: null };
-      }
-    }
-
-    await logAgente("Timeout: vídeo não ficou pronto após 10 min", "error");
-    return { requestId, videoUrl: null };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    await logAgente(`Erro ao gerar vídeo: ${errMsg}`, "error");
-    return { requestId: null, videoUrl: null };
+  if (videoUrl) {
+    let finalUrl = videoUrl;
+    try { finalUrl = await uploadToStorage(videoUrl, `finals/${promoId}_${label}_${ts}.mp4`, "video/mp4"); } catch { /* use original */ }
+    await supabase.from("videos").update({
+      video_url: videoUrl,
+      video_final_url: finalUrl,
+      status: "pronto",
+    }).eq("id", videoId);
+    await logAgente(`✅ Variação [${label}] PRONTA para ${promo.origem}→${promo.destino}`, "success");
+    return true;
+  } else {
+    await supabase.from("videos").update({ status: "erro", erro_detalhes: "Vídeo não ficou pronto (timeout ou falha)" }).eq("id", videoId);
+    return false;
   }
 }
 
@@ -252,34 +216,20 @@ Deno.serve(async (req) => {
     if (!hfApiKey || !hfApiSecret) {
       const msg = "HF_API_KEY ou HF_API_SECRET não definidos";
       await logAgente(msg, "error");
-      return new Response(JSON.stringify({ error: msg }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    await logAgente("Iniciando VideoMaker", "info");
+    await logAgente("Iniciando VideoMaker v3 (3 variações por promo)", "info");
 
-    const { data: config } = await supabase
-      .from("config_agentes")
-      .select("*")
-      .eq("agente", "videomaker")
-      .single();
-
+    const { data: config } = await supabase.from("config_agentes").select("*").eq("agente", "videomaker").single();
     if (!config?.ativo) {
       await logAgente("Agente VideoMaker está desativado", "warn");
-      return new Response(JSON.stringify({ message: "Agente desativado" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ message: "Agente desativado" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let promoId: string | null = null;
-    try {
-      const body = await req.json();
-      promoId = body?.promocao_id || body?.record?.id || null;
-    } catch { /* no body */ }
+    try { const body = await req.json(); promoId = body?.promocao_id || null; } catch { /* no body */ }
 
-    // Buscar promos com prompts_gerados (pipeline novo) OU aprovada (fallback)
     let query;
     if (promoId) {
       query = supabase.from("promocoes").select("*").eq("id", promoId);
@@ -292,9 +242,7 @@ Deno.serve(async (req) => {
 
     if (!promos?.length) {
       await logAgente("Nenhuma promoção para produção de vídeo", "info");
-      return new Response(JSON.stringify({ processed: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ processed: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     await logAgente(`Encontradas ${promos.length} promoções para processar`, "info");
@@ -302,92 +250,45 @@ Deno.serve(async (req) => {
 
     for (const promo of promos) {
       try {
-        await logAgente(`Processando promo ${promo.id}: ${promo.origem}→${promo.destino} (status: ${promo.status})`, "info");
+        await logAgente(`Processando promo ${promo.id}: ${promo.origem}→${promo.destino}`, "info");
         await supabase.from("promocoes").update({ status: "em_producao" }).eq("id", promo.id);
 
-        const { data: videoRecord, error: videoInsertError } = await supabase
-          .from("videos")
-          .insert({ promocao_id: promo.id, status: "gerando_arte" })
-          .select()
-          .single();
+        // Get variations from prompt_variations or fallback
+        const variations: Array<{ label: string; duration: number; art_prompt: string; video_prompt: string; narration_script: string }> =
+          (promo.prompt_variations as Array<{ label: string; duration: number; art_prompt: string; video_prompt: string; narration_script: string }>) ||
+          [buildFallback(promo)];
 
-        if (videoInsertError) throw videoInsertError;
+        await logAgente(`${variations.length} variações para processar`, "info");
 
-        // ── ARTE ──
-        await logAgente(`Gerando arte para ${promo.origem}→${promo.destino}`, "info");
-        const arteUrl = await generateArt(promo);
-
-        if (!arteUrl) {
-          await supabase.from("videos").update({ status: "erro", erro_detalhes: "Falha ao gerar arte" }).eq("id", videoRecord.id);
-          continue;
-        }
-
-        await supabase.from("videos").update({ arte_url: arteUrl, status: "com_arte" }).eq("id", videoRecord.id);
-
-        // ── NARRAÇÃO ──
-        await logAgente(`Gerando narração para ${promo.origem}→${promo.destino}`, "info");
-        const narrationUrl = await generateNarration(promo);
-        if (narrationUrl) {
-          await supabase.from("videos").update({ narration_url: narrationUrl, status: "com_narracao" }).eq("id", videoRecord.id);
-        }
-
-        // ── VÍDEO (com polling!) ──
-        await logAgente(`Gerando vídeo para ${promo.origem}→${promo.destino}`, "info");
-        await supabase.from("videos").update({ status: "gerando_video" }).eq("id", videoRecord.id);
-        const { requestId, videoUrl } = await generateVideo(arteUrl, promo);
-
-        if (requestId) {
-          await supabase.from("videos").update({ higgsfield_request_id: requestId }).eq("id", videoRecord.id);
-        }
-
-        if (videoUrl) {
-          // Download and store in Supabase Storage
-          let finalUrl = videoUrl;
+        let allDone = true;
+        for (const variation of variations) {
           try {
-            const videoRes = await fetch(videoUrl);
-            const videoBuffer = new Uint8Array(await videoRes.arrayBuffer());
-            const fileName = `finals/${promo.id}_${Date.now()}.mp4`;
-            await supabase.storage.from("videos").upload(fileName, videoBuffer, { contentType: "video/mp4" });
-            const { data: urlData } = supabase.storage.from("videos").getPublicUrl(fileName);
-            finalUrl = urlData.publicUrl;
-            await logAgente(`Vídeo salvo no Storage: ${finalUrl}`, "success");
-          } catch (storageErr) {
-            await logAgente(`Storage falhou, usando URL externa: ${videoUrl}`, "warn");
+            const ok = await processVariation(promo, variation);
+            if (!ok) allDone = false;
+          } catch (varErr) {
+            allDone = false;
+            await logAgente(`Erro variação [${variation.label}]: ${varErr instanceof Error ? varErr.message : String(varErr)}`, "error");
           }
-
-          await supabase.from("videos").update({
-            video_url: videoUrl,
-            video_final_url: finalUrl,
-            status: "pronto",
-          }).eq("id", videoRecord.id);
-
-          await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", promo.id);
-          await logAgente(`Vídeo PRONTO para ${promo.origem}→${promo.destino}!`, "success");
-        } else if (!requestId) {
-          await supabase.from("videos").update({
-            status: "erro",
-            erro_detalhes: "Falha ao iniciar geração de vídeo",
-          }).eq("id", videoRecord.id);
         }
-        // If requestId but no videoUrl, video stays in gerando_video for webhook/manual check
+
+        if (allDone) {
+          await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", promo.id);
+          await logAgente(`🎉 Todas as variações prontas para ${promo.origem}→${promo.destino}!`, "success");
+        } else {
+          await logAgente(`Algumas variações falharam para ${promo.origem}→${promo.destino}`, "warn");
+        }
 
         processed++;
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        await logAgente(`Erro promo ${promo.id}: ${errMsg}`, "error");
+        await logAgente(`Erro promo ${promo.id}: ${err instanceof Error ? err.message : String(err)}`, "error");
       }
     }
 
-    await logAgente(`VideoMaker finalizado: ${processed} processadas`, "success");
-    return new Response(JSON.stringify({ processed }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    await logAgente(`VideoMaker v3 finalizado: ${processed} promoções processadas`, "success");
+    return new Response(JSON.stringify({ processed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     await logAgente(`Erro fatal: ${errMsg}`, "error");
-    return new Response(JSON.stringify({ error: errMsg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: errMsg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
