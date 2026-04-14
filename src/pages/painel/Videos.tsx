@@ -67,6 +67,31 @@ const Videos = () => {
     toast.success("Regeneração de vídeo iniciada");
   };
 
+  const [checking, setChecking] = useState(false);
+
+  const handleCheckStatus = async () => {
+    setChecking(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-video-status`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+      });
+      const data = await res.json();
+      const prontos = data.results?.filter((r: any) => r.newStatus === "pronto").length || 0;
+      if (prontos > 0) {
+        toast.success(`${prontos} vídeo(s) ficaram prontos!`);
+      } else {
+        toast.info(`Verificados ${data.checked || 0} vídeos. Nenhum pronto ainda.`);
+      }
+      fetchVideos();
+    } catch {
+      toast.error("Erro ao verificar status");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
