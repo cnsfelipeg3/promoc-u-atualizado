@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.97.0";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -15,7 +19,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const requestId = body.request_id || body.id;
     const status = body.status || body.state;
-    const videoUrl = body.output?.video_url || body.result?.url || body.output?.[0]?.url;
+    const videoUrl = body.videos?.[0]?.url || body.images?.[0]?.url || body.output?.video_url || body.output?.url || body.output?.[0]?.url || body.result?.url;
 
     if (!requestId) {
       return new Response(JSON.stringify({ error: "No request_id" }), {
@@ -24,7 +28,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Find video record
     const { data: video } = await supabase
       .from("videos")
       .select("*, promocoes(*)")
@@ -39,7 +42,6 @@ Deno.serve(async (req) => {
     }
 
     if (status === "completed" && videoUrl) {
-      // Download and save to storage
       try {
         const videoRes = await fetch(videoUrl);
         const videoBuffer = new Uint8Array(await videoRes.arrayBuffer());
@@ -62,10 +64,9 @@ Deno.serve(async (req) => {
           agente: "videomaker",
           mensagem: `Vídeo pronto para ${video.promocoes?.origem}→${video.promocoes?.destino}`,
           tipo: "success",
-          payload: { videoId: video.id, promoId: video.promocao_id },
+          payload: { videoId: video.id, promoId: video.promocao_id, requestId, status, videoUrl },
         });
       } catch (storageErr) {
-        // Save URL even if storage fails
         await supabase.from("videos").update({
           video_url: videoUrl,
           status: "pronto",
@@ -83,7 +84,7 @@ Deno.serve(async (req) => {
         agente: "videomaker",
         mensagem: `Erro na geração de vídeo: ${body.error || "unknown"}`,
         tipo: "error",
-        payload: { videoId: video.id, requestId },
+        payload: { videoId: video.id, requestId, status, videoUrl, body },
       });
     }
 
