@@ -57,7 +57,8 @@ IMPORTANT: All text must be clearly legible. The price must be the dominant visu
       {
         method: "POST",
         headers: {
-          Authorization: `Key ${hfApiKey}:${hfApiSecret}`,
+          "hf-api-key": hfApiKey!,
+          "hf-secret": hfApiSecret!,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -84,7 +85,7 @@ IMPORTANT: All text must be clearly legible. The price must be the dominant visu
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
       const statusRes = await fetch(statusUrl, {
-        headers: { Authorization: `Key ${hfApiKey}:${hfApiSecret}` },
+        headers: { "hf-api-key": hfApiKey!, "hf-secret": hfApiSecret! },
       });
       const statusData = await statusRes.json();
 
@@ -182,7 +183,8 @@ async function generateVideo(arteUrl: string, promoId: string): Promise<string |
       {
         method: "POST",
         headers: {
-          Authorization: `Key ${hfApiKey}:${hfApiSecret}`,
+          "hf-api-key": hfApiKey!,
+          "hf-secret": hfApiSecret!,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
