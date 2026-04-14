@@ -100,7 +100,7 @@ IMPORTANT: All text must be clearly legible. The price must be the dominant visu
       const statusData = JSON.parse(statusBody);
 
       if (statusData.status === "completed" || statusData.state === "completed") {
-        result = statusData.output?.image_url || statusData.result?.url || statusData.output?.[0]?.url;
+        result = statusData.images?.[0]?.url || statusData.output?.image_url || statusData.result?.url;
         await logAgente(`Arte gerada com sucesso! URL: ${result}`, "success");
         break;
       }
