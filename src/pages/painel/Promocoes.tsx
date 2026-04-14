@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, CheckCircle, XCircle, RefreshCw, Video, Eye } from "lucide-react";
+import { Search, CheckCircle, XCircle, RefreshCw, Video, Eye, Plus } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 interface Promo {
   id: string;
@@ -41,12 +42,20 @@ const statusColors: Record<string, string> = {
   arquivada: "bg-gray-500/20 text-gray-400",
 };
 
+const emptyForm = {
+  origem: "", destino: "", preco: "", preco_normal: "", pct_desconto: "",
+  cia_aerea: "", tipo_voo: "ida_volta", classe: "economica", validade: "",
+  bagagem: "", escalas: "", fonte: "manual",
+};
+
 const Promocoes = () => {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Promo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showInsert, setShowInsert] = useState(false);
+  const [form, setForm] = useState(emptyForm);
 
   const fetchPromos = async () => {
     let query = supabase.from("promocoes").select("*").order("created_at", { ascending: false }).limit(200);
@@ -110,9 +119,47 @@ const Promocoes = () => {
     setLoading(false);
   };
 
+  const handleInsertPromo = async () => {
+    if (!form.origem || !form.destino || !form.preco) {
+      toast.error("Preencha pelo menos origem, destino e preço");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.from("promocoes").insert({
+      origem: form.origem,
+      destino: form.destino,
+      preco: Number(form.preco),
+      preco_normal: form.preco_normal ? Number(form.preco_normal) : null,
+      pct_desconto: form.pct_desconto ? Number(form.pct_desconto) : null,
+      cia_aerea: form.cia_aerea || null,
+      tipo_voo: form.tipo_voo,
+      classe: form.classe,
+      validade: form.validade || null,
+      bagagem: form.bagagem || null,
+      escalas: form.escalas || null,
+      fonte: form.fonte || "manual",
+      status: "pendente",
+    });
+    if (error) {
+      toast.error("Erro ao inserir promoção");
+    } else {
+      toast.success("Promoção inserida com sucesso!");
+      setForm(emptyForm);
+      setShowInsert(false);
+    }
+    setLoading(false);
+  };
+
+  const updateForm = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Promoções</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">Promoções</h1>
+        <Button onClick={() => setShowInsert(true)} className="bg-amber-600 hover:bg-amber-700">
+          <Plus className="h-4 w-4 mr-2" /> Inserir Promoção
+        </Button>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -190,6 +237,84 @@ const Promocoes = () => {
           </table>
         </div>
       </Card>
+
+      {/* Insert Modal */}
+      <Dialog open={showInsert} onOpenChange={setShowInsert}>
+        <DialogContent className="bg-[#1e293b] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Inserir Promoção Manual</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-slate-400">Origem *</Label>
+              <Input value={form.origem} onChange={e => updateForm("origem", e.target.value)} placeholder="Ex: Guarulhos (GRU)" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Destino *</Label>
+              <Input value={form.destino} onChange={e => updateForm("destino", e.target.value)} placeholder="Ex: Orlando (MCO)" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Preço (R$) *</Label>
+              <Input type="number" value={form.preco} onChange={e => updateForm("preco", e.target.value)} placeholder="2919" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Preço Normal (R$)</Label>
+              <Input type="number" value={form.preco_normal} onChange={e => updateForm("preco_normal", e.target.value)} placeholder="5500" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Desconto (%)</Label>
+              <Input type="number" value={form.pct_desconto} onChange={e => updateForm("pct_desconto", e.target.value)} placeholder="47" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Cia Aérea</Label>
+              <Input value={form.cia_aerea} onChange={e => updateForm("cia_aerea", e.target.value)} placeholder="LATAM" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Tipo de Voo</Label>
+              <Select value={form.tipo_voo} onValueChange={v => updateForm("tipo_voo", v)}>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-[#1e293b] border-white/10">
+                  <SelectItem value="ida_volta">Ida e Volta</SelectItem>
+                  <SelectItem value="ida">Só Ida</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-slate-400">Classe</Label>
+              <Select value={form.classe} onValueChange={v => updateForm("classe", v)}>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-[#1e293b] border-white/10">
+                  <SelectItem value="economica">Econômica</SelectItem>
+                  <SelectItem value="executiva">Executiva</SelectItem>
+                  <SelectItem value="primeira">Primeira</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-slate-400">Validade</Label>
+              <Input value={form.validade} onChange={e => updateForm("validade", e.target.value)} placeholder="10/05 a 18/05/2026" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Bagagem</Label>
+              <Input value={form.bagagem} onChange={e => updateForm("bagagem", e.target.value)} placeholder="Bagagem despachada inclusa" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Escalas</Label>
+              <Input value={form.escalas} onChange={e => updateForm("escalas", e.target.value)} placeholder="Voo direto" className="bg-white/5 border-white/10 text-white" />
+            </div>
+            <div>
+              <Label className="text-slate-400">Fonte</Label>
+              <Input value={form.fonte} onChange={e => updateForm("fonte", e.target.value)} placeholder="manual" className="bg-white/5 border-white/10 text-white" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowInsert(false)} className="border-white/20 text-white hover:bg-white/10">Cancelar</Button>
+            <Button onClick={handleInsertPromo} disabled={loading} className="bg-amber-600 hover:bg-amber-700">
+              {loading ? "Inserindo..." : "Inserir Promoção"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail Modal */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
