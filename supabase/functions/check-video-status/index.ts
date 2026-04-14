@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
           results.push({ id: video.id, requestId, newStatus: `still_${status}` });
         }
       } catch (err) {
+        console.error(`[check] Error checking video ${video.id}: ${String(err)}`);
         results.push({ id: video.id, requestId, newStatus: `check_error: ${String(err)}` });
       }
     }
