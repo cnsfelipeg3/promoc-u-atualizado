@@ -40,7 +40,9 @@ Deno.serve(async (req) => {
         const res = await fetch(statusUrl, {
           headers: { "hf-api-key": hfApiKey, "hf-secret": hfApiSecret },
         });
-        const data = await res.json();
+        const rawBody = await res.text();
+        console.log(`[check] Video ${video.id} request ${requestId}: status=${res.status}, body=${rawBody.substring(0, 500)}`);
+        const data = JSON.parse(rawBody);
         const status = data.status || data.state;
 
         if (status === "completed") {
