@@ -94,6 +94,7 @@ export type Database = {
       }
       promocoes: {
         Row: {
+          art_prompt: string | null
           bagagem: string | null
           cia_aerea: string | null
           classe: string | null
@@ -104,6 +105,7 @@ export type Database = {
           fonte: string | null
           id: string
           margem_pct: number | null
+          narration_script: string | null
           origem: string
           pct_desconto: number | null
           preco: number
@@ -116,8 +118,10 @@ export type Database = {
           updated_at: string | null
           url_fonte: string | null
           validade: string | null
+          video_prompt: string | null
         }
         Insert: {
+          art_prompt?: string | null
           bagagem?: string | null
           cia_aerea?: string | null
           classe?: string | null
@@ -128,6 +132,7 @@ export type Database = {
           fonte?: string | null
           id?: string
           margem_pct?: number | null
+          narration_script?: string | null
           origem: string
           pct_desconto?: number | null
           preco: number
@@ -140,8 +145,10 @@ export type Database = {
           updated_at?: string | null
           url_fonte?: string | null
           validade?: string | null
+          video_prompt?: string | null
         }
         Update: {
+          art_prompt?: string | null
           bagagem?: string | null
           cia_aerea?: string | null
           classe?: string | null
@@ -152,6 +159,7 @@ export type Database = {
           fonte?: string | null
           id?: string
           margem_pct?: number | null
+          narration_script?: string | null
           origem?: string
           pct_desconto?: number | null
           preco?: number
@@ -164,6 +172,7 @@ export type Database = {
           updated_at?: string | null
           url_fonte?: string | null
           validade?: string | null
+          video_prompt?: string | null
         }
         Relationships: []
       }

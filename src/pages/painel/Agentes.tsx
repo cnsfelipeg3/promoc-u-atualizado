@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Play, Bot, Search, Tag, Video, Shield } from "lucide-react";
+import { Play, Bot, Search, Tag, Video, Shield, Sparkles } from "lucide-react";
 
 interface AgentConfig {
   id: string;
@@ -25,6 +25,7 @@ interface AgentMeta {
 const agentMeta: Record<string, AgentMeta> = {
   cacador: { name: "Caçador", description: "Busca promoções em sites especializados", icon: Search, functionName: "agente-cacador" },
   precificador: { name: "Precificador", description: "Avalia e precifica promoções com IA", icon: Tag, functionName: "agente-precificador" },
+  promptengineer: { name: "Prompt Engineer", description: "Gera prompts cinematográficos e scripts de narração com IA", icon: Sparkles, functionName: "agente-promptengineer" },
   videomaker: { name: "VideoMaker", description: "Gera arte, narração e vídeo para promoções", icon: Video, functionName: "agente-videomaker" },
   aprovador: { name: "Aprovador", description: "Gerencia aprovação automática e manual", icon: Shield, functionName: "" },
 };
