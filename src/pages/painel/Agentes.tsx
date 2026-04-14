@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Play, Bot, Search, Tag, Video, Shield } from "lucide-react";
+import { Play, Bot, Search, Tag, Video, Shield, Sparkles } from "lucide-react";
 
 interface AgentConfig {
   id: string;
