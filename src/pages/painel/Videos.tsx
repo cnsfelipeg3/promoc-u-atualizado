@@ -123,17 +123,6 @@ const Videos = () => {
           </Select>
         </div>
       </div>
-          <SelectContent className="bg-[#1e293b] border-white/10">
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="gerando_arte">Gerando Arte</SelectItem>
-            <SelectItem value="com_arte">Com Arte</SelectItem>
-            <SelectItem value="gerando_video">Gerando Vídeo</SelectItem>
-            <SelectItem value="pronto">Pronto</SelectItem>
-            <SelectItem value="erro">Erro</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {videos.map((video) => (
