@@ -96,10 +96,33 @@ const Videos = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Vídeos</h1>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckStatus}
+            disabled={checking}
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <Search className="h-4 w-4 mr-1" />
+            {checking ? "Verificando..." : "Verificar Status"}
+          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e293b] border-white/10">
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="gerando_arte">Gerando Arte</SelectItem>
+              <SelectItem value="com_arte">Com Arte</SelectItem>
+              <SelectItem value="gerando_video">Gerando Vídeo</SelectItem>
+              <SelectItem value="pronto">Pronto</SelectItem>
+              <SelectItem value="erro">Erro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
           <SelectContent className="bg-[#1e293b] border-white/10">
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="pendente">Pendente</SelectItem>
