@@ -24,7 +24,32 @@ async function generateArt(promo: Record<string, unknown>): Promise<string | nul
     return null;
   }
 
-  const prompt = `Professional dark premium travel promotion poster. Route: ${promo.origem} to ${promo.destino}. Original price: R$${promo.preco_normal || promo.preco} crossed out. Promotional price: R$${promo.preco_cliente || promo.preco} highlighted in gold. ${promo.pct_desconto ? `${promo.pct_desconto}% OFF badge.` : ""} Airline: ${promo.cia_aerea || ""}. Style: dark navy blue background (#0f172a), golden accents (#f59e0b), airplane silhouette, modern bold typography, luxury travel aesthetic. Brand: PromoCéu logo. Aspect ratio 9:16 for Instagram Stories/Reels.`;
+  const precoCliente = promo.preco_cliente || promo.preco;
+  const precoNormal = promo.preco_normal || promo.preco;
+  const desconto = promo.pct_desconto ? `${promo.pct_desconto}%` : "";
+  const ciaAerea = promo.cia_aerea || "";
+  const escalas = promo.escalas || "";
+  const bagagem = promo.bagagem || "";
+  const tipoVoo = promo.tipo_voo === "ida_volta" ? "ida e volta" : "só ida";
+
+  const prompt = `Ultra-professional premium travel promotion poster for Instagram Stories/Reels (9:16 vertical format).
+
+BRAND: "PromoCéu" logo text prominently displayed at the top with a small airplane icon integrated into the logo. Clean modern sans-serif typography.
+
+COLOR PALETTE: Deep navy blue background (#0f172a), golden accents (#f59e0b) for price highlights and decorative elements, cyan (#06b6d4) for secondary accents and route indicators.
+
+LAYOUT (top to bottom):
+- Top: "PromoCéu" brand logo in white/gold with airplane icon
+- Route badge: "${promo.origem} → ${promo.destino}" in bold white text with cyan arrow
+- Center hero: Large golden price "R$ ${precoCliente}" per person, bold typography with shimmer effect
+- Strike-through original price "R$ ${precoNormal}" in faded gray above the golden price
+${desconto ? `- Discount badge: "-${desconto} OFF" in a vibrant red/gold badge` : ""}
+- Info pills below price: "${ciaAerea}" • "${escalas}" • "${bagagem}" • "${tipoVoo}"
+- Bottom footer: "Promoção exclusiva PromoCéu • Link na bio" in small white text
+
+STYLE: Dark luxury aesthetic, floating golden particles, subtle airplane silhouette in background, professional gradient overlays, glass-morphism card effects, premium travel agency advertisement quality. Modern bold typography throughout.
+
+IMPORTANT: All text must be clearly legible. The price must be the dominant visual element. Clean composition with proper hierarchy.`;
 
   try {
     const response = await fetch(
@@ -50,13 +75,11 @@ async function generateArt(promo: Record<string, unknown>): Promise<string | nul
 
     const data = await response.json();
     const statusUrl = data.status_url || data.request_url;
-    const requestId = data.request_id || data.id;
 
     if (!statusUrl) {
       throw new Error("No status_url returned from Higgsfield");
     }
 
-    // Poll for completion
     let result = null;
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
@@ -87,11 +110,17 @@ async function generateNarration(promo: Record<string, unknown>): Promise<string
     return null;
   }
 
-  const text = `Promoção imperdível! Voo de ${promo.origem} para ${promo.destino} por apenas ${promo.preco_cliente || promo.preco} reais! ${promo.pct_desconto ? `Isso é ${promo.pct_desconto}% de desconto` : "Preço incrível"} com a ${promo.cia_aerea || "companhia aérea"}! Corre que é por tempo limitado! Link na bio.`;
+  const precoCliente = promo.preco_cliente || promo.preco;
+  const desconto = promo.pct_desconto ? `quase ${promo.pct_desconto}% de desconto` : "um preço incrível";
+  const escalas = promo.escalas ? String(promo.escalas).toLowerCase() : "";
+  const bagagem = promo.bagagem ? `, com ${String(promo.bagagem).toLowerCase()},` : "";
+  const ciaAerea = promo.cia_aerea ? ` com a ${promo.cia_aerea}` : "";
+  const isDirecto = escalas.includes("direto");
+
+  const text = `Atenção viajantes! Achamos uma promoção ABSURDA! ${isDirecto ? "Voo direto de" : "Voo de"} ${promo.origem} pra ${promo.destino}, ida e volta${bagagem}, por apenas ${Math.floor(Number(precoCliente))} reais! Isso é ${desconto}${ciaAerea}! Corre que vaga tá acabando! Link na bio!`;
 
   try {
-    // Use a Brazilian Portuguese voice
-    const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah
+    const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah - multilingual
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
       {
@@ -104,9 +133,10 @@ async function generateNarration(promo: Record<string, unknown>): Promise<string
           text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.6,
+            stability: 0.5,
             similarity_boost: 0.8,
-            style: 0.4,
+            style: 0.5,
+            use_speaker_boost: true,
           },
         }),
       }
@@ -120,14 +150,12 @@ async function generateNarration(promo: Record<string, unknown>): Promise<string
     const audioBuffer = await response.arrayBuffer();
     const uint8Array = new Uint8Array(audioBuffer);
 
-    // Upload to Supabase Storage
     const fileName = `narrations/${promo.id}_${Date.now()}.mp3`;
     const { error: uploadError } = await supabase.storage
       .from("videos")
       .upload(fileName, uint8Array, { contentType: "audio/mpeg" });
 
     if (uploadError) {
-      // Try creating bucket first
       await supabase.storage.createBucket("videos", { public: true });
       const { error: retryError } = await supabase.storage
         .from("videos")
@@ -159,7 +187,7 @@ async function generateVideo(arteUrl: string, promoId: string): Promise<string |
         },
         body: JSON.stringify({
           image_url: arteUrl,
-          prompt: "Smooth cinematic zoom, golden shimmer effect, airplane flying across, professional motion graphics, luxury travel vibes",
+          prompt: "Dramatic cinematic zoom in, golden particles floating, airplane silhouette flying across frame, price text revealing with shimmer effect, premium luxury feel, smooth professional motion graphics",
           duration: 5,
         }),
       }
@@ -186,7 +214,6 @@ Deno.serve(async (req) => {
   try {
     await logAgente("Iniciando execução do VideoMaker", "info");
 
-    // Check if agent is active
     const { data: config } = await supabase
       .from("config_agentes")
       .select("*")
@@ -200,7 +227,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get body if called with specific promo ID
     let promoId: string | null = null;
     try {
       const body = await req.json();
@@ -209,7 +235,6 @@ Deno.serve(async (req) => {
       // No body
     }
 
-    // Get approved promos
     let query = supabase.from("promocoes").select("*").eq("status", "aprovada");
     if (promoId) {
       query = supabase.from("promocoes").select("*").eq("id", promoId);
@@ -229,10 +254,8 @@ Deno.serve(async (req) => {
 
     for (const promo of promos) {
       try {
-        // Update status
         await supabase.from("promocoes").update({ status: "em_producao" }).eq("id", promo.id);
 
-        // Create video record
         const { data: videoRecord, error: videoInsertError } = await supabase
           .from("videos")
           .insert({ promocao_id: promo.id, status: "gerando_arte" })
@@ -241,7 +264,6 @@ Deno.serve(async (req) => {
 
         if (videoInsertError) throw videoInsertError;
 
-        // Step 1: Generate art
         await logAgente(`Gerando arte para ${promo.origem}→${promo.destino}`, "info");
         const arteUrl = await generateArt(promo);
 
@@ -253,7 +275,6 @@ Deno.serve(async (req) => {
         await supabase.from("videos").update({ arte_url: arteUrl, status: "com_arte" }).eq("id", videoRecord.id);
         await logAgente(`Arte gerada para ${promo.origem}→${promo.destino}`, "success");
 
-        // Step 2: Generate narration
         await logAgente(`Gerando narração para ${promo.origem}→${promo.destino}`, "info");
         const narrationUrl = await generateNarration(promo);
 
@@ -262,7 +283,6 @@ Deno.serve(async (req) => {
           await logAgente(`Narração gerada para ${promo.origem}→${promo.destino}`, "success");
         }
 
-        // Step 3: Generate video (async via webhook)
         await logAgente(`Iniciando geração de vídeo para ${promo.origem}→${promo.destino}`, "info");
         await supabase.from("videos").update({ status: "gerando_video" }).eq("id", videoRecord.id);
         const requestId = await generateVideo(arteUrl, promo.id);
