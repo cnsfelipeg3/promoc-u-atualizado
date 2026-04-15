@@ -129,6 +129,18 @@ const Promocoes = () => {
     setLoading(false);
   };
 
+  const handleGeneratePrompts = async (id: string) => {
+    setLoading(true);
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agente-promptengineer`;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+      body: JSON.stringify({ promocao_id: id }),
+    });
+    toast.success("Geração de storyboard iniciada! Aguarde...");
+    setLoading(false);
+  };
+
   const handleInsertPromo = async () => {
     if (!form.origem || !form.destino || !form.preco) {
       toast.error("Preencha pelo menos origem, destino e preço");
