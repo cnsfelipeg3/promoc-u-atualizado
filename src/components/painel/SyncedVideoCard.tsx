@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, Play, Image as ImageIcon } from "lucide-react";
+import { Download, RefreshCw, Play, Film } from "lucide-react";
 
 interface VideoRecord {
   id: string;
@@ -10,6 +10,7 @@ interface VideoRecord {
   video_url: string | null;
   narration_url: string | null;
   video_final_url: string | null;
+  scene_video_url?: string | null;
   status: string;
   erro_detalhes: string | null;
   variation_label: string | null;
@@ -17,12 +18,14 @@ interface VideoRecord {
 
 const statusColors: Record<string, string> = {
   pendente: "bg-slate-500/20 text-slate-300",
+  gerando_cena: "bg-blue-500/20 text-blue-400",
+  com_cena: "bg-cyan-500/20 text-cyan-400",
   gerando_arte: "bg-blue-500/20 text-blue-400",
   com_arte: "bg-cyan-500/20 text-cyan-400",
-  gerando_video: "bg-amber-500/20 text-amber-400",
-  com_video: "bg-orange-500/20 text-orange-400",
   gerando_narracao: "bg-purple-500/20 text-purple-400",
   com_narracao: "bg-violet-500/20 text-violet-400",
+  gerando_video: "bg-amber-500/20 text-amber-400",
+  compondo_video: "bg-orange-500/20 text-orange-400",
   pronto: "bg-emerald-500/20 text-emerald-400",
   erro: "bg-red-500/20 text-red-400",
 };
@@ -44,73 +47,78 @@ const SyncedVideoCard = ({ video, onRegenerate }: Props) => {
 
   const vLabel = video.variation_label || "promo";
   const badge = variationBadges[vLabel] || variationBadges.promo;
+  // Prefer video_final_url (has audio baked in via Creatomate)
   const videoSrc = video.video_final_url || video.video_url;
+  const hasComposedVideo = !!video.video_final_url;
 
   const handlePlay = () => {
-    if (audioRef.current && videoRef.current) {
+    // Only sync separate audio if video_final_url is NOT composed (fallback mode)
+    if (!hasComposedVideo && audioRef.current && videoRef.current) {
       audioRef.current.currentTime = videoRef.current.currentTime;
       audioRef.current.play();
     }
   };
 
   const handlePause = () => {
-    audioRef.current?.pause();
+    if (!hasComposedVideo) audioRef.current?.pause();
   };
 
   const handleSeeked = () => {
-    if (audioRef.current && videoRef.current) {
+    if (!hasComposedVideo && audioRef.current && videoRef.current) {
       audioRef.current.currentTime = videoRef.current.currentTime;
     }
   };
 
   const handleEnded = () => {
-    audioRef.current?.pause();
+    if (!hasComposedVideo) audioRef.current?.pause();
   };
+
+  const statusLabel = video.status === "compondo_video" ? "Compondo..." :
+    video.status === "gerando_cena" ? "Gerando cena..." :
+    video.status === "com_cena" ? "Cena pronta" :
+    video.status;
 
   return (
     <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
       {/* Header badges */}
       <div className="p-2 border-b border-white/10 flex items-center justify-between">
         <Badge className={badge.color}>{badge.icon} {badge.label}</Badge>
-        <Badge className={statusColors[video.status] || ""}>{video.status}</Badge>
+        <Badge className={statusColors[video.status] || ""}>{statusLabel}</Badge>
       </div>
 
-      {/* Arte thumbnail */}
+      {/* Video preview area */}
       <div className="aspect-[9/16] max-h-[240px] bg-slate-800 relative overflow-hidden">
-        {video.arte_url ? (
+        {videoSrc ? (
+          <video
+            ref={videoRef}
+            src={videoSrc}
+            controls
+            className="w-full h-full object-cover"
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onSeeked={handleSeeked}
+            onEnded={handleEnded}
+          />
+        ) : video.arte_url ? (
           <img src={video.arte_url} alt="Arte" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="h-10 w-10 text-slate-600" />
-          </div>
-        )}
-        {videoSrc && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <Play className="h-10 w-10 text-white" />
+            <Film className="h-10 w-10 text-slate-600" />
           </div>
         )}
       </div>
 
+      {/* Hidden audio for sync fallback */}
+      {!hasComposedVideo && video.narration_url && (
+        <audio ref={audioRef} src={video.narration_url} preload="auto" />
+      )}
+
       <div className="p-3 space-y-2">
-        {/* Synced video + hidden audio */}
-        {videoSrc && (
-          <>
-            <video
-              ref={videoRef}
-              src={videoSrc}
-              controls
-              className="w-full rounded-md"
-              style={{ maxHeight: 160 }}
-              onPlay={handlePlay}
-              onPause={handlePause}
-              onSeeked={handleSeeked}
-              onEnded={handleEnded}
-            />
-            {video.narration_url && (
-              <audio ref={audioRef} src={video.narration_url} preload="auto" />
-            )}
-            <p className="text-[10px] text-emerald-400/70">🔊 Narração sincronizada com o vídeo</p>
-          </>
+        {hasComposedVideo && (
+          <p className="text-[10px] text-emerald-400/70">🎬 Vídeo composto (narração + overlays + música)</p>
+        )}
+        {!hasComposedVideo && video.narration_url && videoSrc && (
+          <p className="text-[10px] text-amber-400/70">🔊 Narração sincronizada (sem composição)</p>
         )}
 
         {/* Standalone audio if no video yet */}
@@ -124,9 +132,10 @@ const SyncedVideoCard = ({ video, onRegenerate }: Props) => {
 
         {/* Status checklist */}
         <div className="text-xs text-slate-500 space-y-0.5">
-          {video.arte_url && <p>✓ Arte</p>}
+          {(video.scene_video_url || video.arte_url) && <p>✓ Cena</p>}
           {video.narration_url && <p>✓ Narração</p>}
-          {videoSrc && <p>✓ Vídeo</p>}
+          {video.video_final_url && <p>✓ Vídeo composto</p>}
+          {!video.video_final_url && videoSrc && <p>✓ Vídeo (sem composição)</p>}
         </div>
 
         {/* Actions */}

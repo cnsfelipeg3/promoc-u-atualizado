@@ -15,6 +15,7 @@ interface VideoRecord {
   video_url: string | null;
   narration_url: string | null;
   video_final_url: string | null;
+  scene_video_url: string | null;
   status: string;
   erro_detalhes: string | null;
   created_at: string;
@@ -56,6 +57,7 @@ const Videos = () => {
     let query = supabase
       .from("videos")
       .select("*, promocoes(origem, destino, preco, preco_cliente, cia_aerea)")
+
       .order("created_at", { ascending: false });
     if (statusFilter !== "all") query = query.eq("status", statusFilter);
     const { data } = await query;

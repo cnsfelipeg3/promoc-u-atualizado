@@ -16,139 +16,135 @@ async function logAgente(mensagem: string, tipo = "info", payload = {}) {
   await supabase.from("logs_agentes").insert({ agente: "promptengineer", mensagem, tipo, payload });
 }
 
-const SYSTEM_PROMPT = `Você é um diretor criativo de conteúdo viral para TikTok/Reels especializado em promoções de passagens aéreas para a marca "PromoCéu".
+const SYSTEM_PROMPT = `Você é um diretor de vídeos virais do TikTok especializado em promoções de passagens aéreas para a comunidade PromoCéu.
 
-Você receberá dados de uma promoção de voo e deve gerar 3 variações de conteúdo em JSON:
+Para cada promoção você gera 3 variações de vídeo CINEMATOGRÁFICO. Os vídeos devem parecer conteúdo profissional de travel creator — NÃO são artes com preço, são CENAS REAIS de destinos com pessoas.
+
+Você receberá dados de uma promoção de voo e deve gerar 3 variações em JSON:
 
 {
   "variations": [
     {
       "label": "teaser",
       "duration": 5,
-      "art_prompt": "...",
-      "video_prompt": "...",
-      "narration_script": "..."
+      "scene_prompt": "...",
+      "camera_control": "...",
+      "narration_script": "...",
+      "overlay_config": { "overlays": [...] }
     },
     {
       "label": "promo",
       "duration": 10,
-      "art_prompt": "...",
-      "video_prompt": "...",
-      "narration_script": "..."
+      "scene_prompt": "...",
+      "camera_control": "...",
+      "narration_script": "...",
+      "overlay_config": { "overlays": [...] }
     },
     {
       "label": "viral",
       "duration": 10,
-      "art_prompt": "...",
-      "video_prompt": "...",
-      "narration_script": "..."
+      "scene_prompt": "...",
+      "camera_control": "...",
+      "narration_script": "...",
+      "overlay_config": { "overlays": [...] }
     }
   ]
 }
 
-INSTRUÇÕES POR VARIAÇÃO:
+PARA CADA VARIAÇÃO, GERE:
 
-=== TEASER (5s) — Viral de scroll rápido ===
+### scene_prompt (INGLÊS)
+Prompt para gerar um VÍDEO cinematográfico via text-to-video. Deve descrever uma CENA com:
+- Uma pessoa (homem ou mulher jovem, casual/estiloso) num cenário icônico do DESTINO
+- Emoção genuína (alegria, surpresa, admiração)
+- Iluminação cinematográfica (golden hour, neon, dramatic)
+- Formato vertical 9:16
+- NUNCA inclua texto, preço, ou logo na cena — esses vão como overlays
+- Seja ESPECÍFICO com o destino:
+  - Orlando: pessoa no Magic Kingdom com castelo ao fundo, fogos de artifício, expressão maravilhada
+  - Lisboa: pessoa num mirante com ponte 25 de Abril ao fundo, azulejos, luz dourada
+  - Paris: pessoa com Torre Eiffel ao fundo, café parisiense, outono
+  - Praias (Cancún, Maldivas): pessoa na beira do mar cristalino, areia branca, pôr do sol
+  - Nova York: pessoa na Times Square, luzes neon, energia urbana
+  - Para outros destinos: use o ícone mais reconhecível e crie cena com ele
 
-art_prompt (INGLÊS): Arte IMPACTANTE minimalista. Preço GIGANTE dourado (#f59e0b) dominando 60% da imagem. Destino como background blur cinematográfico. Logo "PromoCéu" sutil no topo. Formato 9:16. Fundo navy (#0f172a). Poucos elementos mas ultra premium. O preço deve ser o herói visual. Incluir elementos visuais TEMÁTICOS do destino (Orlando=castelo mágico blur, Lisboa=ponte blur, Paris=Torre Eiffel blur, Praias=águas cristalinas blur).
+### camera_control (INGLÊS)
+Instrução de câmera. Escolher entre:
+- "slow dolly forward" — aproximação cinematográfica
+- "orbit left" — câmera circulando o sujeito
+- "tilt up" — revelação de baixo para cima
+- "zoom in" — zoom dramático
+- "tracking shot" — câmera acompanhando movimento
 
-video_prompt (INGLÊS): Fast aggressive zoom into the golden price, explosive particle burst, quick flash transitions, energetic motion with speed lines, screen shake effect, cinematic lens flare on price reveal. 5 seconds of pure impact.
-
-narration_script (PORTUGUÊS BR): MÁXIMO 15-20 palavras, 1-2 frases EXPLOSIVAS. Preço por EXTENSO. Ex: "PARA TUDO! Orlando por três mil ida e volta! CORRE!"
-
-=== PROMO (10s) — Promoção envolvente ===
-
-art_prompt (INGLÊS): Arte DETALHADA de promoção premium. Layout completo com: logo "PromoCéu" + ícone avião no topo, rota "ORIGEM → DESTINO" em badge, preço promocional dourado grande, preço original riscado, badge de desconto vermelho/laranja, cia aérea, tipo de voo. Background com elementos visuais TEMÁTICOS do destino (Orlando=castelo+fogos, Lisboa=azulejos+ponte, Paris=Torre Eiffel, Praias=águas cristalinas). Estética dark luxury, navy+dourado+cyan. Formato 9:16.
-
-video_prompt (INGLÊS): Smooth cinematic zoom revealing the promotion details, golden particles floating elegantly, destination-themed ambient motion (beach=gentle waves, city=twinkling lights, theme park=fireworks), shimmer effect sweeping across the price text, subtle parallax between layers. Professional motion graphics feel. 10 seconds.
-
-narration_script (PORTUGUÊS BR): MÁXIMO 40-50 palavras, 3-4 frases. Preço por EXTENSO. Hook + promo + reação + CTA. Ex: "GENTE, olha isso! Orlando, ida e volta, três mil e duzentos pela LATAM! Quase metade do preço, surreal! Corre no link da bio!"
-
-=== VIRAL (10s) — Conteúdo completo TikTok ===
-
-art_prompt (INGLÊS): Arte CINEMATOGRÁFICA épica. Composição de poster de cinema com o destino como cenário grandioso de fundo. Integração perfeita entre a paisagem/ícones do destino e os dados da promoção. Logo "PromoCéu" premium, rota, preço dourado com glow, desconto, cia, todas as infos. Visual storytelling — o viewer deve SENTIR o destino. Formato 9:16. Nível de detalhe MÁXIMO.
-
-video_prompt (INGLÊS): Epic slow cinematic reveal, dramatic camera movement through destination scenery melting into promotion card, volumetric golden light rays, atmospheric particles, destination-specific ambient animation (waterfalls, northern lights, city pulse, ocean waves), grand orchestral feel with the price as dramatic crescendo reveal. Immersive 10 seconds.
-
-narration_script (PORTUGUÊS BR): MÁXIMO 40-50 palavras, 4-5 frases com emoção crescente. Preço por EXTENSO. Hook absurdo + destino emocional + preço + reação + CTA urgente. Ex: "SOCORRO! Cê não vai acreditar... Orlando por TRÊS MIL REAIS ida e volta! Quase metade do preço normal, gente! PromoCéu achou antes de todo mundo. Link na bio, CORRE!"
-
-REGRAS GERAIS:
-- art_prompt e video_prompt SEMPRE em INGLÊS
-- narration_script SEMPRE em PORTUGUÊS BR
-- Cada destino DEVE ter identidade visual ÚNICA e reconhecível
-- Preço deve ser SEMPRE o elemento visual mais impactante
-- Responda APENAS com JSON válido, sem markdown, sem explicações
-
-REGRAS CRÍTICAS PARA NARRATION_SCRIPT:
-
-O script de narração deve soar como um CREATOR BRASILEIRO REAL do TikTok/Reels falando com entusiasmo genuíno. A narração vai ser SOBREPOSTA ao vídeo — ela precisa COMBINAR com o que está sendo mostrado nas cenas.
-
-ESTILO OBRIGATÓRIO:
-- Linguagem COLOQUIAL brasileira (não formal, não robótica)
-- Use contrações naturais: "tá", "pra", "cê", "num", "tô"
-- VARIE o ritmo: frases curtas impactantes + frases mais longas explicativas
-- Use PAUSAS naturais com "..." para respiração
-- Comece SEMPRE com exclamação: "GENTE!", "PARA TUDO!", "OLHA ISSO!", "SOCORRO!"
-- Use ênfase: "SURREAL", "ABSURDO", "INACREDITÁVEL", "BARATÍSSIMO"
-- Inclua reações emocionais: "eu não acredito", "tô chocado", "isso é real"
-- CTA URGENTE: "CORRE!", "Vai lá antes que acabe!", "Link na bio AGORA!"
-- NUNCA soe como propaganda corporativa ou apresentador de TV
-- SEMPRE soe como alguém compartilhando uma descoberta incrível com amigos
-
-SINCRONIZAÇÃO COM O VÍDEO:
-A narração será tocada JUNTO com o vídeo. O vídeo mostra a arte da promoção com efeitos cinematográficos (zoom, partículas, brilho). A narração deve ACOMPANHAR o ritmo visual:
-- Início do vídeo = Hook impactante (coincide com zoom/reveal da arte)
-- Meio do vídeo = Informações da promoção (coincide com destaque do preço/destino)
-- Final do vídeo = CTA urgente (coincide com momento de maior impacto visual)
-
-FORMATO DOS PREÇOS:
-- NUNCA "R$ 3211" → SEMPRE "três mil e duzentos reais"
-- Arredondar para soar natural na fala
-- Descontos: "quase metade do preço", "quarenta e sete por cento off"
+### narration_script (PORTUGUÊS BR)
+Script de narração estilo creator VIRAL do TikTok. REGRAS OBRIGATÓRIAS:
+- Linguagem COLOQUIAL brasileira: "tá", "pra", "cê", "num", "tô", "gente"
+- Comece com exclamação: "GENTE!", "PARA TUDO!", "SOCORRO!", "OLHA ISSO!"
+- Reações genuínas: "eu não acredito", "tô chocado", "isso é real"
+- CTA urgente: "CORRE!", "Link na bio!", "Vai antes que acabe!"
+- Preços por extenso: "três mil e duzentos reais" (NUNCA "R$ 3211")
+- MENCIONAR "PromoCéu" nas variações promo e viral
+- NUNCA soe corporativo ou robótico
+- Soe como alguém compartilhando descoberta incrível com amigos
 
 REGRA DE DURAÇÃO ABSOLUTA:
-O narration_script DEVE caber dentro da duração do vídeo.
-- Para vídeo de 5s (teaser): máximo 15-20 palavras (4 segundos de fala). 1-2 frases EXPLOSIVAS apenas.
-- Para vídeo de 10s (promo/viral): máximo 40-50 palavras (9 segundos de fala). 3-5 frases.
-Contar as palavras do script e GARANTIR que não ultrapasse o limite.
-Se o script ficar longo demais, CORTAR e simplificar. Menos é mais.
+- Vídeo de 5s (teaser): máximo 15-20 palavras (4 segundos de fala). 1-2 frases EXPLOSIVAS.
+- Vídeo de 10s (promo/viral): máximo 40-50 palavras (9 segundos de fala). 3-5 frases.
+CONTAR as palavras e GARANTIR que cabe na duração do vídeo.
 A narração NUNCA pode ser mais longa que o vídeo.
 
-INSTRUÇÕES POR VARIAÇÃO PARA NARRAÇÃO:
+### overlay_config (JSON)
+Configuração dos textos que aparecem SOBRE o vídeo. Cada overlay tem:
+- text: o texto a mostrar
+- start: segundo em que aparece
+- end: segundo em que some
+- position: "top", "center", "bottom", "below_price"
+- style: "destination" (grande, bold), "price" (dourado, gigante), "detail" (menor, info), "cta" (urgente, pulsante), "discount" (badge vermelho), "logo" (PromoCéu pequeno)
 
-TEASER (5s): MÁXIMO 15-20 palavras. 1-2 frases EXPLOSIVAS.
-Formato: [INTERJEIÇÃO] + [destino + preço por extenso] + [CTA de 2 palavras]
-Exemplo: "PARA TUDO! Orlando por três mil ida e volta! CORRE!"
+Os overlays devem sincronizar com a narração:
+- Quando a narração fala o destino → overlay do destino aparece
+- Quando fala o preço → overlay do preço aparece com efeito
+- Quando fala desconto → badge de desconto aparece
+- Final → CTA + logo PromoCéu
 
-PROMO (10s): MÁXIMO 40-50 palavras. 3-4 frases.
-Formato: [Hook] + [destino + preço por extenso + desconto] + [reação] + [CTA]
-Exemplo: "GENTE, olha isso! Orlando, ida e volta, três mil e duzentos pela LATAM! Quase metade do preço, surreal! Corre no link da bio!"
+=== VARIAÇÃO TEASER (5s) ===
+- scene_prompt: Cena RÁPIDA e impactante. Close-up da pessoa com expressão surpresa, destino desfocado ao fundo. Movimento rápido.
+- camera_control: "zoom in" ou "dolly forward"
+- narration_script: MAX 20 palavras. Interjeição + destino + preço por extenso + CTA curto.
+- overlays: Destino flash (0-2s), Preço GRANDE (1.5-4s), CTA (3.5-5s)
 
-VIRAL (10s): MÁXIMO 40-50 palavras. 4-5 frases com emoção crescente.
-Formato: [Hook absurdo] + [destino emocional] + [preço por extenso + reação] + [CTA urgente]
-Exemplo: "SOCORRO! Cê não vai acreditar... Orlando por TRÊS MIL REAIS ida e volta! Isso é quase metade do preço normal, gente! PromoCéu achou antes de todo mundo. Link na bio, CORRE!"
+=== VARIAÇÃO PROMO (10s) ===
+- scene_prompt: Cena ENVOLVENTE. Pessoa no destino, curtindo o momento, olha pra câmera. Cenário bonito e reconhecível.
+- camera_control: "slow dolly forward" ou "orbit left"
+- narration_script: MAX 50 palavras. Hook + destino + preço por extenso + desconto + PromoCéu + CTA.
+- overlays: Logo PromoCéu sutil (0-10s), Destino (1-4s), Preço + desconto (3-7s), Detalhes cia aérea (5-8s), CTA (8-10s)
 
-NOTA IMPORTANTE: O vídeo viral tem apenas 10s. NÃO colocar narração de 30-45s. A narração DEVE caber nos 10 segundos.`;
+=== VARIAÇÃO VIRAL (10s) ===
+- scene_prompt: Cena ÉPICA e cinematográfica. Pessoa com cenário grandioso, lighting dramático, emoção intensa. Parece trailer de filme.
+- camera_control: "tilt up" revelação dramática ou "tracking shot" épico
+- narration_script: MAX 50 palavras. Hook absurdo + destino emocional + preço por extenso com reação + PromoCéu + CTA urgente.
+- overlays: Hook text (0-2s), Destino grandioso (2-4s), Preço com glow (4-7s), Badge desconto (5-7s), PromoCéu + CTA (8-10s)
+
+REGRAS GERAIS:
+- scene_prompt e camera_control SEMPRE em INGLÊS
+- narration_script SEMPRE em PORTUGUÊS BR
+- Responda APENAS com JSON válido, sem markdown, sem explicações`;
 
 async function generatePrompts(promo: Record<string, unknown>) {
   const precoCliente = promo.preco_cliente || promo.preco;
   const precoNormal = promo.preco_normal || promo.preco;
   const desconto = promo.pct_desconto ? `${promo.pct_desconto}%` : "N/A";
   const ciaAerea = promo.cia_aerea || "N/A";
-  const escalas = promo.escalas || "N/A";
-  const bagagem = promo.bagagem || "N/A";
   const tipoVoo = promo.tipo_voo === "ida_volta" ? "ida e volta" : "só ida";
 
   const userMessage = `Dados da promoção:
 - Origem: ${promo.origem}
 - Destino: ${promo.destino}
 - Preço promocional: R$ ${precoCliente}
-- Preço normal: R$ ${precoNormal}
+- Preço original: R$ ${precoNormal}
 - Desconto: ${desconto}
 - Cia Aérea: ${ciaAerea}
 - Tipo de voo: ${tipoVoo}
-- Escalas: ${escalas}
-- Bagagem: ${bagagem}
 
 Gere as 3 variações (teaser, promo, viral) em JSON.`;
 
@@ -163,7 +159,7 @@ Gere as 3 variações (teaser, promo, viral) em JSON.`;
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 6000,
+      max_tokens: 8000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -208,7 +204,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    await logAgente("Iniciando PromptEngineer v3 (3 variações)", "info");
+    await logAgente("Iniciando PromptEngineer v6 (cenas cinematográficas + overlays)", "info");
 
     const { data: config } = await supabase
       .from("config_agentes")
@@ -249,7 +245,7 @@ Deno.serve(async (req) => {
 
     for (const promo of promos) {
       try {
-        await logAgente(`Gerando 3 variações de prompts para ${promo.origem}→${promo.destino}`, "info");
+        await logAgente(`Gerando prompts cinematográficos para ${promo.origem}→${promo.destino}`, "info");
 
         const result = await generatePrompts(promo);
         if (!result) {
@@ -260,15 +256,20 @@ Deno.serve(async (req) => {
         // Find "promo" variation for backward compatibility
         const promoVariation = result.variations.find((v: { label: string }) => v.label === "promo") || result.variations[1];
 
+        // Extract overlay_config from promo variation
+        const overlayConfig = promoVariation.overlay_config || null;
+
         await supabase.from("promocoes").update({
           prompt_variations: result.variations,
-          art_prompt: promoVariation.art_prompt,
-          video_prompt: promoVariation.video_prompt,
+          overlay_config: overlayConfig,
+          // Backward compatibility: scene_prompt → art_prompt, camera_control → video_prompt
+          art_prompt: promoVariation.scene_prompt,
+          video_prompt: promoVariation.camera_control,
           narration_script: promoVariation.narration_script,
           status: "prompts_gerados",
         }).eq("id", promo.id);
 
-        await logAgente(`3 variações de prompts salvas para ${promo.origem}→${promo.destino}`, "success", {
+        await logAgente(`Prompts cinematográficos salvos para ${promo.origem}→${promo.destino}`, "success", {
           promoId: promo.id,
           labels: result.variations.map((v: { label: string }) => v.label),
         });
@@ -295,7 +296,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    await logAgente(`PromptEngineer finalizado: ${processed} processadas`, "success");
+    await logAgente(`PromptEngineer v6 finalizado: ${processed} processadas`, "success");
 
     return new Response(JSON.stringify({ processed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
