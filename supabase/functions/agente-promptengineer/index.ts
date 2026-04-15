@@ -54,7 +54,7 @@ art_prompt (INGLÊS): Arte IMPACTANTE minimalista. Preço GIGANTE dourado (#f59e
 
 video_prompt (INGLÊS): Fast aggressive zoom into the golden price, explosive particle burst, quick flash transitions, energetic motion with speed lines, screen shake effect, cinematic lens flare on price reveal. 5 seconds of pure impact.
 
-narration_script (PORTUGUÊS BR): MÁXIMO 2 frases. Hook + preço + CTA. Ex: "PARA TUDO! [Destino] por apenas [preço] reais, ida e volta! Link na bio, CORRE!"
+narration_script (PORTUGUÊS BR): MÁXIMO 15-20 palavras, 1-2 frases EXPLOSIVAS. Preço por EXTENSO. Ex: "PARA TUDO! Orlando por três mil ida e volta! CORRE!"
 
 === PROMO (10s) — Promoção envolvente ===
 
@@ -62,10 +62,7 @@ art_prompt (INGLÊS): Arte DETALHADA de promoção premium. Layout completo com:
 
 video_prompt (INGLÊS): Smooth cinematic zoom revealing the promotion details, golden particles floating elegantly, destination-themed ambient motion (beach=gentle waves, city=twinkling lights, theme park=fireworks), shimmer effect sweeping across the price text, subtle parallax between layers. Professional motion graphics feel. 10 seconds.
 
-narration_script (PORTUGUÊS BR): Estrutura COMPLETA:
-- HOOK (3s): Frase viral de impacto. "Gente, OLHA essa promoção que a gente achou!"
-- PROMO (8-10s): Destino + preço + desconto + cia aérea com ENTUSIASMO. Contextualizar o destino. "Imagina você em [destino]... por apenas [preço] reais! Isso é [desconto]% de desconto!"
-- CTA (3s): "Link na bio! Corre que esgota RÁPIDO!"
+narration_script (PORTUGUÊS BR): MÁXIMO 40-50 palavras, 3-4 frases. Preço por EXTENSO. Hook + promo + reação + CTA. Ex: "GENTE, olha isso! Orlando, ida e volta, três mil e duzentos pela LATAM! Quase metade do preço, surreal! Corre no link da bio!"
 
 === VIRAL (10s) — Conteúdo completo TikTok ===
 
@@ -73,18 +70,65 @@ art_prompt (INGLÊS): Arte CINEMATOGRÁFICA épica. Composição de poster de ci
 
 video_prompt (INGLÊS): Epic slow cinematic reveal, dramatic camera movement through destination scenery melting into promotion card, volumetric golden light rays, atmospheric particles, destination-specific ambient animation (waterfalls, northern lights, city pulse, ocean waves), grand orchestral feel with the price as dramatic crescendo reveal. Immersive 10 seconds.
 
-narration_script (PORTUGUÊS BR): Script COMPLETO estilo creator TikTok viral:
-- HOOK (3s): Frase ABSURDA de impacto. "Gente, isso é SURREAL" ou "Para TUDO que eu acabei de achar!"
-- PROMO (12-15s): Apresentação EMPOLGADA com contexto do destino. "Sabe aquele sonho de conhecer [destino]? Então, a gente acabou de achar passagem de [origem] pra [destino] por apenas [preço] reais, ida e volta pela [cia]! Isso é quase [desconto] de desconto do preço normal! É promoção REAL, gente!"
-- COMUNIDADE (8-10s): Pitch da PromoCéu. "Aqui na PromoCéu a gente monitora MILHARES de rotas todos os dias pra achar promoções assim ANTES de todo mundo. Nossa equipe de inteligência artificial vasculha companhias aéreas 24 horas por dia."
-- CTA (5s): "Se você quer receber promoções como essa DIRETO no celular, entra no nosso grupo VIP do WhatsApp! Link na bio. Corre que vaga tá acabando!"
+narration_script (PORTUGUÊS BR): MÁXIMO 40-50 palavras, 4-5 frases com emoção crescente. Preço por EXTENSO. Hook absurdo + destino emocional + preço + reação + CTA urgente. Ex: "SOCORRO! Cê não vai acreditar... Orlando por TRÊS MIL REAIS ida e volta! Quase metade do preço normal, gente! PromoCéu achou antes de todo mundo. Link na bio, CORRE!"
 
 REGRAS GERAIS:
 - art_prompt e video_prompt SEMPRE em INGLÊS
 - narration_script SEMPRE em PORTUGUÊS BR
 - Cada destino DEVE ter identidade visual ÚNICA e reconhecível
 - Preço deve ser SEMPRE o elemento visual mais impactante
-- Responda APENAS com JSON válido, sem markdown, sem explicações`;
+- Responda APENAS com JSON válido, sem markdown, sem explicações
+
+REGRAS CRÍTICAS PARA NARRATION_SCRIPT:
+
+O script de narração deve soar como um CREATOR BRASILEIRO REAL do TikTok/Reels falando com entusiasmo genuíno. A narração vai ser SOBREPOSTA ao vídeo — ela precisa COMBINAR com o que está sendo mostrado nas cenas.
+
+ESTILO OBRIGATÓRIO:
+- Linguagem COLOQUIAL brasileira (não formal, não robótica)
+- Use contrações naturais: "tá", "pra", "cê", "num", "tô"
+- VARIE o ritmo: frases curtas impactantes + frases mais longas explicativas
+- Use PAUSAS naturais com "..." para respiração
+- Comece SEMPRE com exclamação: "GENTE!", "PARA TUDO!", "OLHA ISSO!", "SOCORRO!"
+- Use ênfase: "SURREAL", "ABSURDO", "INACREDITÁVEL", "BARATÍSSIMO"
+- Inclua reações emocionais: "eu não acredito", "tô chocado", "isso é real"
+- CTA URGENTE: "CORRE!", "Vai lá antes que acabe!", "Link na bio AGORA!"
+- NUNCA soe como propaganda corporativa ou apresentador de TV
+- SEMPRE soe como alguém compartilhando uma descoberta incrível com amigos
+
+SINCRONIZAÇÃO COM O VÍDEO:
+A narração será tocada JUNTO com o vídeo. O vídeo mostra a arte da promoção com efeitos cinematográficos (zoom, partículas, brilho). A narração deve ACOMPANHAR o ritmo visual:
+- Início do vídeo = Hook impactante (coincide com zoom/reveal da arte)
+- Meio do vídeo = Informações da promoção (coincide com destaque do preço/destino)
+- Final do vídeo = CTA urgente (coincide com momento de maior impacto visual)
+
+FORMATO DOS PREÇOS:
+- NUNCA "R$ 3211" → SEMPRE "três mil e duzentos reais"
+- Arredondar para soar natural na fala
+- Descontos: "quase metade do preço", "quarenta e sete por cento off"
+
+REGRA DE DURAÇÃO ABSOLUTA:
+O narration_script DEVE caber dentro da duração do vídeo.
+- Para vídeo de 5s (teaser): máximo 15-20 palavras (4 segundos de fala). 1-2 frases EXPLOSIVAS apenas.
+- Para vídeo de 10s (promo/viral): máximo 40-50 palavras (9 segundos de fala). 3-5 frases.
+Contar as palavras do script e GARANTIR que não ultrapasse o limite.
+Se o script ficar longo demais, CORTAR e simplificar. Menos é mais.
+A narração NUNCA pode ser mais longa que o vídeo.
+
+INSTRUÇÕES POR VARIAÇÃO PARA NARRAÇÃO:
+
+TEASER (5s): MÁXIMO 15-20 palavras. 1-2 frases EXPLOSIVAS.
+Formato: [INTERJEIÇÃO] + [destino + preço por extenso] + [CTA de 2 palavras]
+Exemplo: "PARA TUDO! Orlando por três mil ida e volta! CORRE!"
+
+PROMO (10s): MÁXIMO 40-50 palavras. 3-4 frases.
+Formato: [Hook] + [destino + preço por extenso + desconto] + [reação] + [CTA]
+Exemplo: "GENTE, olha isso! Orlando, ida e volta, três mil e duzentos pela LATAM! Quase metade do preço, surreal! Corre no link da bio!"
+
+VIRAL (10s): MÁXIMO 40-50 palavras. 4-5 frases com emoção crescente.
+Formato: [Hook absurdo] + [destino emocional] + [preço por extenso + reação] + [CTA urgente]
+Exemplo: "SOCORRO! Cê não vai acreditar... Orlando por TRÊS MIL REAIS ida e volta! Isso é quase metade do preço normal, gente! PromoCéu achou antes de todo mundo. Link na bio, CORRE!"
+
+NOTA IMPORTANTE: O vídeo viral tem apenas 10s. NÃO colocar narração de 30-45s. A narração DEVE caber nos 10 segundos.`;
 
 async function generatePrompts(promo: Record<string, unknown>) {
   const precoCliente = promo.preco_cliente || promo.preco;
