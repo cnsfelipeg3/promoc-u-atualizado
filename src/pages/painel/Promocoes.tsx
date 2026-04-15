@@ -30,6 +30,11 @@ interface Promo {
   status: string;
   fonte: string | null;
   created_at: string;
+  prompt_variations: Json | null;
+  overlay_config: Json | null;
+  narration_script: string | null;
+  art_prompt: string | null;
+  video_prompt: string | null;
 }
 
 const statusColors: Record<string, string> = {
