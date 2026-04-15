@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, CheckCircle, XCircle, RefreshCw, Video, Eye, Plus } from "lucide-react";
+import { Search, CheckCircle, XCircle, RefreshCw, Video, Eye, Plus, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Json } from "@/integrations/supabase/types";
 
 interface Promo {
   id: string;
