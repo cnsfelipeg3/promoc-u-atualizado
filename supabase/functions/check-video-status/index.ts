@@ -38,6 +38,71 @@ type VideoPayload = {
   part_b_url?: string | null;
 };
 
+async function hydrateLegacySceneJobs(video: { created_at?: string | null }, payload: VideoPayload): Promise<VideoPayload> {
+  if (payload.part_a || payload.part_b || !payload.storyboard || !video.created_at) return payload;
+
+  const storyboard = payload.storyboard as {
+    part_a?: { prompt?: string };
+    part_b?: { prompt?: string };
+    narration_script?: string;
+    overlay_config?: VideoPayload["overlay_config"];
+  };
+
+  const { data: logs } = await supabase
+    .from("logs_agentes")
+    .select("mensagem, payload, created_at")
+    .eq("agente", "videomaker")
+    .like("mensagem", "%I2V aceito via%")
+    .gte("created_at", video.created_at)
+    .order("created_at", { ascending: true })
+    .limit(10);
+
+  let partA = payload.part_a ?? null;
+  let partB = payload.part_b ?? null;
+
+  for (const log of logs || []) {
+    const responseString = typeof (log.payload as any)?.response === "string" ? (log.payload as any).response : null;
+    if (!responseString) continue;
+
+    try {
+      const parsed = JSON.parse(responseString);
+      const requestId = parsed.request_id || parsed.id;
+      const statusUrl = parsed.status_url || (requestId ? `https://platform.higgsfield.ai/requests/${requestId}/status` : null);
+      if (!requestId || !statusUrl) continue;
+
+      if (log.mensagem.includes("[Parte_A]")) {
+        partA = {
+          label: "Parte_A",
+          prompt: storyboard.part_a?.prompt,
+          request_id: requestId,
+          status_url: statusUrl,
+          status: "queued",
+        };
+      }
+
+      if (log.mensagem.includes("[Parte_B]")) {
+        partB = {
+          label: "Parte_B",
+          prompt: storyboard.part_b?.prompt,
+          request_id: requestId,
+          status_url: statusUrl,
+          status: "queued",
+        };
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return {
+    ...payload,
+    narration_script: payload.narration_script || storyboard.narration_script,
+    overlay_config: payload.overlay_config || storyboard.overlay_config || null,
+    part_a: partA,
+    part_b: partB,
+  };
+}
+
 async function logAgente(mensagem: string, tipo = "info", payload: Record<string, unknown> = {}) {
   console.log(`[check-video-status][${tipo}] ${mensagem}`, JSON.stringify(payload));
   await supabase.from("logs_agentes").insert({ agente: "videomaker", mensagem, tipo, payload });
@@ -239,7 +304,7 @@ Deno.serve(async (req) => {
   try {
     const { data: pendingVideos } = await supabase
       .from("videos")
-      .select("id, higgsfield_request_id, promocao_id, video_url, video_final_url, narration_url, payload, status, promocoes(origem, destino)")
+      .select("id, created_at, higgsfield_request_id, promocao_id, video_url, video_final_url, narration_url, payload, status, promocoes(origem, destino)")
       .in("status", ["gerando_video", "gerando_cena", "gerando_narracao", "compondo_video"]);
 
     if (!pendingVideos?.length) {
@@ -251,7 +316,8 @@ Deno.serve(async (req) => {
     const results: Array<{ id: string; requestId: string; newStatus: string }> = [];
 
     for (const video of pendingVideos) {
-      const payload = (video.payload ?? {}) as VideoPayload;
+      let payload = (video.payload ?? {}) as VideoPayload;
+      payload = await hydrateLegacySceneJobs(video, payload);
       const legacyRequestId = video.higgsfield_request_id;
       const requestId = payload.part_a?.request_id || legacyRequestId || "-";
 
