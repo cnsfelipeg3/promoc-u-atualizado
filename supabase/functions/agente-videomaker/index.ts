@@ -12,23 +12,17 @@ const T2I_ENDPOINTS = [
   {
     name: "Seedream v4",
     path: "/bytedance/seedream/v4/text-to-image",
-    body: (prompt: string) => ({
-      input: { prompt, aspect_ratio: "9:16", seed: Math.floor(Math.random() * 999999) },
-    }),
+    body: (prompt: string) => ({ prompt, aspect_ratio: "9:16", seed: Math.floor(Math.random() * 999999) }),
   },
   {
     name: "Soul",
     path: "/v1/text2image/soul",
-    body: (prompt: string) => ({
-      input: { prompt, aspect_ratio: "9:16" },
-    }),
+    body: (prompt: string) => ({ params: { prompt, aspect_ratio: "9:16" } }),
   },
   {
     name: "Flux Pro",
     path: "/flux-pro/kontext/max/text-to-image",
-    body: (prompt: string) => ({
-      input: { prompt, aspect_ratio: "9:16" },
-    }),
+    body: (prompt: string) => ({ prompt, aspect_ratio: "9:16" }),
   },
 ];
 
@@ -37,47 +31,22 @@ const I2V_ENDPOINTS = [
   {
     name: "DoP Turbo",
     path: "/v1/image2video/dop",
-    body: (imageUrl: string, prompt: string) => ({
-      input: {
-        model: "dop-turbo",
-        prompt,
-        input_images: [{ type: "image_url", image_url: imageUrl }],
-      },
-    }),
+    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-turbo", prompt, input_images: [{ type: "image_url", image_url: imageUrl }] } }),
   },
   {
     name: "Kling 2.1 Pro",
     path: "/kling-video/v2.1/pro/image-to-video",
-    body: (imageUrl: string, prompt: string) => ({
-      input: {
-        prompt,
-        image_url: imageUrl,
-        duration: "5",
-        aspect_ratio: "9:16",
-      },
-    }),
+    body: (imageUrl: string, prompt: string) => ({ prompt, image_url: imageUrl, duration: "5", aspect_ratio: "9:16" }),
   },
   {
     name: "DoP Standard",
     path: "/v1/image2video/dop",
-    body: (imageUrl: string, prompt: string) => ({
-      input: {
-        model: "dop-standard",
-        prompt,
-        input_images: [{ type: "image_url", image_url: imageUrl }],
-      },
-    }),
+    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-standard", prompt, input_images: [{ type: "image_url", image_url: imageUrl }] } }),
   },
   {
     name: "DoP Lite",
     path: "/v1/image2video/dop",
-    body: (imageUrl: string, prompt: string) => ({
-      input: {
-        model: "dop-lite",
-        prompt,
-        input_images: [{ type: "image_url", image_url: imageUrl }],
-      },
-    }),
+    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-lite", prompt, input_images: [{ type: "image_url", image_url: imageUrl }] } }),
   },
 ];
 
