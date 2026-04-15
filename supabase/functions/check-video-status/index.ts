@@ -204,11 +204,8 @@ async function composeInCreatomate(
     elements.push({ type: "audio", track: 2, source: narrationUrl, time: 0, duration: 30, volume: "90%" });
   }
 
-  elements.push({
-    type: "audio", track: 3,
-    source: "https://cdn.pixabay.com/audio/2024/11/04/audio_2460e0e59a.mp3",
-    time: 0, duration: 30, volume: "12%", audio_fade_out: 2.0,
-  });
+  // Background music removed — Pixabay blocks hot-linking (403)
+  // TODO: upload a royalty-free track to Supabase Storage and use that URL
 
   const overlays = overlayConfig?.overlays;
   if (overlays) {
@@ -233,33 +230,55 @@ async function composeInCreatomate(
   }
 
   try {
-    const renderResponse = await fetch("https://api.creatomate.com/v1/renders", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${creatomateKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify([{ output_format: "mp4", width: 1080, height: 1920, duration: 30, elements }]),
+    const renderBody = {
+      output_format: "mp4",
+      width: 1080,
+      height: 1920,
+      duration: 30,
+      elements,
+    };
+    await logAgente(`Creatomate: iniciando composição para ${promoId}`, "info", {
+      partAUrl, partBUrl: partBUrl || "none", narrationUrl: narrationUrl || "none",
+      overlayCount: overlayConfig?.overlays?.length || 0,
+      elementCount: elements.length,
     });
 
-    if (!renderResponse.ok) throw new Error(`Creatomate ${renderResponse.status}: ${await renderResponse.text()}`);
+    const renderResponse = await fetch("https://api.creatomate.com/v2/renders", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${creatomateKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(renderBody),
+    });
 
-    const renders = await renderResponse.json();
-    const renderId = renders[0]?.id;
-    if (!renderId) throw new Error("Creatomate sem render ID");
+    const responseText = await renderResponse.text();
+    if (!renderResponse.ok) {
+      await logAgente(`Creatomate HTTP ${renderResponse.status}: ${responseText.substring(0, 500)}`, "error");
+      throw new Error(`Creatomate ${renderResponse.status}: ${responseText}`);
+    }
 
+    const renders = JSON.parse(responseText);
+    const renderId = Array.isArray(renders) ? renders[0]?.id : renders?.id;
+    if (!renderId) throw new Error("Creatomate sem render ID: " + responseText.substring(0, 200));
+    await logAgente(`Creatomate render submetido: ${renderId}`, "info");
+
+    // Poll for up to 10 minutes (120 x 5s)
     for (let i = 0; i < 120; i++) {
       await new Promise((r) => setTimeout(r, 5000));
-      const check = await fetch(`https://api.creatomate.com/v1/renders/${renderId}`, {
+      const check = await fetch(`https://api.creatomate.com/v2/renders/${renderId}`, {
         headers: { "Authorization": `Bearer ${creatomateKey}` },
       });
       const result = await check.json();
       if (result.status === "succeeded") {
+        await logAgente(`Creatomate render ${renderId} succeeded!`, "success");
         return await uploadToStorage(result.url, `finals/${promoId}_30s_${Date.now()}.mp4`, "video/mp4");
       }
       if (result.status === "failed") throw new Error("Creatomate falhou: " + (result.error_message || ""));
     }
 
-    throw new Error("Creatomate timeout");
+    throw new Error("Creatomate timeout (10min)");
   } catch (err) {
-    await logAgente(`Erro composição no checker: ${err instanceof Error ? err.message : String(err)}`, "error");
+    await logAgente(`Erro composição Creatomate: ${err instanceof Error ? err.message : String(err)}`, "error", {
+      partAUrl, partBUrl, narrationUrl,
+    });
     return null;
   }
 }
@@ -382,25 +401,40 @@ Deno.serve(async (req) => {
             );
           }
 
-          const readyUrl = finalUrl || checkedPartA?.stored_url || checkedPartA?.video_url || null;
+          // CRITICAL: Only mark as "pronto" if Creatomate composed successfully
+          // Never save raw scene as video_final_url — audio MUST be baked in
+          if (finalUrl) {
+            await supabase.from("videos").update({
+              scene_video_url: checkedPartA?.stored_url || null,
+              video_url: checkedPartA?.stored_url || checkedPartA?.video_url || null,
+              video_final_url: finalUrl,
+              narration_url: narrationUrl,
+              status: "pronto",
+              payload: nextPayload,
+              erro_detalhes: null,
+            }).eq("id", video.id);
 
-          await supabase.from("videos").update({
-            scene_video_url: checkedPartA?.stored_url || null,
-            video_url: checkedPartA?.stored_url || checkedPartA?.video_url || null,
-            video_final_url: readyUrl,
-            narration_url: narrationUrl,
-            status: "pronto",
-            payload: nextPayload,
-            erro_detalhes: null,
-          }).eq("id", video.id);
-
-          await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", video.promocao_id);
-          results.push({ id: video.id, requestId, newStatus: "pronto" });
-          await logAgente(`Vídeo pronto (pipeline assíncrono) para ${(video as any).promocoes?.origem}→${(video as any).promocoes?.destino}`, "success", {
-            videoId: video.id,
-            requestId,
-            readyUrl,
-          });
+            await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", video.promocao_id);
+            results.push({ id: video.id, requestId, newStatus: "pronto" });
+            await logAgente(`Vídeo COMPOSTO pronto para ${(video as any).promocoes?.origem}→${(video as any).promocoes?.destino}`, "success", {
+              videoId: video.id, requestId, finalUrl,
+            });
+          } else {
+            // Creatomate failed — save scene + narration but DON'T mark as pronto
+            await supabase.from("videos").update({
+              scene_video_url: checkedPartA?.stored_url || null,
+              video_url: checkedPartA?.stored_url || checkedPartA?.video_url || null,
+              video_final_url: null,
+              narration_url: narrationUrl,
+              status: "compondo_video",
+              payload: nextPayload,
+              erro_detalhes: "Composição Creatomate falhou — será retentada no próximo check",
+            }).eq("id", video.id);
+            results.push({ id: video.id, requestId, newStatus: "compondo_video_retry" });
+            await logAgente(`Creatomate falhou para ${(video as any).promocoes?.origem}→${(video as any).promocoes?.destino}, ficará em compondo_video para retry`, "warn", {
+              videoId: video.id, requestId,
+            });
+          }
           continue;
         }
 
