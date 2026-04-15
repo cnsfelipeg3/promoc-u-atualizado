@@ -14,8 +14,9 @@ const creatomateKey = Deno.env.get("CREATOMATE_API_KEY");
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const hfHeaders: Record<string, string> = { "hf-api-key": hfApiKey, "hf-secret": hfApiSecret, "Content-Type": "application/json" };
-const hfPollHeaders: Record<string, string> = { "hf-api-key": hfApiKey, "hf-secret": hfApiSecret };
+const hfAuthHeader = `Key ${hfApiKey}:${hfApiSecret}`;
+const hfHeaders: Record<string, string> = { "Authorization": hfAuthHeader, "Content-Type": "application/json", "Accept": "application/json" };
+const hfPollHeaders: Record<string, string> = { "Authorization": hfAuthHeader };
 
 async function logAgente(mensagem: string, tipo = "info", payload: Record<string, unknown> = {}) {
   console.log(`[videomaker][${tipo}] ${mensagem}`, JSON.stringify(payload));
@@ -66,9 +67,9 @@ async function pollForVideo(statusUrl: string, label: string, maxAttempts = 90):
 
 // ── SEEDANCE 2.0 — Text-to-Video Multi-Shot ──────────────────
 const SEEDANCE_ENDPOINTS = [
-  "https://platform.higgsfield.ai/api/v1/bytedance/seedance/v2/text-to-video",
-  "https://platform.higgsfield.ai/api/v1/seedance/v2/text-to-video",
-  "https://platform.higgsfield.ai/api/v1/seedance-2/text-to-video",
+  "https://platform.higgsfield.ai/bytedance/seedance/v2/pro/text-to-video",
+  "https://platform.higgsfield.ai/bytedance/seedance/v2/text-to-video",
+  "https://platform.higgsfield.ai/bytedance/seedance/v2.0/text-to-video",
 ];
 
 async function generateSeedanceVideo(prompt: string, label: string): Promise<string | null> {
@@ -96,9 +97,9 @@ async function generateSeedanceVideo(prompt: string, label: string): Promise<str
       }
 
       const data = JSON.parse(await res.text());
-      await logAgente(`[${label}] Aceito via ${endpoint}`, "success");
-      const statusUrl = data.status_url || data.request_url ||
-        `https://platform.higgsfield.ai/api/v1/generation/${data.id || data.request_id}`;
+      await logAgente(`[${label}] Aceito via ${endpoint}`, "success", { response: JSON.stringify(data).substring(0, 500) });
+      const statusUrl = data.status_url ||
+        `https://platform.higgsfield.ai/requests/${data.request_id || data.id}/status`;
       return await pollForVideo(statusUrl, `seedance-${label}`);
     } catch (e) {
       await logAgente(`[${label}] Erro ${endpoint}: ${e instanceof Error ? e.message : String(e)}`, "warn");
@@ -117,25 +118,27 @@ async function generateKlingFallback(prompt: string, label: string): Promise<str
     .replace(/SFX:.*\n?/gi, "")
     .substring(0, 500);
 
-  const endpoints = [
-    "https://platform.higgsfield.ai/api/v1/kling-video/v2.1/pro/text-to-video",
-    "https://platform.higgsfield.ai/kling-video/v2.1/pro/text-to-video",
-  ];
+  const endpoint = "https://platform.higgsfield.ai/kling-video/v2.1/pro/text-to-video";
 
-  for (const endpoint of endpoints) {
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: hfHeaders,
-        body: JSON.stringify({ prompt: cleanPrompt, duration: 10, aspect_ratio: "9:16", cfg_scale: 0.6 }),
-      });
-      if (!res.ok) continue;
+  try {
+    await logAgente(`[${label}] Kling fallback tentando: ${endpoint}`, "info");
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: hfHeaders,
+      body: JSON.stringify({ prompt: cleanPrompt, duration: 10, aspect_ratio: "9:16", cfg_scale: 0.6 }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      await logAgente(`[${label}] Kling ${res.status}: ${err.substring(0, 200)}`, "warn");
+    } else {
       const data = JSON.parse(await res.text());
-      const statusUrl = data.status_url || data.request_url;
-      if (!statusUrl) continue;
-      await logAgente(`[${label}] Kling fallback aceito`, "info");
+      const statusUrl = data.status_url ||
+        `https://platform.higgsfield.ai/requests/${data.request_id || data.id}/status`;
+      await logAgente(`[${label}] Kling fallback aceito`, "success", { response: JSON.stringify(data).substring(0, 300) });
       return await pollForVideo(statusUrl, `kling-${label}`, 120);
-    } catch { continue; }
+    }
+  } catch (e) {
+    await logAgente(`[${label}] Kling erro: ${e instanceof Error ? e.message : String(e)}`, "error");
   }
 
   await logAgente(`[${label}] Kling fallback também falhou`, "error");
