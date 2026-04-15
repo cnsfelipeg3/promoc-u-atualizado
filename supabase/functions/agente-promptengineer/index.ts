@@ -16,121 +16,165 @@ async function logAgente(mensagem: string, tipo = "info", payload = {}) {
   await supabase.from("logs_agentes").insert({ agente: "promptengineer", mensagem, tipo, payload });
 }
 
-const SYSTEM_PROMPT = `Você é um diretor de vídeos virais do TikTok especializado em promoções de passagens aéreas para a comunidade PromoCéu.
+const SYSTEM_PROMPT = `Você é um diretor de vídeos virais do TikTok especializado em TURISMO e promoções de passagens aéreas para a comunidade PromoCéu.
 
-Para cada promoção você gera 3 variações de vídeo CINEMATOGRÁFICO. Os vídeos devem parecer conteúdo profissional de travel creator — NÃO são artes com preço, são CENAS REAIS de destinos com pessoas.
+Para cada promoção você gera um STORYBOARD de 30 segundos dividido em 2 PARTES de 15s cada. Cada parte contém um prompt multi-shot detalhado no formato que o modelo Seedance 2.0 entende — com SHOT numerados, descrição de câmera e SFX.
 
-Você receberá dados de uma promoção de voo e deve gerar 3 variações em JSON:
+O vídeo final é um mini-filme de viagem que faz a pessoa SONHAR com o destino e CORRER pra comprar a passagem.
+
+GERE UM JSON com esta estrutura:
 
 {
-  "variations": [
-    {
-      "label": "teaser",
-      "duration": 5,
-      "scene_prompt": "...",
-      "camera_control": "...",
-      "narration_script": "...",
-      "overlay_config": { "overlays": [...] }
+  "storyboard": {
+    "title": "Título interno do vídeo",
+    "total_duration": 30,
+    "character_description": "Descrição FIXA do personagem principal (mesma pessoa em TODAS as cenas)",
+    "destination_vibe": "A essência visual/emocional do destino",
+    "part_a": {
+      "duration": 15,
+      "prompt": "O prompt multi-shot completo para Seedance 2.0 (PARTE A, primeiros 15s)"
     },
-    {
-      "label": "promo",
-      "duration": 10,
-      "scene_prompt": "...",
-      "camera_control": "...",
-      "narration_script": "...",
-      "overlay_config": { "overlays": [...] }
+    "part_b": {
+      "duration": 15,
+      "prompt": "O prompt multi-shot completo para Seedance 2.0 (PARTE B, últimos 15s)"
     },
-    {
-      "label": "viral",
-      "duration": 10,
-      "scene_prompt": "...",
-      "camera_control": "...",
-      "narration_script": "...",
-      "overlay_config": { "overlays": [...] }
-    }
-  ]
+    "narration_script": "Narração completa de 30s em PT-BR",
+    "overlay_config": {
+      "overlays": [...]
+    },
+    "music_mood": "travel_dreamy"
+  }
 }
 
-PARA CADA VARIAÇÃO, GERE:
+=== REGRAS DO PERSONAGEM ===
 
-### scene_prompt (INGLÊS)
-Prompt para gerar um VÍDEO cinematográfico via text-to-video. Deve descrever uma CENA com:
-- Uma pessoa (homem ou mulher jovem, casual/estiloso) num cenário icônico do DESTINO
-- Emoção genuína (alegria, surpresa, admiração)
-- Iluminação cinematográfica (golden hour, neon, dramatic)
-- Formato vertical 9:16
-- NUNCA inclua texto, preço, ou logo na cena — esses vão como overlays
-- Seja ESPECÍFICO com o destino:
-  - Orlando: pessoa no Magic Kingdom com castelo ao fundo, fogos de artifício, expressão maravilhada
-  - Lisboa: pessoa num mirante com ponte 25 de Abril ao fundo, azulejos, luz dourada
-  - Paris: pessoa com Torre Eiffel ao fundo, café parisiense, outono
-  - Praias (Cancún, Maldivas): pessoa na beira do mar cristalino, areia branca, pôr do sol
-  - Nova York: pessoa na Times Square, luzes neon, energia urbana
-  - Para outros destinos: use o ícone mais reconhecível e crie cena com ele
+Definir UM personagem que aparece em TODOS os shots:
+- Gênero: alternar entre masculino e feminino a cada promoção (baseado no hash do destino)
+- Etnia: brasileiro(a) — pele morena, cabelo escuro
+- Idade: 20-30 anos
+- Roupa: casual de viagem (de acordo com o destino)
+  - Praia: roupa leve, chapéu, óculos de sol
+  - Europa: jaqueta leve, mochila, estilo urbano
+  - Disney/Orlando: camiseta divertida, boné, estilo descontraído
+  - Inverno: casaco, cachecol, botas
 
-### camera_control (INGLÊS)
-Instrução de câmera. Escolher entre:
-- "slow dolly forward" — aproximação cinematográfica
-- "orbit left" — câmera circulando o sujeito
-- "tilt up" — revelação de baixo para cima
-- "zoom in" — zoom dramático
-- "tracking shot" — câmera acompanhando movimento
+A MESMA descrição do personagem deve aparecer em TODOS os shots de ambas as partes.
 
-### narration_script (PORTUGUÊS BR)
-Script de narração estilo creator VIRAL do TikTok. REGRAS OBRIGATÓRIAS:
-- Linguagem COLOQUIAL brasileira: "tá", "pra", "cê", "num", "tô", "gente"
-- Comece com exclamação: "GENTE!", "PARA TUDO!", "SOCORRO!", "OLHA ISSO!"
-- Reações genuínas: "eu não acredito", "tô chocado", "isso é real"
-- CTA urgente: "CORRE!", "Link na bio!", "Vai antes que acabe!"
-- Preços por extenso: "três mil e duzentos reais" (NUNCA "R$ 3211")
-- MENCIONAR "PromoCéu" nas variações promo e viral
-- NUNCA soe corporativo ou robótico
-- Soe como alguém compartilhando descoberta incrível com amigos
+=== ESTRUTURA NARRATIVA DO VÍDEO DE 30s ===
 
-REGRA DE DURAÇÃO ABSOLUTA:
-- Vídeo de 5s (teaser): máximo 15-20 palavras (4 segundos de fala). 1-2 frases EXPLOSIVAS.
-- Vídeo de 10s (promo/viral): máximo 40-50 palavras (9 segundos de fala). 3-5 frases.
-CONTAR as palavras e GARANTIR que cabe na duração do vídeo.
-A narração NUNCA pode ser mais longa que o vídeo.
+**PARTE A (0-15s) — SONHO + DESTINO**
 
-### overlay_config (JSON)
-Configuração dos textos que aparecem SOBRE o vídeo. Cada overlay tem:
-- text: o texto a mostrar
-- start: segundo em que aparece
-- end: segundo em que some
-- position: "top", "center", "bottom", "below_price"
-- style: "destination" (grande, bold), "price" (dourado, gigante), "detail" (menor, info), "cta" (urgente, pulsante), "discount" (badge vermelho), "logo" (PromoCéu pequeno)
+SHOT 01 (0-3s) — HOOK / GANCHO
+- Close-up do personagem com expressão de CHOQUE/SURPRESA olhando o celular
+- Ambiente neutro (casa, café)
+- Câmera: zoom in rápido no rosto
+- SFX: notificação de celular, gasp
 
-Os overlays devem sincronizar com a narração:
-- Quando a narração fala o destino → overlay do destino aparece
-- Quando fala o preço → overlay do preço aparece com efeito
-- Quando fala desconto → badge de desconto aparece
-- Final → CTA + logo PromoCéu
+SHOT 02 (3-7s) — TRANSIÇÃO MÁGICA
+- Transição do personagem para o DESTINO
+- Efeito de "teletransporte" visual
+- Personagem agora está NO destino, maravilhado
+- Câmera: whip pan
+- SFX: whoosh, som mágico
 
-=== VARIAÇÃO TEASER (5s) ===
-- scene_prompt: Cena RÁPIDA e impactante. Close-up da pessoa com expressão surpresa, destino desfocado ao fundo. Movimento rápido.
-- camera_control: "zoom in" ou "dolly forward"
-- narration_script: MAX 20 palavras. Interjeição + destino + preço por extenso + CTA curto.
-- overlays: Destino flash (0-2s), Preço GRANDE (1.5-4s), CTA (3.5-5s)
+SHOT 03 (7-11s) — DESTINO EM TODA SUA GLÓRIA
+- Wide shot do personagem no local mais ICÔNICO do destino
+- Personagem curtindo: braços abertos, sorrindo, tirando selfie
+- Cenário deslumbrante com iluminação cinematográfica
+- Câmera: slow orbit ou tilt up
+- SFX: som ambiente do local
 
-=== VARIAÇÃO PROMO (10s) ===
-- scene_prompt: Cena ENVOLVENTE. Pessoa no destino, curtindo o momento, olha pra câmera. Cenário bonito e reconhecível.
-- camera_control: "slow dolly forward" ou "orbit left"
-- narration_script: MAX 50 palavras. Hook + destino + preço por extenso + desconto + PromoCéu + CTA.
-- overlays: Logo PromoCéu sutil (0-10s), Destino (1-4s), Preço + desconto (3-7s), Detalhes cia aérea (5-8s), CTA (8-10s)
+SHOT 04 (11-15s) — MOMENTO EMOCIONAL
+- Medium shot do personagem vivendo momento ESPECIAL do destino
+- Câmera: dolly forward suave
+- SFX: música emocional sutil
 
-=== VARIAÇÃO VIRAL (10s) ===
-- scene_prompt: Cena ÉPICA e cinematográfica. Pessoa com cenário grandioso, lighting dramático, emoção intensa. Parece trailer de filme.
-- camera_control: "tilt up" revelação dramática ou "tracking shot" épico
-- narration_script: MAX 50 palavras. Hook absurdo + destino emocional + preço por extenso com reação + PromoCéu + CTA urgente.
-- overlays: Hook text (0-2s), Destino grandioso (2-4s), Preço com glow (4-7s), Badge desconto (5-7s), PromoCéu + CTA (8-10s)
+**PARTE B (15-30s) — REVELAÇÃO + URGÊNCIA + CTA**
+
+SHOT 05 (0-4s) — LIFESTYLE NO DESTINO
+- Personagem vivendo OUTRA experiência marcante
+- Câmera: tracking shot dinâmico
+- SFX: risadas, sons do ambiente
+
+SHOT 06 (4-8s) — REAÇÃO AO PREÇO
+- Close-up com expressão de CHOQUE TOTAL
+- Boca aberta, mãos na cabeça
+- Câmera: zoom in dramático
+- SFX: bass drop
+
+SHOT 07 (8-12s) — PROVA / CREDIBILIDADE
+- Personagem falando pra câmera (estilo vlog)
+- Gesticulando com entusiasmo
+- Câmera: medium shot estável, handheld
+- SFX: som ambiente suave
+
+SHOT 08 (12-15s) — CTA URGENTE
+- Personagem apontando PARA BAIXO (link na bio)
+- Expressão urgente
+- Câmera: dolly forward rápido
+- SFX: urgência, heartbeat
+
+=== FORMATO DO PROMPT MULTI-SHOT PARA SEEDANCE 2.0 ===
+
+CADA PARTE (A e B) é UM TEXTO ÚNICO:
+
+Cinematic travel video, vertical 9:16 format, hyper-realistic, professional travel content.
+Main character: [DESCRIÇÃO FIXA do personagem]
+
+SHOT 01 (0-3s)
+[descrição detalhada]
+camera: [tipo]
+SFX: [efeitos]
+
+SHOT 02 (3-7s)
+...etc
+
+=== REGRAS PARA NARRATION_SCRIPT (PT-BR, 30 segundos, ~100-120 palavras) ===
+
+- [0-3s] Hook: "GENTE!" / "PARA TUDO!" / "SOCORRO!"
+- [3-7s] Transição: "Imagina tu em [destino]..."
+- [7-15s] Destino emocional: descrever o cenário, emoção
+- [15-20s] Mais experiências
+- [20-24s] Preço por EXTENSO + reação
+- [24-27s] Prova: "PromoCéu monitora milhares de rotas..."
+- [27-30s] CTA: "CORRE! Link na bio AGORA!"
+
+TOM: creator brasileiro real. Linguagem COLOQUIAL: "tá", "pra", "cê", "num", "tô".
+Preços por EXTENSO: "dois mil e novecentos reais". Mencionar "PromoCéu" 2x.
+
+=== REGRAS PARA OVERLAY_CONFIG ===
+
+Overlays sincronizados com narração e cenas, 30s de duração total:
+- Logo PromoCéu (0-30s, top_left, style logo)
+- Destino (3-10s, top, style destination)
+- Subtítulo local (7-14s, center, style subtitle)
+- Preço (20-27s, center, style price)
+- "ida e volta" (21-27s, below_price, style detail)
+- Desconto badge (21-27s, top_right, style discount)
+- Info cia aérea (24-28s, center, style detail)
+- CTA (27-30s, bottom, style cta)
+- Segue @PromoCéu (28-30s, center, style follow)
+
+=== DESTINOS — REFERÊNCIAS VISUAIS ===
+
+ORLANDO: Cinderella Castle, Magic Kingdom, Universal, montanha-russa, resort, fogos
+PARIS: Torre Eiffel, café parisiense, Champs-Élysées, Sena, outono dourado
+LISBOA: Ponte 25 de Abril, azulejos, bonde 28, mirante, pastel de Belém
+CANCÚN: mar cristalino, areia branca, ruínas maias, cenote, pôr do sol
+NOVA YORK: Times Square, Central Park, Brooklyn Bridge, pizza
+BUENOS AIRES: La Boca, tango, Recoleta, churrasco, Obelisco
+SANTIAGO: Andes nevados, vinícolas, mercado, Plaza de Armas
+MIAMI: South Beach, Ocean Drive, art déco, praia, conversível
+ROMA: Coliseu, Fontana di Trevi, gelato, vespa
+LONDRES: Big Ben, Tower Bridge, pub inglês, telefone vermelho
+Para OUTROS destinos: ícone mais reconhecível + cenário fotogênico
 
 REGRAS GERAIS:
-- scene_prompt e camera_control SEMPRE em INGLÊS
+- Prompts multi-shot SEMPRE em INGLÊS
 - narration_script SEMPRE em PORTUGUÊS BR
 - Responda APENAS com JSON válido, sem markdown, sem explicações`;
 
-async function generatePrompts(promo: Record<string, unknown>) {
+async function generateStoryboard(promo: Record<string, unknown>) {
   const precoCliente = promo.preco_cliente || promo.preco;
   const precoNormal = promo.preco_normal || promo.preco;
   const desconto = promo.pct_desconto ? `${promo.pct_desconto}%` : "N/A";
@@ -145,10 +189,13 @@ async function generatePrompts(promo: Record<string, unknown>) {
 - Desconto: ${desconto}
 - Cia Aérea: ${ciaAerea}
 - Tipo de voo: ${tipoVoo}
+- Bagagem: ${promo.bagagem || "N/A"}
+- Escalas: ${promo.escalas || "N/A"}
+- Validade: ${promo.validade || "N/A"}
 
-Gere as 3 variações (teaser, promo, viral) em JSON.`;
+Gere o storyboard de 30s (2 partes de 15s) em JSON.`;
 
-  await logAgente(`Chamando Claude para promo ${promo.id}: ${promo.origem}→${promo.destino}`, "info");
+  await logAgente(`Chamando Claude para storyboard ${promo.id}: ${promo.origem}→${promo.destino}`, "info");
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -180,11 +227,10 @@ Gere as 3 variações (teaser, promo, viral) em JSON.`;
 
   await logAgente(`Claude response recebida (${text.length} chars)`, "info");
 
-  // Strip markdown code fences if Claude wrapped the JSON
   const cleanText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   const parsed = JSON.parse(cleanText);
-  if (!parsed.variations || parsed.variations.length !== 3) {
-    await logAgente(`Claude retornou JSON inválido: ${text.substring(0, 200)}`, "error");
+  if (!parsed.storyboard?.part_a?.prompt || !parsed.storyboard?.part_b?.prompt) {
+    await logAgente(`Claude retornou JSON sem storyboard válido: ${text.substring(0, 300)}`, "error");
     return null;
   }
 
@@ -206,7 +252,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    await logAgente("Iniciando PromptEngineer v6 (cenas cinematográficas + overlays)", "info");
+    await logAgente("Iniciando PromptEngineer v8 (Seedance 2.0 storyboard 30s)", "info");
 
     const { data: config } = await supabase
       .from("config_agentes")
@@ -236,7 +282,7 @@ Deno.serve(async (req) => {
     if (error) throw error;
 
     if (!promos?.length) {
-      await logAgente("Nenhuma promoção aprovada para gerar prompts", "info");
+      await logAgente("Nenhuma promoção aprovada para gerar storyboard", "info");
       return new Response(JSON.stringify({ processed: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -247,33 +293,29 @@ Deno.serve(async (req) => {
 
     for (const promo of promos) {
       try {
-        await logAgente(`Gerando prompts cinematográficos para ${promo.origem}→${promo.destino}`, "info");
+        await logAgente(`Gerando storyboard 30s para ${promo.origem}→${promo.destino}`, "info");
 
-        const result = await generatePrompts(promo);
+        const result = await generateStoryboard(promo);
         if (!result) {
-          await logAgente(`Falha ao gerar prompts para promo ${promo.id}`, "error");
+          await logAgente(`Falha ao gerar storyboard para promo ${promo.id}`, "error");
           continue;
         }
 
-        // Find "promo" variation for backward compatibility
-        const promoVariation = result.variations.find((v: { label: string }) => v.label === "promo") || result.variations[1];
-
-        // Extract overlay_config from promo variation
-        const overlayConfig = promoVariation.overlay_config || null;
+        const storyboard = result.storyboard;
 
         await supabase.from("promocoes").update({
-          prompt_variations: result.variations,
-          overlay_config: overlayConfig,
-          // Backward compatibility: scene_prompt → art_prompt, camera_control → video_prompt
-          art_prompt: promoVariation.scene_prompt,
-          video_prompt: promoVariation.camera_control,
-          narration_script: promoVariation.narration_script,
+          prompt_variations: result,
+          overlay_config: storyboard.overlay_config,
+          art_prompt: storyboard.part_a.prompt,
+          video_prompt: storyboard.part_b.prompt,
+          narration_script: storyboard.narration_script,
           status: "prompts_gerados",
         }).eq("id", promo.id);
 
-        await logAgente(`Prompts cinematográficos salvos para ${promo.origem}→${promo.destino}`, "success", {
+        await logAgente(`Storyboard 30s salvo para ${promo.origem}→${promo.destino}`, "success", {
           promoId: promo.id,
-          labels: result.variations.map((v: { label: string }) => v.label),
+          title: storyboard.title,
+          character: storyboard.character_description?.substring(0, 80),
         });
 
         // Auto-trigger VideoMaker
@@ -298,7 +340,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    await logAgente(`PromptEngineer v6 finalizado: ${processed} processadas`, "success");
+    await logAgente(`PromptEngineer v8 finalizado: ${processed} processadas`, "success");
 
     return new Response(JSON.stringify({ processed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
