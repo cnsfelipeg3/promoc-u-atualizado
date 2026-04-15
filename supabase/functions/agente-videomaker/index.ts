@@ -80,14 +80,19 @@ async function generateNarration(script: string, label: string): Promise<string 
   if (!elevenLabsKey) { await logAgente("ELEVENLABS_API_KEY não configurada", "error"); return null; }
   await logAgente(`Gerando narração [${label}]: ${script.substring(0, 60)}...`, "info");
   try {
-    const voiceId = "EXAVITQu4vr4xnSDxMaL";
+    const voiceId = "nPczCjzI2devNBz1zQrb"; // Brian - voz jovem expressiva, ótima para multilingual
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
       method: "POST",
       headers: { "xi-api-key": elevenLabsKey, "Content-Type": "application/json" },
       body: JSON.stringify({
         text: script,
         model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.45, similarity_boost: 0.85, style: 0.7, use_speaker_boost: true },
+        voice_settings: {
+          stability: 0.25,          // Baixa = mais variação emocional, mais humano
+          similarity_boost: 0.80,   // Alta = mantém consistência da voz
+          style: 1.0,               // Máximo = máxima expressividade e emoção
+          use_speaker_boost: true,
+        },
       }),
     });
     if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
