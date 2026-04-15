@@ -65,84 +65,148 @@ async function pollForVideo(statusUrl: string, label: string, maxAttempts = 90):
   return null;
 }
 
-// ── SEEDANCE 2.0 — Text-to-Video Multi-Shot ──────────────────
-const SEEDANCE_ENDPOINTS = [
-  "https://platform.higgsfield.ai/bytedance/seedance/v2/pro/text-to-video",
-  "https://platform.higgsfield.ai/bytedance/seedance/v2/text-to-video",
-  "https://platform.higgsfield.ai/bytedance/seedance/v2.0/text-to-video",
+// ── STEP 1: TEXT-TO-IMAGE (generate starting frame) ──────────
+const T2I_MODELS = [
+  "higgsfield-ai/soul/standard",
+  "reve/text-to-image",
 ];
 
-async function generateSeedanceVideo(prompt: string, label: string): Promise<string | null> {
-  await logAgente(`[${label}] Gerando 15s via Seedance 2.0...`, "info");
+async function generateStartingFrame(prompt: string, label: string): Promise<string | null> {
+  // Extract the first SHOT description to create a still image
+  const shotMatch = prompt.match(/SHOT \d+ \(\d+-\d+s\)\n([\s\S]*?)(?=\nSHOT|\ncamera:|$)/i);
+  const sceneDesc = shotMatch?.[1]?.trim() || prompt.substring(0, 500);
+  
+  // Build an image prompt from the video prompt
+  const mainCharMatch = prompt.match(/Main character:([^\n]+)/i);
+  const mainChar = mainCharMatch?.[1]?.trim() || "";
+  
+  const imagePrompt = `Cinematic photograph, vertical 9:16, hyper-realistic, professional photography, shallow depth of field, golden hour lighting. ${mainChar ? `Person: ${mainChar}.` : ""} Scene: ${sceneDesc}`;
+  
+  await logAgente(`[${label}] Gerando imagem inicial...`, "info");
 
-  for (const endpoint of SEEDANCE_ENDPOINTS) {
+  for (const model of T2I_MODELS) {
     try {
-      await logAgente(`[${label}] Tentando: ${endpoint}`, "info");
+      const endpoint = `https://platform.higgsfield.ai/${model}`;
+      await logAgente(`[${label}] T2I tentando: ${model}`, "info");
+      
       const res = await fetch(endpoint, {
         method: "POST",
         headers: hfHeaders,
         body: JSON.stringify({
-          prompt,
-          duration: 15,
+          prompt: imagePrompt,
           aspect_ratio: "9:16",
-          generate_audio: true,
-          quality: "high",
+          resolution: "720p",
         }),
       });
 
       if (!res.ok) {
         const err = await res.text();
-        await logAgente(`[${label}] ${endpoint} → ${res.status}: ${err.substring(0, 200)}`, "warn");
+        await logAgente(`[${label}] T2I ${model} → ${res.status}: ${err.substring(0, 200)}`, "warn");
         continue;
       }
 
       const data = JSON.parse(await res.text());
-      await logAgente(`[${label}] Aceito via ${endpoint}`, "success", { response: JSON.stringify(data).substring(0, 500) });
+      await logAgente(`[${label}] T2I aceito via ${model}`, "success", { response: JSON.stringify(data).substring(0, 300) });
+      
+      // Poll for image
       const statusUrl = data.status_url ||
         `https://platform.higgsfield.ai/requests/${data.request_id || data.id}/status`;
-      return await pollForVideo(statusUrl, `seedance-${label}`);
+      
+      for (let i = 0; i < 60; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const check = await fetch(statusUrl, { headers: hfPollHeaders });
+        const result = JSON.parse(await check.text());
+        const status = (result.status || "").toLowerCase();
+        
+        if (i % 5 === 0) await logAgente(`[${label}] T2I poll ${i + 1}/60: ${status}`, "info");
+        
+        if (status === "completed") {
+          const imgUrl = result.images?.[0]?.url || result.image?.url || result.output?.url;
+          if (imgUrl) {
+            await logAgente(`[${label}] Imagem gerada!`, "success");
+            return imgUrl;
+          }
+          await logAgente(`[${label}] T2I pronto mas sem URL: ${JSON.stringify(result).substring(0, 300)}`, "error");
+          return null;
+        }
+        if (["failed", "error", "nsfw"].includes(status)) {
+          await logAgente(`[${label}] T2I falhou: ${status}`, "error");
+          break;
+        }
+      }
     } catch (e) {
-      await logAgente(`[${label}] Erro ${endpoint}: ${e instanceof Error ? e.message : String(e)}`, "warn");
+      await logAgente(`[${label}] T2I erro: ${e instanceof Error ? e.message : String(e)}`, "warn");
     }
   }
-
-  // FALLBACK: Kling text-to-video
-  await logAgente(`[${label}] Seedance falhou, tentando Kling fallback...`, "warn");
-  return await generateKlingFallback(prompt, label);
+  return null;
 }
 
-async function generateKlingFallback(prompt: string, label: string): Promise<string | null> {
+// ── STEP 2: IMAGE-TO-VIDEO (Seedance or Kling) ──────────────
+const I2V_MODELS = [
+  "bytedance/seedance/v2/pro/image-to-video",
+  "bytedance/seedance/v1/pro/image-to-video",
+  "kling-video/v2.1/pro/image-to-video",
+];
+
+async function generateVideoFromImage(imageUrl: string, prompt: string, label: string): Promise<string | null> {
+  // Clean prompt for video animation
   const cleanPrompt = prompt
     .replace(/SHOT \d+ \(\d+-\d+s\)\n?/g, "")
     .replace(/camera:.*\n?/gi, "")
     .replace(/SFX:.*\n?/gi, "")
-    .substring(0, 500);
+    .substring(0, 800);
 
-  const endpoint = "https://platform.higgsfield.ai/kling-video/v2.1/pro/text-to-video";
+  await logAgente(`[${label}] Gerando vídeo a partir da imagem...`, "info");
 
-  try {
-    await logAgente(`[${label}] Kling fallback tentando: ${endpoint}`, "info");
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: hfHeaders,
-      body: JSON.stringify({ prompt: cleanPrompt, duration: 10, aspect_ratio: "9:16", cfg_scale: 0.6 }),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      await logAgente(`[${label}] Kling ${res.status}: ${err.substring(0, 200)}`, "warn");
-    } else {
+  for (const model of I2V_MODELS) {
+    try {
+      const endpoint = `https://platform.higgsfield.ai/${model}`;
+      await logAgente(`[${label}] I2V tentando: ${model}`, "info");
+      
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: hfHeaders,
+        body: JSON.stringify({
+          image_url: imageUrl,
+          prompt: cleanPrompt,
+          duration: 10,
+          aspect_ratio: "9:16",
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        await logAgente(`[${label}] I2V ${model} → ${res.status}: ${err.substring(0, 200)}`, "warn");
+        continue;
+      }
+
       const data = JSON.parse(await res.text());
+      await logAgente(`[${label}] I2V aceito via ${model}`, "success", { response: JSON.stringify(data).substring(0, 300) });
+      
       const statusUrl = data.status_url ||
         `https://platform.higgsfield.ai/requests/${data.request_id || data.id}/status`;
-      await logAgente(`[${label}] Kling fallback aceito`, "success", { response: JSON.stringify(data).substring(0, 300) });
-      return await pollForVideo(statusUrl, `kling-${label}`, 120);
+      return await pollForVideo(statusUrl, `i2v-${label}`);
+    } catch (e) {
+      await logAgente(`[${label}] I2V erro ${model}: ${e instanceof Error ? e.message : String(e)}`, "warn");
     }
-  } catch (e) {
-    await logAgente(`[${label}] Kling erro: ${e instanceof Error ? e.message : String(e)}`, "error");
   }
 
-  await logAgente(`[${label}] Kling fallback também falhou`, "error");
+  await logAgente(`[${label}] Todos os modelos I2V falharam`, "error");
   return null;
+}
+
+// ── PIPELINE: Text → Image → Video ──────────────────────────
+async function generateSceneVideo(prompt: string, label: string): Promise<string | null> {
+  // Step 1: Generate starting frame image
+  const imageUrl = await generateStartingFrame(prompt, label);
+  if (!imageUrl) {
+    await logAgente(`[${label}] Falha ao gerar imagem inicial`, "error");
+    return null;
+  }
+
+  // Step 2: Animate the image into video
+  const videoUrl = await generateVideoFromImage(imageUrl, prompt, label);
+  return videoUrl;
 }
 
 // ── ELEVENLABS — Narração PT-BR viral ─────────────────────────
