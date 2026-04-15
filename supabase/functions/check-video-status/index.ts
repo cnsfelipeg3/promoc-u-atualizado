@@ -233,18 +233,31 @@ async function composeInCreatomate(
   }
 
   try {
+    const renderBody = [{ output_format: "mp4", width: 1080, height: 1920, duration: 30, elements }];
+    await logAgente(`Creatomate: iniciando composição para ${promoId}`, "info", {
+      partAUrl, partBUrl: partBUrl || "none", narrationUrl: narrationUrl || "none",
+      overlayCount: overlayConfig?.overlays?.length || 0,
+      elementCount: elements.length,
+    });
+
     const renderResponse = await fetch("https://api.creatomate.com/v1/renders", {
       method: "POST",
       headers: { "Authorization": `Bearer ${creatomateKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify([{ output_format: "mp4", width: 1080, height: 1920, duration: 30, elements }]),
+      body: JSON.stringify(renderBody),
     });
 
-    if (!renderResponse.ok) throw new Error(`Creatomate ${renderResponse.status}: ${await renderResponse.text()}`);
+    const responseText = await renderResponse.text();
+    if (!renderResponse.ok) {
+      await logAgente(`Creatomate HTTP ${renderResponse.status}: ${responseText.substring(0, 500)}`, "error");
+      throw new Error(`Creatomate ${renderResponse.status}: ${responseText}`);
+    }
 
-    const renders = await renderResponse.json();
+    const renders = JSON.parse(responseText);
     const renderId = renders[0]?.id;
     if (!renderId) throw new Error("Creatomate sem render ID");
+    await logAgente(`Creatomate render submetido: ${renderId}`, "info");
 
+    // Poll for up to 10 minutes (120 x 5s)
     for (let i = 0; i < 120; i++) {
       await new Promise((r) => setTimeout(r, 5000));
       const check = await fetch(`https://api.creatomate.com/v1/renders/${renderId}`, {
@@ -252,14 +265,17 @@ async function composeInCreatomate(
       });
       const result = await check.json();
       if (result.status === "succeeded") {
+        await logAgente(`Creatomate render ${renderId} succeeded!`, "success");
         return await uploadToStorage(result.url, `finals/${promoId}_30s_${Date.now()}.mp4`, "video/mp4");
       }
       if (result.status === "failed") throw new Error("Creatomate falhou: " + (result.error_message || ""));
     }
 
-    throw new Error("Creatomate timeout");
+    throw new Error("Creatomate timeout (10min)");
   } catch (err) {
-    await logAgente(`Erro composição no checker: ${err instanceof Error ? err.message : String(err)}`, "error");
+    await logAgente(`Erro composição Creatomate: ${err instanceof Error ? err.message : String(err)}`, "error", {
+      partAUrl, partBUrl, narrationUrl,
+    });
     return null;
   }
 }
