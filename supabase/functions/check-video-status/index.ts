@@ -17,11 +17,6 @@ const creatomateKey = Deno.env.get("CREATOMATE_API_KEY");
 const supabase = createClient(supabaseUrl, supabaseKey);
 const hfAuth = `Key ${hfApiKey}:${hfApiSecret}`;
 
-function extractVideoUrl(r: any): string | null {
-  return r?.video?.url || r?.videos?.[0]?.url || r?.data?.video_url || r?.data?.output?.video_url
-    || r?.output?.video_url || r?.result?.url || r?.result?.video_url || r?.url || null;
-}
-
 async function logAgente(msg: string, tipo = "info", payload: Record<string, unknown> = {}) {
   console.log(`[check-video][${tipo}] ${msg}`);
   try { await supabase.from("logs_agentes").insert({ agente: "videomaker", mensagem: msg, tipo, payload }); } catch (_) {}
@@ -39,28 +34,26 @@ async function uploadToStorage(url: string, path: string, ct: string): Promise<s
   return supabase.storage.from("videos").getPublicUrl(path).data.publicUrl;
 }
 
-async function pollScene(requestId: string, endpoint: string): Promise<{ status: string; videoUrl?: string; error?: string }> {
-  const urls = [
-    `${HIGGSFIELD_BASE}${endpoint}/${requestId}`,
-    `${HIGGSFIELD_BASE}/api/v1/generation/${requestId}`,
-    `${HIGGSFIELD_BASE}/api/v1/generations/${requestId}`,
-    `${HIGGSFIELD_BASE}/api/v1/requests/${requestId}/status`,
-  ];
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { headers: { "Authorization": hfAuth } });
-      if (!r.ok) continue;
-      const result = await r.json();
-      const st = ((result.status || result.data?.status || "") as string).toLowerCase();
-      if (["completed", "done", "succeed", "succeeded", "finished"].includes(st)) {
-        const v = extractVideoUrl(result);
-        if (v) return { status: "completed", videoUrl: v };
-      }
-      if (["failed", "error"].includes(st)) return { status: "failed", error: JSON.stringify(result).substring(0, 300) };
-      return { status: st || "in_progress" };
-    } catch (_) { continue; }
+// ── Polling — GET /requests/{id}/status ─────────────────────
+async function pollScene(requestId: string): Promise<{ status: string; videoUrl?: string; error?: string }> {
+  try {
+    const resp = await fetch(`${HIGGSFIELD_BASE}/requests/${requestId}/status`, {
+      headers: { "Authorization": hfAuth },
+    });
+    if (!resp.ok) return { status: "in_progress" };
+    const data = await resp.json();
+    const status = ((data.status || "") as string).toLowerCase();
+
+    if (status === "completed") {
+      const videoUrl = data?.video?.url || data?.videos?.[0]?.url || null;
+      if (videoUrl) return { status: "completed", videoUrl };
+    }
+    if (status === "failed") return { status: "failed", error: JSON.stringify(data).substring(0, 300) };
+    if (status === "nsfw") return { status: "failed", error: "Conteúdo bloqueado (NSFW)" };
+    return { status: status || "in_progress" };
+  } catch (_) {
+    return { status: "in_progress" };
   }
-  return { status: "in_progress" };
 }
 
 async function generateNarration(script: string, promoId: string): Promise<string | null> {
@@ -168,7 +161,7 @@ Deno.serve(async (req) => {
         // Check Part A
         let partAUrl = partA.stored_url || partA.video_url || null;
         if (!partAUrl) {
-          const rA = await pollScene(partA.request_id, partA.endpoint || "");
+          const rA = await pollScene(partA.request_id);
           if (rA.status === "completed" && rA.videoUrl) {
             partAUrl = await uploadToStorage(rA.videoUrl, `scenes/${video.promocao_id}_A_${Date.now()}.mp4`, "video/mp4");
             await logAgente(`[${video.id}] Parte A pronta`, "success");
@@ -186,7 +179,7 @@ Deno.serve(async (req) => {
         // Check Part B
         let partBUrl = partB?.stored_url || partB?.video_url || null;
         if (partB?.request_id && !partBUrl) {
-          const rB = await pollScene(partB.request_id, partB.endpoint || "");
+          const rB = await pollScene(partB.request_id);
           if (rB.status === "completed" && rB.videoUrl) {
             partBUrl = await uploadToStorage(rB.videoUrl, `scenes/${video.promocao_id}_B_${Date.now()}.mp4`, "video/mp4");
             await logAgente(`[${video.id}] Parte B pronta`, "success");
