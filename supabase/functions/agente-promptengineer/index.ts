@@ -180,7 +180,9 @@ Gere as 3 variações (teaser, promo, viral) em JSON.`;
 
   await logAgente(`Claude response recebida (${text.length} chars)`, "info");
 
-  const parsed = JSON.parse(text);
+  // Strip markdown code fences if Claude wrapped the JSON
+  const cleanText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  const parsed = JSON.parse(cleanText);
   if (!parsed.variations || parsed.variations.length !== 3) {
     await logAgente(`Claude retornou JSON inválido: ${text.substring(0, 200)}`, "error");
     return null;

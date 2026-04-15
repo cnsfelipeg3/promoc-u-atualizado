@@ -514,8 +514,16 @@ Deno.serve(async (req) => {
         await logAgente(`Processando promo ${promo.id}: ${promo.origem}→${promo.destino}`, "info");
         await supabase.from("promocoes").update({ status: "em_producao" }).eq("id", promo.id);
 
-        // Get variations
-        let variations: Variation[] = (promo.prompt_variations as Variation[]) || [buildLegacyFallback(promo)];
+        // Get variations — prompt_variations may be {variations: [...]} or [...] directly
+        const rawVariations = promo.prompt_variations as Record<string, unknown> | Variation[] | null;
+        let variations: Variation[];
+        if (Array.isArray(rawVariations)) {
+          variations = rawVariations;
+        } else if (rawVariations && Array.isArray((rawVariations as Record<string, unknown>).variations)) {
+          variations = (rawVariations as Record<string, unknown>).variations as Variation[];
+        } else {
+          variations = [buildLegacyFallback(promo)];
+        }
 
         // Filter to single variation if requested
         if (singleVariation) {
