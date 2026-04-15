@@ -37,33 +37,12 @@ async function uploadToStorage(url: string, path: string, contentType: string): 
   return data.publicUrl;
 }
 
-// ── POLLING HELPER ────────────────────────────────────────────
-async function pollForVideo(statusUrl: string, label: string, maxAttempts = 90): Promise<string | null> {
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise(r => setTimeout(r, 5000));
-    const res = await fetch(statusUrl, { headers: hfPollHeaders });
-    const data = JSON.parse(await res.text());
-    const status = (data.status || data.state || "").toLowerCase();
-
-    if (i % 6 === 0) await logAgente(`Polling ${label} ${i + 1}/${maxAttempts}: ${status}`, "info");
-
-    if (["completed", "done", "succeed", "succeeded"].includes(status)) {
-      const url = data.videos?.[0]?.url || data.video?.url || data.data?.video_url ||
-        data.output?.video_url || data.output?.url || data.video_url || data.url;
-      if (!url) {
-        await logAgente(`${label} pronto mas sem URL: ${JSON.stringify(data).substring(0, 300)}`, "error");
-        return null;
-      }
-      return url as string;
-    }
-    if (["failed", "error"].includes(status)) {
-      await logAgente(`${label} falhou: ${JSON.stringify(data).substring(0, 300)}`, "error");
-      return null;
-    }
-  }
-  await logAgente(`Timeout: ${label}`, "error");
-  return null;
-}
+type SubmittedSceneJob = {
+  imageUrl: string;
+  model: string;
+  requestId: string;
+  statusUrl: string;
+};
 
 // ── STEP 1: TEXT-TO-IMAGE (generate starting frame) ──────────
 const T2I_MODELS = [
@@ -148,7 +127,7 @@ const I2V_MODELS = [
   "kling-video/v2.1/pro/image-to-video",
 ];
 
-async function generateVideoFromImage(imageUrl: string, prompt: string, label: string): Promise<string | null> {
+async function submitVideoFromImage(imageUrl: string, prompt: string, label: string): Promise<Omit<SubmittedSceneJob, "imageUrl"> | null> {
   // Clean prompt for video animation
   const cleanPrompt = prompt
     .replace(/SHOT \d+ \(\d+-\d+s\)\n?/g, "")
@@ -181,11 +160,28 @@ async function generateVideoFromImage(imageUrl: string, prompt: string, label: s
       }
 
       const data = JSON.parse(await res.text());
-      await logAgente(`[${label}] I2V aceito via ${model}`, "success", { response: JSON.stringify(data).substring(0, 300) });
-      
-      const statusUrl = data.status_url ||
-        `https://platform.higgsfield.ai/requests/${data.request_id || data.id}/status`;
-      return await pollForVideo(statusUrl, `i2v-${label}`);
+      const requestId = data.request_id || data.id;
+      const statusUrl = data.status_url || (requestId
+        ? `https://platform.higgsfield.ai/requests/${requestId}/status`
+        : null);
+
+      if (!requestId || !statusUrl) {
+        await logAgente(`[${label}] I2V ${model} sem request_id/status_url`, "warn", {
+          response: JSON.stringify(data).substring(0, 300),
+        });
+        continue;
+      }
+
+      await logAgente(`[${label}] I2V aceito via ${model}`, "success", {
+        requestId,
+        statusUrl,
+      });
+
+      return {
+        model,
+        requestId,
+        statusUrl,
+      };
     } catch (e) {
       await logAgente(`[${label}] I2V erro ${model}: ${e instanceof Error ? e.message : String(e)}`, "warn");
     }
@@ -196,7 +192,7 @@ async function generateVideoFromImage(imageUrl: string, prompt: string, label: s
 }
 
 // ── PIPELINE: Text → Image → Video ──────────────────────────
-async function generateSceneVideo(prompt: string, label: string): Promise<string | null> {
+async function generateSceneVideo(prompt: string, label: string): Promise<SubmittedSceneJob | null> {
   // Step 1: Generate starting frame image
   const imageUrl = await generateStartingFrame(prompt, label);
   if (!imageUrl) {
@@ -205,8 +201,15 @@ async function generateSceneVideo(prompt: string, label: string): Promise<string
   }
 
   // Step 2: Animate the image into video
-  const videoUrl = await generateVideoFromImage(imageUrl, prompt, label);
-  return videoUrl;
+  const submitted = await submitVideoFromImage(imageUrl, prompt, label);
+  if (!submitted) {
+    return null;
+  }
+
+  return {
+    ...submitted,
+    imageUrl,
+  };
 }
 
 // ── ELEVENLABS — Narração PT-BR viral ─────────────────────────
@@ -458,67 +461,50 @@ Deno.serve(async (req) => {
         const videoId = videoRec.id;
 
         try {
-          // ── STEP 1: Generate Part A & Part B in parallel ──
-          await logAgente("Gerando 2 cenas (imagem→vídeo) em paralelo...", "info");
-          const [partAUrl, partBUrl] = await Promise.all([
+          await logAgente("Gerando imagens iniciais e enviando 2 cenas para o provedor...", "info");
+          const [partAJob, partBJob] = await Promise.all([
             generateSceneVideo(partA.prompt, "Parte_A"),
             generateSceneVideo(partB.prompt, "Parte_B"),
           ]);
 
-          if (!partAUrl) {
+          if (!partAJob) {
             await supabase.from("videos").update({ status: "erro", erro_detalhes: "Parte A falhou" }).eq("id", videoId);
             continue;
           }
 
-          // Store scene URLs
-          let storedPartA = partAUrl;
-          try { storedPartA = await uploadToStorage(partAUrl, `scenes/${promo.id}_partA_${Date.now()}.mp4`, "video/mp4"); } catch { /* use original */ }
-          let storedPartB = partBUrl;
-          if (partBUrl) {
-            try { storedPartB = await uploadToStorage(partBUrl, `scenes/${promo.id}_partB_${Date.now()}.mp4`, "video/mp4"); } catch { /* use original */ }
-          }
-
           await supabase.from("videos").update({
-            scene_video_url: storedPartA,
-            status: "com_cena",
-            payload: { storyboard, part_a_url: storedPartA, part_b_url: storedPartB },
+            higgsfield_request_id: partAJob.requestId,
+            status: "gerando_cena",
+            payload: {
+              storyboard,
+              narration_script: narrationScript,
+              overlay_config: overlayConfig,
+              part_a: {
+                image_url: partAJob.imageUrl,
+                label: "Parte_A",
+                model: partAJob.model,
+                prompt: partA.prompt,
+                request_id: partAJob.requestId,
+                status: "queued",
+                status_url: partAJob.statusUrl,
+              },
+              part_b: partBJob ? {
+                image_url: partBJob.imageUrl,
+                label: "Parte_B",
+                model: partBJob.model,
+                prompt: partB.prompt,
+                request_id: partBJob.requestId,
+                status: "queued",
+                status_url: partBJob.statusUrl,
+              } : null,
+            },
           }).eq("id", videoId);
 
-          await logAgente(`Cenas prontas: A=${!!storedPartA}, B=${!!storedPartB}`, "success");
-
-          // ── STEP 2: Generate narration ──
-          await supabase.from("videos").update({ status: "gerando_narracao" }).eq("id", videoId);
-          const narrationUrl = await generateNarration(narrationScript, promo.id);
-          if (narrationUrl) {
-            await supabase.from("videos").update({ narration_url: narrationUrl, status: "com_narracao" }).eq("id", videoId);
-          }
-
-          // ── STEP 3: Compose final video ──
-          await supabase.from("videos").update({ status: "compondo_video" }).eq("id", videoId);
-          const finalUrl = await composeInCreatomate(
-            storedPartA!, storedPartB || null, narrationUrl, overlayConfig, promo.id,
-          );
-
-          if (finalUrl) {
-            await supabase.from("videos").update({
-              video_url: storedPartA,
-              video_final_url: finalUrl,
-              status: "pronto",
-            }).eq("id", videoId);
-            await logAgente(`✅ Vídeo 30s PRONTO para ${promo.origem}→${promo.destino}!`, "success");
-          } else {
-            // No composition — save Part A as final
-            await supabase.from("videos").update({
-              video_url: storedPartA,
-              video_final_url: storedPartA,
-              status: "pronto",
-            }).eq("id", videoId);
-            await logAgente(`⚠ Vídeo salvo SEM composição (apenas Parte A)`, "warn");
-          }
-
-          await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", promo.id);
+          await logAgente(`Cenas enviadas para processamento assíncrono: A=${partAJob.requestId}, B=${partBJob?.requestId || "-"}`, "success", {
+            promoId: promo.id,
+            videoId,
+          });
           processed++;
-
         } catch (err) {
           await supabase.from("videos").update({
             status: "erro",
