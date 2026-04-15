@@ -266,7 +266,7 @@ async function composeInCreatomate(
     // Poll for up to 10 minutes (120 x 5s)
     for (let i = 0; i < 120; i++) {
       await new Promise((r) => setTimeout(r, 5000));
-      const check = await fetch(`https://api.creatomate.com/v1/renders/${renderId}`, {
+      const check = await fetch(`https://api.creatomate.com/v2/renders/${renderId}`, {
         headers: { "Authorization": `Bearer ${creatomateKey}` },
       });
       const result = await check.json();
