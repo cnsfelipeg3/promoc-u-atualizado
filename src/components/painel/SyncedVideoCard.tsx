@@ -34,6 +34,7 @@ const variationBadges: Record<string, { icon: string; label: string; color: stri
   teaser: { icon: "⚡", label: "Teaser 5s", color: "bg-yellow-500/20 text-yellow-300" },
   promo: { icon: "📢", label: "Promo 10s", color: "bg-blue-500/20 text-blue-300" },
   viral: { icon: "🔥", label: "Viral 10s", color: "bg-red-500/20 text-red-300" },
+  storytelling_30s: { icon: "🎬", label: "Story 30s", color: "bg-purple-500/20 text-purple-300" },
 };
 
 interface Props {
