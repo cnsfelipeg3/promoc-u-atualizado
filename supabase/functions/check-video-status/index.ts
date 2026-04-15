@@ -204,11 +204,8 @@ async function composeInCreatomate(
     elements.push({ type: "audio", track: 2, source: narrationUrl, time: 0, duration: 30, volume: "90%" });
   }
 
-  elements.push({
-    type: "audio", track: 3,
-    source: "https://cdn.pixabay.com/audio/2024/11/04/audio_2460e0e59a.mp3",
-    time: 0, duration: 30, volume: "12%", audio_fade_out: 2.0,
-  });
+  // Background music removed — Pixabay blocks hot-linking (403)
+  // TODO: upload a royalty-free track to Supabase Storage and use that URL
 
   const overlays = overlayConfig?.overlays;
   if (overlays) {
