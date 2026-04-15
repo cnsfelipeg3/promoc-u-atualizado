@@ -62,6 +62,10 @@ const Promocoes = () => {
   const [loading, setLoading] = useState(false);
   const [showInsert, setShowInsert] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [showPartA, setShowPartA] = useState(false);
+  const [showPartB, setShowPartB] = useState(false);
+  const [showNarration, setShowNarration] = useState(false);
+  const [showOverlays, setShowOverlays] = useState(false);
 
   const fetchPromos = async () => {
     let query = supabase.from("promocoes").select("*").order("created_at", { ascending: false }).limit(200);
