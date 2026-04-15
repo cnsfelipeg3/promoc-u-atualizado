@@ -233,7 +233,15 @@ async function composeInCreatomate(
   }
 
   try {
-    const renderBody = [{ output_format: "mp4", width: 1080, height: 1920, duration: 30, elements }];
+    const renderBody = [{
+      source: {
+        output_format: "mp4",
+        width: 1080,
+        height: 1920,
+        duration: 30,
+        elements,
+      },
+    }];
     await logAgente(`Creatomate: iniciando composição para ${promoId}`, "info", {
       partAUrl, partBUrl: partBUrl || "none", narrationUrl: narrationUrl || "none",
       overlayCount: overlayConfig?.overlays?.length || 0,
