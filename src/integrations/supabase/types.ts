@@ -196,6 +196,7 @@ export type Database = {
           promocao_id: string | null
           scene_video_url: string | null
           status: string | null
+          storyboard: Json | null
           updated_at: string | null
           variation_label: string | null
           video_final_url: string | null
@@ -214,6 +215,7 @@ export type Database = {
           promocao_id?: string | null
           scene_video_url?: string | null
           status?: string | null
+          storyboard?: Json | null
           updated_at?: string | null
           variation_label?: string | null
           video_final_url?: string | null
@@ -232,6 +234,7 @@ export type Database = {
           promocao_id?: string | null
           scene_video_url?: string | null
           status?: string | null
+          storyboard?: Json | null
           updated_at?: string | null
           variation_label?: string | null
           video_final_url?: string | null
