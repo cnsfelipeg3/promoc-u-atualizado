@@ -390,6 +390,129 @@ const Promocoes = () => {
                 ))}
               </div>
 
+              {/* Storyboard / Prompts Preview */}
+              {selected.prompt_variations && (
+                <div className="space-y-3 border-t border-white/10 pt-4">
+                  <h3 className="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Storyboard Gerado (Seedance 2.0)
+                  </h3>
+
+                  {(() => {
+                    const pv = selected.prompt_variations as Record<string, unknown>;
+                    const storyboard = pv?.storyboard as Record<string, unknown> | undefined;
+                    const partA = storyboard?.part_a as { prompt: string } | undefined;
+                    const partB = storyboard?.part_b as { prompt: string } | undefined;
+                    const narration = storyboard?.narration_script as string | undefined;
+                    const overlays = (storyboard?.overlay_config as { overlays?: Array<{ text: string; start: number; end: number; position: string; style: string }> })?.overlays;
+                    const charDesc = storyboard?.character_description as string | undefined;
+                    const title = storyboard?.title as string | undefined;
+
+                    // Fallback for old format (variations array)
+                    if (!storyboard) {
+                      return (
+                        <div className="p-3 bg-white/5 rounded-lg">
+                          <p className="text-xs text-amber-400 mb-1">⚠ Formato antigo (pré-V8)</p>
+                          <pre className="text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-auto">
+                            {JSON.stringify(pv, null, 2)}
+                          </pre>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-2">
+                        {title && (
+                          <p className="text-sm text-slate-300">📽 <strong>{title}</strong></p>
+                        )}
+                        {charDesc && (
+                          <div className="p-2 bg-white/5 rounded text-xs text-slate-400">
+                            👤 <strong>Personagem:</strong> {charDesc}
+                          </div>
+                        )}
+
+                        {/* Part A */}
+                        {partA?.prompt && (
+                          <div className="rounded-lg border border-white/10 overflow-hidden">
+                            <button
+                              onClick={() => setShowPartA(!showPartA)}
+                              className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-colors text-left"
+                            >
+                              <span className="text-sm font-medium text-blue-400">🎬 Parte A (0-15s) — Prompt Higgsfield</span>
+                              {showPartA ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                            </button>
+                            {showPartA && (
+                              <pre className="p-3 text-xs text-slate-300 whitespace-pre-wrap max-h-[300px] overflow-auto bg-black/30 font-mono leading-relaxed">
+                                {partA.prompt}
+                              </pre>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Part B */}
+                        {partB?.prompt && (
+                          <div className="rounded-lg border border-white/10 overflow-hidden">
+                            <button
+                              onClick={() => setShowPartB(!showPartB)}
+                              className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-colors text-left"
+                            >
+                              <span className="text-sm font-medium text-purple-400">🎬 Parte B (15-30s) — Prompt Higgsfield</span>
+                              {showPartB ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                            </button>
+                            {showPartB && (
+                              <pre className="p-3 text-xs text-slate-300 whitespace-pre-wrap max-h-[300px] overflow-auto bg-black/30 font-mono leading-relaxed">
+                                {partB.prompt}
+                              </pre>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Narration */}
+                        {narration && (
+                          <div className="rounded-lg border border-white/10 overflow-hidden">
+                            <button
+                              onClick={() => setShowNarration(!showNarration)}
+                              className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-colors text-left"
+                            >
+                              <span className="text-sm font-medium text-amber-400">🎙 Narração PT-BR (30s)</span>
+                              {showNarration ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                            </button>
+                            {showNarration && (
+                              <div className="p-3 text-sm text-slate-300 bg-black/30 leading-relaxed">
+                                {narration}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Overlays */}
+                        {overlays && overlays.length > 0 && (
+                          <div className="rounded-lg border border-white/10 overflow-hidden">
+                            <button
+                              onClick={() => setShowOverlays(!showOverlays)}
+                              className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 transition-colors text-left"
+                            >
+                              <span className="text-sm font-medium text-emerald-400">📝 Overlays ({overlays.length} textos)</span>
+                              {showOverlays ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                            </button>
+                            {showOverlays && (
+                              <div className="p-3 bg-black/30 space-y-1">
+                                {overlays.map((ov, i) => (
+                                  <div key={i} className="flex items-center gap-2 text-xs">
+                                    <span className="text-slate-500 font-mono w-14">{ov.start}s-{ov.end}s</span>
+                                    <Badge className="text-[10px] bg-white/10 text-slate-400">{ov.style}</Badge>
+                                    <span className="text-slate-300">{ov.text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2 pt-2">
                 {selected.status === "precificada" && (
                   <>
@@ -405,6 +528,11 @@ const Promocoes = () => {
                   <RefreshCw className="h-4 w-4 mr-2" /> Reavaliar
                 </Button>
                 {(selected.status === "aprovada" || selected.status === "precificada") && (
+                  <Button onClick={() => handleGeneratePrompts(selected.id)} disabled={loading} className="bg-cyan-700 hover:bg-cyan-800">
+                    <FileText className="h-4 w-4 mr-2" /> Gerar Prompts
+                  </Button>
+                )}
+                {(selected.status === "prompts_gerados" || selected.status === "aprovada") && (
                   <Button onClick={() => handleGenerateVideo(selected.id)} disabled={loading} className="bg-amber-600 hover:bg-amber-700">
                     <Video className="h-4 w-4 mr-2" /> Gerar Vídeo
                   </Button>
