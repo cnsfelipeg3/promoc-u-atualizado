@@ -18,6 +18,8 @@ interface VideoRecord {
 
 const statusColors: Record<string, string> = {
   pendente: "bg-slate-500/20 text-slate-300",
+  gerando: "bg-amber-500/20 text-amber-400",
+  aguardando_render: "bg-yellow-500/20 text-yellow-400",
   gerando_cena: "bg-blue-500/20 text-blue-400",
   com_cena: "bg-cyan-500/20 text-cyan-400",
   gerando_arte: "bg-blue-500/20 text-blue-400",
@@ -25,7 +27,9 @@ const statusColors: Record<string, string> = {
   gerando_narracao: "bg-purple-500/20 text-purple-400",
   com_narracao: "bg-violet-500/20 text-violet-400",
   gerando_video: "bg-amber-500/20 text-amber-400",
+  compondo: "bg-indigo-500/20 text-indigo-400",
   compondo_video: "bg-orange-500/20 text-orange-400",
+  timeout_render: "bg-orange-500/20 text-orange-400",
   pronto: "bg-emerald-500/20 text-emerald-400",
   erro: "bg-red-500/20 text-red-400",
 };
@@ -75,7 +79,11 @@ const SyncedVideoCard = ({ video, onRegenerate }: Props) => {
   };
 
   const statusLabel = video.status === "compondo_video" ? "Compondo..." :
+    video.status === "compondo" ? "Compondo..." :
     video.status === "gerando_cena" ? "Gerando cena..." :
+    video.status === "gerando" ? "Gerando..." :
+    video.status === "aguardando_render" ? "Aguardando render..." :
+    video.status === "timeout_render" ? "Timeout (retry)" :
     video.status === "com_cena" ? "Cena pronta" :
     video.status;
 

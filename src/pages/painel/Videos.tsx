@@ -43,7 +43,13 @@ const statusColors: Record<string, string> = {
   pendente: "bg-slate-500/20 text-slate-300",
   gerando_arte: "bg-blue-500/20 text-blue-400",
   com_arte: "bg-cyan-500/20 text-cyan-400",
+  gerando: "bg-amber-500/20 text-amber-400",
+  aguardando_render: "bg-yellow-500/20 text-yellow-400",
+  gerando_cena: "bg-blue-500/20 text-blue-400",
   gerando_video: "bg-amber-500/20 text-amber-400",
+  compondo: "bg-indigo-500/20 text-indigo-400",
+  compondo_video: "bg-orange-500/20 text-orange-400",
+  timeout_render: "bg-orange-500/20 text-orange-400",
   pronto: "bg-emerald-500/20 text-emerald-400",
   erro: "bg-red-500/20 text-red-400",
 };
@@ -139,9 +145,12 @@ const Videos = () => {
             <SelectContent className="bg-[#1e293b] border-white/10">
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="pendente">Pendente</SelectItem>
-              <SelectItem value="gerando_arte">Gerando Arte</SelectItem>
-              <SelectItem value="com_arte">Com Arte</SelectItem>
-              <SelectItem value="gerando_video">Gerando Vídeo</SelectItem>
+              <SelectItem value="gerando">Gerando</SelectItem>
+              <SelectItem value="aguardando_render">Aguardando Render</SelectItem>
+              <SelectItem value="gerando_cena">Gerando Cena</SelectItem>
+              <SelectItem value="compondo">Compondo</SelectItem>
+              <SelectItem value="compondo_video">Compondo Vídeo</SelectItem>
+              <SelectItem value="timeout_render">Timeout</SelectItem>
               <SelectItem value="pronto">Pronto</SelectItem>
               <SelectItem value="erro">Erro</SelectItem>
             </SelectContent>
