@@ -259,8 +259,8 @@ async function composeInCreatomate(
     }
 
     const renders = JSON.parse(responseText);
-    const renderId = renders[0]?.id;
-    if (!renderId) throw new Error("Creatomate sem render ID");
+    const renderId = Array.isArray(renders) ? renders[0]?.id : renders?.id;
+    if (!renderId) throw new Error("Creatomate sem render ID: " + responseText.substring(0, 200));
     await logAgente(`Creatomate render submetido: ${renderId}`, "info");
 
     // Poll for up to 10 minutes (120 x 5s)
