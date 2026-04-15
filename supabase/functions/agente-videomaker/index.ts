@@ -459,10 +459,10 @@ Deno.serve(async (req) => {
 
         try {
           // ── STEP 1: Generate Part A & Part B in parallel ──
-          await logAgente("Gerando 2 clips de 15s em paralelo...", "info");
+          await logAgente("Gerando 2 cenas (imagem→vídeo) em paralelo...", "info");
           const [partAUrl, partBUrl] = await Promise.all([
-            generateSeedanceVideo(partA.prompt, "Parte_A"),
-            generateSeedanceVideo(partB.prompt, "Parte_B"),
+            generateSceneVideo(partA.prompt, "Parte_A"),
+            generateSceneVideo(partB.prompt, "Parte_B"),
           ]);
 
           if (!partAUrl) {
