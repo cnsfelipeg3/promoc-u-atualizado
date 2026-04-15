@@ -382,25 +382,40 @@ Deno.serve(async (req) => {
             );
           }
 
-          const readyUrl = finalUrl || checkedPartA?.stored_url || checkedPartA?.video_url || null;
+          // CRITICAL: Only mark as "pronto" if Creatomate composed successfully
+          // Never save raw scene as video_final_url — audio MUST be baked in
+          if (finalUrl) {
+            await supabase.from("videos").update({
+              scene_video_url: checkedPartA?.stored_url || null,
+              video_url: checkedPartA?.stored_url || checkedPartA?.video_url || null,
+              video_final_url: finalUrl,
+              narration_url: narrationUrl,
+              status: "pronto",
+              payload: nextPayload,
+              erro_detalhes: null,
+            }).eq("id", video.id);
 
-          await supabase.from("videos").update({
-            scene_video_url: checkedPartA?.stored_url || null,
-            video_url: checkedPartA?.stored_url || checkedPartA?.video_url || null,
-            video_final_url: readyUrl,
-            narration_url: narrationUrl,
-            status: "pronto",
-            payload: nextPayload,
-            erro_detalhes: null,
-          }).eq("id", video.id);
-
-          await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", video.promocao_id);
-          results.push({ id: video.id, requestId, newStatus: "pronto" });
-          await logAgente(`Vídeo pronto (pipeline assíncrono) para ${(video as any).promocoes?.origem}→${(video as any).promocoes?.destino}`, "success", {
-            videoId: video.id,
-            requestId,
-            readyUrl,
-          });
+            await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", video.promocao_id);
+            results.push({ id: video.id, requestId, newStatus: "pronto" });
+            await logAgente(`Vídeo COMPOSTO pronto para ${(video as any).promocoes?.origem}→${(video as any).promocoes?.destino}`, "success", {
+              videoId: video.id, requestId, finalUrl,
+            });
+          } else {
+            // Creatomate failed — save scene + narration but DON'T mark as pronto
+            await supabase.from("videos").update({
+              scene_video_url: checkedPartA?.stored_url || null,
+              video_url: checkedPartA?.stored_url || checkedPartA?.video_url || null,
+              video_final_url: null,
+              narration_url: narrationUrl,
+              status: "compondo_video",
+              payload: nextPayload,
+              erro_detalhes: "Composição Creatomate falhou — será retentada no próximo check",
+            }).eq("id", video.id);
+            results.push({ id: video.id, requestId, newStatus: "compondo_video_retry" });
+            await logAgente(`Creatomate falhou para ${(video as any).promocoes?.origem}→${(video as any).promocoes?.destino}, ficará em compondo_video para retry`, "warn", {
+              videoId: video.id, requestId,
+            });
+          }
           continue;
         }
 
