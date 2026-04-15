@@ -31,7 +31,7 @@ const I2V_ENDPOINTS = [
   {
     name: "DoP Turbo",
     path: "/v1/image2video/dop",
-    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-turbo", prompt, input_images: [{ type: "image_url", image_url: imageUrl }] } }),
+    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-turbo", prompt, aspect_ratio: "9:16", input_images: [{ type: "image_url", image_url: imageUrl }] } }),
   },
   {
     name: "Kling 2.1 Pro",
@@ -41,12 +41,12 @@ const I2V_ENDPOINTS = [
   {
     name: "DoP Standard",
     path: "/v1/image2video/dop",
-    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-standard", prompt, input_images: [{ type: "image_url", image_url: imageUrl }] } }),
+    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-standard", prompt, aspect_ratio: "9:16", input_images: [{ type: "image_url", image_url: imageUrl }] } }),
   },
   {
     name: "DoP Lite",
     path: "/v1/image2video/dop",
-    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-lite", prompt, input_images: [{ type: "image_url", image_url: imageUrl }] } }),
+    body: (imageUrl: string, prompt: string) => ({ params: { model: "dop-lite", prompt, aspect_ratio: "9:16", input_images: [{ type: "image_url", image_url: imageUrl }] } }),
   },
 ];
 
@@ -199,23 +199,80 @@ function buildCreatomatePayload(
   videoPartAUrl: string, videoPartBUrl: string, narrationUrl: string | null,
   ov: { destino: string; preco: string; preco_normal: string; desconto: string; cia: string; escalas: string; tipo: string }
 ) {
-  const elements: Record<string, unknown>[] = [
-    { type: "video", track: 1, source: videoPartAUrl, duration: 15, width: "100%", height: "100%", fit: "cover", animations: [{ time: "start", duration: 0.5, type: "fade", easing: "linear" }] },
-    { type: "video", track: 1, source: videoPartBUrl, duration: 16, width: "100%", height: "100%", fit: "cover", animations: [{ time: "start", duration: 1, transition: true, type: "fade", easing: "linear" }] },
-    { type: "text", track: 3, text: "PromoCéu ✈️", time: 0, duration: 30, x: "50%", y: "6%", width: "60%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "#FFFFFF", font_family: "Montserrat", font_weight: 700, font_size: "5.5 vmin", shadow_color: "rgba(0,0,0,0.7)", shadow_blur: 8, shadow_x: 2, shadow_y: 2, opacity: "90%" },
-    { type: "text", track: 3, text: ov.desconto + " OFF", time: 1, duration: 8, x: "50%", y: "15%", width: "40%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "#FF0000", background_color: "#FFFF00", background_x_padding: "15%", background_y_padding: "10%", background_border_radius: "8", font_family: "Montserrat", font_weight: 900, font_size: "7 vmin", animations: [{ time: "start", duration: 0.6, type: "text-slide", direction: "down", easing: "quadratic-out" }, { time: 7, duration: 0.5, type: "fade", reversed: true }] },
-    { type: "text", track: 3, text: ov.destino.toUpperCase(), time: 18, duration: 12, x: "50%", y: "70%", width: "90%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "#FFFFFF", font_family: "Montserrat", font_weight: 900, font_size: "10 vmin", shadow_color: "rgba(0,0,0,0.8)", shadow_blur: 12, shadow_x: 3, shadow_y: 3, animations: [{ time: "start", duration: 0.7, type: "text-slide", direction: "up", easing: "quadratic-out" }] },
-    { type: "text", track: 3, text: ov.preco, time: 20, duration: 10, x: "50%", y: "80%", width: "80%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "#00FF88", font_family: "Montserrat", font_weight: 900, font_size: "12 vmin", shadow_color: "rgba(0,0,0,0.8)", shadow_blur: 10, shadow_x: 2, shadow_y: 2, animations: [{ time: "start", duration: 0.5, type: "fade", easing: "quadratic-out" }] },
-    { type: "text", track: 3, text: "de " + ov.preco_normal, time: 20, duration: 10, x: "50%", y: "75%", width: "60%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "rgba(255,255,255,0.7)", font_family: "Montserrat", font_weight: 400, font_size: "4.5 vmin", font_style: "normal", text_decoration: "line-through" },
-    { type: "text", track: 3, text: ov.cia + " • " + ov.escalas + " • " + ov.tipo, time: 22, duration: 8, x: "50%", y: "88%", width: "85%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "#FFFFFF", font_family: "Montserrat", font_weight: 600, font_size: "4 vmin", shadow_color: "rgba(0,0,0,0.6)", shadow_blur: 6, animations: [{ time: "start", duration: 0.4, type: "fade" }] },
-    { type: "text", track: 3, text: "🔥 Link na bio • PromoCéu", time: 25, duration: 5, x: "50%", y: "94%", width: "85%", height: "auto", x_alignment: 50, y_alignment: 50, fill_color: "#FFFFFF", background_color: "rgba(0,0,0,0.6)", background_x_padding: "10%", background_y_padding: "8%", background_border_radius: "20", font_family: "Montserrat", font_weight: 700, font_size: "4.5 vmin", animations: [{ time: "start", duration: 0.5, type: "text-slide", direction: "up", easing: "quadratic-out" }] },
-  ];
-
-  if (narrationUrl) {
-    elements.splice(2, 0, { type: "audio", track: 2, source: narrationUrl, volume: 85, audio_fade_in: 0.3, audio_fade_out: 0.5 });
-  }
-
-  return { output_format: "mp4" as const, width: 1080, height: 1920, frame_rate: 30, elements };
+  return {
+    output_format: "mp4",
+    width: 1080,
+    height: 1920,
+    frame_rate: 30,
+    source: {
+      output_format: "mp4",
+      width: 1080,
+      height: 1920,
+      frame_rate: 30,
+      duration: 30,
+      elements: [
+        // TRACK 1: Videos
+        {
+          type: "video", track: 1, time: 0, duration: 16, source: videoPartAUrl, fit: "cover",
+          animations: [{ type: "scale", start_scale: "100%", end_scale: "105%", time: 0, duration: 16, easing: "linear" }],
+        },
+        {
+          type: "video", track: 1, time: 14, duration: 16, source: videoPartBUrl, fit: "cover",
+          transition: { type: "fade", duration: 2 },
+          animations: [{ type: "scale", start_scale: "100%", end_scale: "105%", time: 0, duration: 16, easing: "linear" }],
+        },
+        // TRACK 2: Narration
+        ...(narrationUrl ? [{ type: "audio", track: 2, time: 1, source: narrationUrl, volume: 100, duration: 28 }] : []),
+        // TRACK 3: Overlays
+        {
+          type: "text", track: 3, time: 0, duration: 30, text: "PromoCéu ✈️",
+          font_family: "Montserrat", font_weight: "800", font_size: 52,
+          fill_color: "#FFFFFF", shadow_color: "rgba(0,0,0,0.6)", shadow_blur: 8,
+          x_alignment: 50, y_alignment: 8, width: 100, height: 10,
+          x_padding: 2, y_padding: 1,
+          background_color: "rgba(0,0,0,0.3)", background_border_radius: 12,
+        },
+        {
+          type: "text", track: 3, time: 2, duration: 26, text: ov.destino.toUpperCase(),
+          font_family: "Montserrat", font_weight: "900", font_size: 72,
+          fill_color: "#FFFFFF", stroke_color: "#000000", stroke_width: 3,
+          x_alignment: 50, y_alignment: 25, width: 90, height: 15,
+        },
+        {
+          type: "text", track: 3, time: 3, duration: 24, text: `-${ov.desconto} OFF`,
+          font_family: "Montserrat", font_weight: "800", font_size: 36,
+          fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 20,
+          x_alignment: 82, y_alignment: 18, width: 30, height: 6, x_padding: 3, y_padding: 1.5,
+        },
+        {
+          type: "text", track: 3, time: 4, duration: 24, text: ov.preco,
+          font_family: "Montserrat", font_weight: "900", font_size: 96,
+          fill_color: "#00FF88", stroke_color: "#003322", stroke_width: 4,
+          x_alignment: 50, y_alignment: 72, width: 90, height: 12,
+        },
+        {
+          type: "text", track: 3, time: 4, duration: 24, text: `de ${ov.preco_normal}`,
+          font_family: "Montserrat", font_weight: "600", font_size: 32,
+          fill_color: "rgba(255,255,255,0.6)", text_decoration: "line-through",
+          x_alignment: 50, y_alignment: 66, width: 60, height: 5,
+        },
+        {
+          type: "text", track: 3, time: 5, duration: 22,
+          text: `${ov.cia} • ${ov.tipo} • ${ov.escalas}`,
+          font_family: "Montserrat", font_weight: "600", font_size: 28,
+          fill_color: "#FFFFFF", background_color: "rgba(0,0,0,0.5)", background_border_radius: 8,
+          x_alignment: 50, y_alignment: 82, width: 85, height: 5, x_padding: 2, y_padding: 1,
+        },
+        {
+          type: "text", track: 3, time: 22, duration: 8, text: "🔥 ENTRE NO GRUPO PROMOCÉU 🔥",
+          font_family: "Montserrat", font_weight: "800", font_size: 40,
+          fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 16,
+          x_alignment: 50, y_alignment: 90, width: 90, height: 8, x_padding: 3, y_padding: 2,
+          animations: [{ type: "scale", start_scale: "80%", end_scale: "100%", time: 0, duration: 0.5, easing: "ease-out" }],
+        },
+      ],
+    },
+  };
 }
 
 async function composeWithCreatomate(payload: Record<string, unknown>, apiKey: string, supabase: ReturnType<typeof createClient>): Promise<string> {
@@ -224,7 +281,7 @@ async function composeWithCreatomate(payload: Record<string, unknown>, apiKey: s
   const r = await fetch("https://api.creatomate.com/v2/renders", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-    body: JSON.stringify(payload),
+    body: JSON.stringify([payload]),
   });
   if (!r.ok) {
     const err = await r.text();
@@ -277,7 +334,7 @@ Deno.serve(async (req) => {
     const higgsHeaders = { "Authorization": higgsAuth, "Content-Type": "application/json" };
     const logFn = (t: string, m: string) => log(supabase, t, m);
 
-    await log(supabase, "info", `VideoMaker v10 iniciando para promo ${promoId}`);
+    await log(supabase, "info", `VideoMaker v11 iniciando para promo ${promoId}`);
 
     // Load promo
     const { data: promo, error: pErr } = await supabase.from("promocoes").select("*").eq("id", promoId).single();
