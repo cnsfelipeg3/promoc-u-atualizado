@@ -107,6 +107,7 @@ export type Database = {
           margem_pct: number | null
           narration_script: string | null
           origem: string
+          overlay_config: Json | null
           pct_desconto: number | null
           preco: number
           preco_cliente: number | null
@@ -135,6 +136,7 @@ export type Database = {
           margem_pct?: number | null
           narration_script?: string | null
           origem: string
+          overlay_config?: Json | null
           pct_desconto?: number | null
           preco: number
           preco_cliente?: number | null
@@ -163,6 +165,7 @@ export type Database = {
           margem_pct?: number | null
           narration_script?: string | null
           origem?: string
+          overlay_config?: Json | null
           pct_desconto?: number | null
           preco?: number
           preco_cliente?: number | null
@@ -187,9 +190,11 @@ export type Database = {
           erro_detalhes: string | null
           higgsfield_request_id: string | null
           id: string
+          music_url: string | null
           narration_url: string | null
           payload: Json | null
           promocao_id: string | null
+          scene_video_url: string | null
           status: string | null
           updated_at: string | null
           variation_label: string | null
@@ -203,9 +208,11 @@ export type Database = {
           erro_detalhes?: string | null
           higgsfield_request_id?: string | null
           id?: string
+          music_url?: string | null
           narration_url?: string | null
           payload?: Json | null
           promocao_id?: string | null
+          scene_video_url?: string | null
           status?: string | null
           updated_at?: string | null
           variation_label?: string | null
@@ -219,9 +226,11 @@ export type Database = {
           erro_detalhes?: string | null
           higgsfield_request_id?: string | null
           id?: string
+          music_url?: string | null
           narration_url?: string | null
           payload?: Json | null
           promocao_id?: string | null
+          scene_video_url?: string | null
           status?: string | null
           updated_at?: string | null
           variation_label?: string | null
