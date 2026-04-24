@@ -192,11 +192,26 @@ const Configuracoes = () => {
               />
             </div>
             <div>
-              <label className="text-sm text-slate-400 block mb-1">Voz ElevenLabs</label>
+              <label className="text-sm text-slate-400 block mb-1">Voz ElevenLabs (PT-BR natural)</label>
+              <select
+                value={config.elevenlabs_voice}
+                onChange={(e) => setConfig({ ...config, elevenlabs_voice: e.target.value })}
+                className="w-full bg-white/5 border border-white/10 text-white rounded-md h-10 px-3 text-sm"
+              >
+                <option value="nPczCjzI2devNBz1zQrb">Brian (default — multilingual, voz masculina)</option>
+                <option value="YNu3k2LCbPpcaxqNmevN">Diogo Rates (BR jovem informal)</option>
+                <option value="fw2rVt87x8k5n1K2MUsA">Fábio Abreu (BR carismático)</option>
+                <option value="FvmvwvObRqIHojkEGh5N">Gabriela (BR feminina jovem)</option>
+                <option value="21m00Tcm4TlvDq8ikWAM">Rachel (multilingual feminina)</option>
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Vozes BR exigem que estejam adicionadas na sua conta ElevenLabs. Se a voz falhar, volta pra Brian.
+              </p>
               <Input
                 value={config.elevenlabs_voice}
                 onChange={(e) => setConfig({ ...config, elevenlabs_voice: e.target.value })}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white/5 border-white/10 text-white mt-2 text-xs font-mono"
+                placeholder="Voice ID customizado"
               />
             </div>
           </CardContent>
