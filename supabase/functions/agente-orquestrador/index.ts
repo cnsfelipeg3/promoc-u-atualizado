@@ -16,7 +16,13 @@ const SYSTEM_PROMPT = `Você é o diretor criativo da Promoceu — um clube de a
 
 Sua missão: receber dados de uma promoção e devolver um PACOTE CRIATIVO COMPLETO pra virar um vídeo viral no TikTok que leva a pessoa a comentar "EU QUERO" pra receber o link de assinatura no DM.
 
-Pense como alguém que faz vídeo viral de viagem, não como copywriter corporativo. Linguagem de humano falando com humano. Tom: urgente, chocado (no bom sentido), espirituoso. Fala "cara", "mano", "gente", "tipo", "ó", "sério". Nunca formal.
+# ARQUITETURA DO VÍDEO FINAL (IMPORTANTE)
+
+O vídeo tem EXATAMENTE 2 partes contínuas, ~30 segundos total:
+- PART_A (0-15s): intro + hook visual, estabelece o destino e a promoção
+- PART_B (15-30s): desenvolvimento, mostra o destino em detalhes, termina com CTA
+
+Cada parte é gerada separadamente por IA (imagem → vídeo) e depois composta. Pense como um storyboard de 2 cenas que se conectam visualmente.
 
 # FORMATO DO OUTPUT (obrigatório)
 
@@ -27,20 +33,24 @@ Responda APENAS um JSON válido, sem markdown, sem explicação. Schema:
   "score_justificativa": string (1 frase),
   "titulo_video": string (até 60 chars, chamativo, SEM emoji),
   "hooks": [string (3 hooks diferentes, até 10 palavras cada)],
-  "narration_script": string (80-110 palavras com marcações de entonação — ver regras),
-  "art_prompt": string (inglês, cinematográfico, 9:16, SEM texto — usado como fallback),
-  "video_prompt": string (inglês, 5s, vertical, SEM texto — primeiro clipe do storyboard),
-  "video_prompts": [string] (8-10 prompts EM INGLÊS, cinematográficos, 5s cada, 9:16, SEM texto — viagem visual progressiva: estabelecer → detalhes → atmosfera → climax),
   "storyboard": {
-    "part_a": { "prompt": string, "motion_prompt": string, "duration": 5 },
-    "part_b": { "prompt": string, "motion_prompt": string, "duration": 5 }
+    "part_a": {
+      "prompt": string (inglês, imagem cinematográfica do destino — ESTABELECIMENTO, cena ampla ou hero shot, 9:16),
+      "motion_prompt": string (inglês, como a câmera move — ex: "Slow dolly push-in through the scene"),
+      "duration": 15
+    },
+    "part_b": {
+      "prompt": string (inglês, imagem cinematográfica do destino — DETALHE íntimo, experiência, MESMA paleta que part_a, 9:16),
+      "motion_prompt": string (inglês, ex: "Smooth orbit camera around the subject"),
+      "duration": 15
+    },
+    "narration_script": string (80-100 palavras, 25-30s falado, ver REGRAS abaixo)
   },
+  "video_prompts": [string] (8-10 prompts EM INGLÊS, cinematográficos, 5s cada, 9:16, SEM texto — fallback pro modo dinâmico),
   "text_overlays": [{"tempo_s": number, "texto": string (MAIÚSCULO, até 6 palavras)}],
   "cta_text": string (até 15 palavras),
   "hashtags": [string] (8-12, sem #)
 }
-
-IMPORTANTE: storyboard.part_a e storyboard.part_b são OBRIGATÓRIOS pra retrocompatibilidade — copie os 2 primeiros de video_prompts. art_prompt = part_a.prompt. video_prompt = part_a.motion_prompt.
 
 # CRITÉRIOS DE SCORE (seja crítico)
 
@@ -51,10 +61,10 @@ IMPORTANTE: storyboard.part_a e storyboard.part_b são OBRIGATÓRIOS pra retroco
 
 # REGRAS DE NARRAÇÃO (CRÍTICO — define se soa humana ou robô)
 
-- Duração alvo: 30-45s falado (80-110 palavras)
+- Duração alvo: 25-30 segundos quando falado (80-100 palavras) — NÃO estoure
 - HOOK que quebra o scroll (nunca "Olá", "Bem-vindos", "Atenção")
 - Português brasileiro INFORMAL, tom influencer TikTok, não locutor corporativo
-- Gírias OK: "cara", "mano", "gente", "tipo", "sério", "juro", "ó"
+- Gírias OK: "cara", "mano", "gente", "tipo", "sério", "juro", "ó", "para tudo"
 - Segunda pessoa ("você")
 - Zero jargão técnico (IATA, RT, OW)
 
@@ -68,20 +78,25 @@ IMPORTANTE: storyboard.part_a e storyboard.part_b são OBRIGATÓRIOS pra retroco
 - Números cruciais SEMPRE por extenso ("mil oitocentos e quarenta e sete" > "1847")
 - CTA final intimado: "comenta EU QUERO aí embaixo que eu te mando o link no direct"
 
-# REGRAS DE PROMPTS VISUAIS (ART/VIDEO)
+# REGRAS DE STORYBOARD VISUAL
 
-- Sempre em INGLÊS
+- part_a.prompt e part_b.prompt sempre em INGLÊS
 - Sempre vertical 9:16
-- Vocabulário cinematográfico: "cinematic", "golden hour", "anamorphic lens flare", "shallow depth of field", "teal and orange color grade", "smooth drone shot", "handheld feel"
-- Detalhe específico do destino ("Eiffel Tower silhouette at sunset" > "Paris skyline")
-- Sem texto na imagem/vídeo
-- video_prompts[] deve contar uma JORNADA visual: clipe 1 = estabelecer (wide aerial), 2-3 = aproximar (mid shots), 4-6 = detalhes humanos/locais, 7-8 = atmosfera/climax. NUNCA repita o mesmo tipo de shot.
+- Vocabulário cinematográfico: "cinematic", "golden hour", "anamorphic lens flare", "shallow depth of field", "teal and orange color grade", "handheld feel"
+- part_a = plano amplo / estabelecimento (ex: "Wide aerial shot of Paris...")
+- part_b = detalhe íntimo / experiência (ex: "Close-up of Parisian café terrace...")
+- MESMA paleta de cores e estética entre A e B pra parecer 1 filme
+- Sem texto na imagem (texto é overlay do Creatomate)
+- video_prompts[] (fallback): 8-10 clipes contando uma JORNADA — estabelecer → detalhes → atmosfera → climax. NUNCA repita o mesmo shot.
 
-# EXEMPLO CALIBRADO (siga esse padrão pro narration_script)
+# EXEMPLO CALIBRADO (siga esse formato exato)
 
-"Mil oitocentos e quarenta e sete reais... pra PARIS. Ida e volta, cara. Com Air France. Ó, o preço normal disso é QUASE SEIS MIL. O que tá rolando é: alguns dias do ano a companhia libera uns preços absurdos e... ninguém fica sabendo. Eu caço essas promoções TODO dia e jogo no meu grupo fechado. Quem tá lá dentro já comprou enquanto a gente conversa aqui, sério. Quer entrar? Comenta EU QUERO aqui embaixo que eu te mando o link da Promoceu direto no seu direct."
+Input: { "origem": "São Paulo", "destino": "Paris", "preco": 1847, "preco_normal": 5890, "cia_aerea": "Air France" }
 
-Note: reticências, MAIÚSCULAS, "cara", "ó", "sério", "tá rolando" — é isso que transforma robô em humano.
+storyboard.narration_script esperado:
+"Mil oitocentos e quarenta e sete reais... pra PARIS. Ida e volta, cara. Com Air France. Ó, o preço normal disso é QUASE SEIS MIL. Alguns dias do ano a companhia libera preços absurdos e... ninguém fica sabendo. Eu caço essas promoções TODO dia e jogo no meu grupo fechado. Quer entrar? Comenta EU QUERO aqui embaixo que eu te mando o link da Promoceu no direct."
+
+Note: reticências, MAIÚSCULAS, "cara", "ó", "sério" — é isso que transforma robô em humano.
 
 Agora gere o pacote pra promoção que vou te passar.`;
 
@@ -174,8 +189,16 @@ serve(async (req: Request) => {
       return json({ error: "JSON inválido", raw }, 502);
     }
 
-    const obrigatorios = ["score", "titulo_video", "narration_script", "art_prompt", "video_prompt", "text_overlays"];
+    const obrigatorios = ["score", "titulo_video", "storyboard", "text_overlays"];
     const faltando = obrigatorios.filter(c => !(c in pacote));
+
+    // Validação extra do storyboard
+    if (pacote.storyboard) {
+      if (!pacote.storyboard.part_a?.prompt) faltando.push("storyboard.part_a.prompt");
+      if (!pacote.storyboard.part_b?.prompt) faltando.push("storyboard.part_b.prompt");
+      if (!pacote.storyboard.narration_script) faltando.push("storyboard.narration_script");
+    }
+
     if (faltando.length > 0) {
       await supabase.from("promocoes").update({ status: "pendente" }).eq("id", promocao_id);
       return json({ error: "Pacote incompleto", faltando }, 502);
@@ -202,9 +225,10 @@ serve(async (req: Request) => {
       score_justificativa: pacote.score_justificativa,
       titulo_video: pacote.titulo_video,
       hooks: pacote.hooks,
-      narration_script: pacote.narration_script,
-      art_prompt: pacote.art_prompt,
-      video_prompt: pacote.video_prompt,
+      // Lê do storyboard (novo schema), com fallback pro schema antigo
+      narration_script: pacote.storyboard?.narration_script ?? pacote.narration_script,
+      art_prompt: pacote.storyboard?.part_a?.prompt ?? pacote.art_prompt,
+      video_prompt: pacote.storyboard?.part_b?.motion_prompt ?? pacote.video_prompt,
       video_prompts: pacote.video_prompts ?? null,
       text_overlays: pacote.text_overlays,
       cta_text: pacote.cta_text,
@@ -212,7 +236,7 @@ serve(async (req: Request) => {
       preco_final: precoFinal,
       preco_cliente: precoFinal,
       status: novoStatus,
-      prompt_variations: pacote,
+      prompt_variations: pacote, // pacote inteiro — videomaker lê .storyboard.part_a/part_b daqui
     }).eq("id", promocao_id);
 
     if (errUpdate) {
@@ -237,67 +261,17 @@ serve(async (req: Request) => {
   }
 });
 
-async function dispararProducao(supabase: any, promocaoId: string, pacote: any) {
-  const tasks: Promise<any>[] = [];
-
-  if (Deno.env.get("ELEVENLABS_API_KEY") && pacote.narration_script) {
-    tasks.push(gerarNarracao(supabase, promocaoId, pacote.narration_script));
-  }
-
-  // Reutiliza o agente-videomaker existente (já integra Higgsfield + webhook)
-  tasks.push(
-    supabase.functions.invoke("agente-videomaker", { body: { promocao_id: promocaoId } })
-      .then(({ error }: any) => {
-        if (error) return log(supabase, "orquestrador", "error", "Falha ao invocar agente-videomaker", { error });
-        return log(supabase, "orquestrador", "success", "agente-videomaker disparado");
-      })
-      .catch((e: any) => log(supabase, "orquestrador", "error", "Exceção ao invocar agente-videomaker", { erro: e?.message }))
-  );
-
-  await Promise.allSettled(tasks);
-}
-
-async function gerarNarracao(supabase: any, promocaoId: string, script: string) {
+async function dispararProducao(supabase: any, promocaoId: string, _pacote: any) {
+  // Narração agora é gerada DENTRO do agente-videomaker (que mede duração e dispara Higgsfield em sequência)
   try {
-    const { data: configRow } = await supabase
-      .from("config_agentes").select("config").eq("agente", "orquestrador").maybeSingle();
-    const voiceId = (configRow?.config as any)?.elevenlabs_voice ?? "21m00Tcm4TlvDq8ikWAM";
-
-    const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
-      method: "POST",
-      headers: {
-        "xi-api-key": Deno.env.get("ELEVENLABS_API_KEY")!,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: script,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.6, use_speaker_boost: true },
-      }),
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      await log(supabase, "elevenlabs", "error", `Falha narração: ${resp.status}`, { errText });
-      return;
+    const { error } = await supabase.functions.invoke("agente-videomaker", { body: { promocao_id: promocaoId } });
+    if (error) {
+      await log(supabase, "orquestrador", "error", "Falha ao invocar agente-videomaker", { error });
+    } else {
+      await log(supabase, "orquestrador", "success", "agente-videomaker disparado");
     }
-
-    const audioBuf = new Uint8Array(await resp.arrayBuffer());
-    const filename = `narracao_${promocaoId}_${Date.now()}.mp3`;
-
-    const { error: upErr } = await supabase.storage.from("audios")
-      .upload(filename, audioBuf, { contentType: "audio/mpeg", upsert: true });
-    if (upErr) {
-      await log(supabase, "elevenlabs", "error", "Falha upload narração", { upErr });
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from("audios").getPublicUrl(filename);
-    await supabase.from("promocoes")
-      .update({ audio_narracao_url: urlData.publicUrl }).eq("id", promocaoId);
-    await log(supabase, "elevenlabs", "success", `Narração gerada: ${urlData.publicUrl}`);
-  } catch (err: any) {
-    await log(supabase, "elevenlabs", "error", "Exceção narração", { erro: err?.message });
+  } catch (e: any) {
+    await log(supabase, "orquestrador", "error", "Exceção ao invocar agente-videomaker", { erro: e?.message });
   }
 }
 
