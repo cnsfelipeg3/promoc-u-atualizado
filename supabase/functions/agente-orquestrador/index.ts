@@ -225,9 +225,10 @@ serve(async (req: Request) => {
       score_justificativa: pacote.score_justificativa,
       titulo_video: pacote.titulo_video,
       hooks: pacote.hooks,
-      narration_script: pacote.narration_script,
-      art_prompt: pacote.art_prompt,
-      video_prompt: pacote.video_prompt,
+      // Lê do storyboard (novo schema), com fallback pro schema antigo
+      narration_script: pacote.storyboard?.narration_script ?? pacote.narration_script,
+      art_prompt: pacote.storyboard?.part_a?.prompt ?? pacote.art_prompt,
+      video_prompt: pacote.storyboard?.part_b?.motion_prompt ?? pacote.video_prompt,
       video_prompts: pacote.video_prompts ?? null,
       text_overlays: pacote.text_overlays,
       cta_text: pacote.cta_text,
@@ -235,7 +236,7 @@ serve(async (req: Request) => {
       preco_final: precoFinal,
       preco_cliente: precoFinal,
       status: novoStatus,
-      prompt_variations: pacote,
+      prompt_variations: pacote, // pacote inteiro — videomaker lê .storyboard.part_a/part_b daqui
     }).eq("id", promocao_id);
 
     if (errUpdate) {
