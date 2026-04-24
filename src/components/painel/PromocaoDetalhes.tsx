@@ -35,11 +35,17 @@ interface Promocao {
   narration_script: string | null;
   art_prompt: string | null;
   video_prompt: string | null;
+  video_prompts: any;
   text_overlays: any;
   cta_text: string | null;
   hashtags: any;
   audio_narracao_url: string | null;
   higgsfield_request_id: string | null;
+  duracao_narracao_s: number | null;
+  clipes_urls: any;
+  clipes_total: number | null;
+  clipes_recebidos: number | null;
+  video_final_url: string | null;
 }
 
 const statusColors: Record<string, string> = {
