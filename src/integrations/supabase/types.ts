@@ -95,14 +95,19 @@ export type Database = {
       promocoes: {
         Row: {
           art_prompt: string | null
+          audio_narracao_url: string | null
           bagagem: string | null
           cia_aerea: string | null
           classe: string | null
           created_at: string | null
+          cta_text: string | null
           dados_extras: Json | null
           destino: string
           escalas: string | null
           fonte: string | null
+          hashtags: Json | null
+          higgsfield_request_id: string | null
+          hooks: Json | null
           id: string
           margem_pct: number | null
           narration_script: string | null
@@ -111,12 +116,15 @@ export type Database = {
           pct_desconto: number | null
           preco: number
           preco_cliente: number | null
+          preco_final: number | null
           preco_normal: number | null
           prompt_variations: Json | null
           score: number | null
           score_justificativa: string | null
           status: string | null
+          text_overlays: Json | null
           tipo_voo: string | null
+          titulo_video: string | null
           updated_at: string | null
           url_fonte: string | null
           validade: string | null
@@ -124,14 +132,19 @@ export type Database = {
         }
         Insert: {
           art_prompt?: string | null
+          audio_narracao_url?: string | null
           bagagem?: string | null
           cia_aerea?: string | null
           classe?: string | null
           created_at?: string | null
+          cta_text?: string | null
           dados_extras?: Json | null
           destino: string
           escalas?: string | null
           fonte?: string | null
+          hashtags?: Json | null
+          higgsfield_request_id?: string | null
+          hooks?: Json | null
           id?: string
           margem_pct?: number | null
           narration_script?: string | null
@@ -140,12 +153,15 @@ export type Database = {
           pct_desconto?: number | null
           preco: number
           preco_cliente?: number | null
+          preco_final?: number | null
           preco_normal?: number | null
           prompt_variations?: Json | null
           score?: number | null
           score_justificativa?: string | null
           status?: string | null
+          text_overlays?: Json | null
           tipo_voo?: string | null
+          titulo_video?: string | null
           updated_at?: string | null
           url_fonte?: string | null
           validade?: string | null
@@ -153,14 +169,19 @@ export type Database = {
         }
         Update: {
           art_prompt?: string | null
+          audio_narracao_url?: string | null
           bagagem?: string | null
           cia_aerea?: string | null
           classe?: string | null
           created_at?: string | null
+          cta_text?: string | null
           dados_extras?: Json | null
           destino?: string
           escalas?: string | null
           fonte?: string | null
+          hashtags?: Json | null
+          higgsfield_request_id?: string | null
+          hooks?: Json | null
           id?: string
           margem_pct?: number | null
           narration_script?: string | null
@@ -169,12 +190,15 @@ export type Database = {
           pct_desconto?: number | null
           preco?: number
           preco_cliente?: number | null
+          preco_final?: number | null
           preco_normal?: number | null
           prompt_variations?: Json | null
           score?: number | null
           score_justificativa?: string | null
           status?: string | null
+          text_overlays?: Json | null
           tipo_voo?: string | null
+          titulo_video?: string | null
           updated_at?: string | null
           url_fonte?: string | null
           validade?: string | null
