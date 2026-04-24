@@ -166,17 +166,18 @@ async function discoverI2V(imageUrl: string, motionPrompt: string, headers: Reco
   return null;
 }
 
-// ── ElevenLabs narration ────────────────────────────────────
-async function generateNarration(script: string, apiKey: string, supabase: ReturnType<typeof createClient>, promoId: string): Promise<string> {
-  const voiceId = "nPczCjzI2devNBz1zQrb";
-  await log(supabase, "info", `Gerando narração: ${script.substring(0, 80)}...`);
+// ── ElevenLabs narration (PT-BR natural) ────────────────────
+async function generateNarration(script: string, apiKey: string, supabase: ReturnType<typeof createClient>, promoId: string, voiceId: string): Promise<{ url: string; durationS: number }> {
+  await log(supabase, "info", `Gerando narração PT-BR (voice ${voiceId.slice(0, 8)}...): ${script.substring(0, 80)}...`);
 
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      text: script, model_id: "eleven_multilingual_v2",
-      voice_settings: { stability: 0.25, similarity_boost: 0.85, style: 1.0, use_speaker_boost: true },
+      text: script,
+      model_id: "eleven_turbo_v2_5",
+      language_code: "pt",
+      voice_settings: { stability: 0.35, similarity_boost: 0.80, style: 0.85, use_speaker_boost: true, speed: 1.0 },
     }),
   });
   if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${(await res.text()).substring(0, 300)}`);
@@ -190,8 +191,10 @@ async function generateNarration(script: string, apiKey: string, supabase: Retur
     if (r2.error) throw r2.error;
   }
   const url = supabase.storage.from("videos").getPublicUrl(fileName).data.publicUrl;
-  await log(supabase, "success", `Narração salva: ${url}`);
-  return url;
+  // Estimate duration: ~14 chars/sec in PT-BR informal speech with marcações
+  const durationS = Math.max(15, Math.min(50, script.length / 14));
+  await log(supabase, "success", `Narração salva: ${url} (~${durationS.toFixed(1)}s)`);
+  return { url, durationS };
 }
 
 // ── Creatomate composition ──────────────────────────────────
