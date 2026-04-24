@@ -189,8 +189,16 @@ serve(async (req: Request) => {
       return json({ error: "JSON inválido", raw }, 502);
     }
 
-    const obrigatorios = ["score", "titulo_video", "narration_script", "art_prompt", "video_prompt", "text_overlays"];
+    const obrigatorios = ["score", "titulo_video", "storyboard", "text_overlays"];
     const faltando = obrigatorios.filter(c => !(c in pacote));
+
+    // Validação extra do storyboard
+    if (pacote.storyboard) {
+      if (!pacote.storyboard.part_a?.prompt) faltando.push("storyboard.part_a.prompt");
+      if (!pacote.storyboard.part_b?.prompt) faltando.push("storyboard.part_b.prompt");
+      if (!pacote.storyboard.narration_script) faltando.push("storyboard.narration_script");
+    }
+
     if (faltando.length > 0) {
       await supabase.from("promocoes").update({ status: "pendente" }).eq("id", promocao_id);
       return json({ error: "Pacote incompleto", faltando }, 502);
