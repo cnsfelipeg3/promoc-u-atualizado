@@ -166,17 +166,18 @@ async function discoverI2V(imageUrl: string, motionPrompt: string, headers: Reco
   return null;
 }
 
-// ── ElevenLabs narration ────────────────────────────────────
-async function generateNarration(script: string, apiKey: string, supabase: ReturnType<typeof createClient>, promoId: string): Promise<string> {
-  const voiceId = "nPczCjzI2devNBz1zQrb";
-  await log(supabase, "info", `Gerando narração: ${script.substring(0, 80)}...`);
+// ── ElevenLabs narration (PT-BR natural) ────────────────────
+async function generateNarration(script: string, apiKey: string, supabase: ReturnType<typeof createClient>, promoId: string, voiceId: string): Promise<{ url: string; durationS: number }> {
+  await log(supabase, "info", `Gerando narração PT-BR (voice ${voiceId.slice(0, 8)}...): ${script.substring(0, 80)}...`);
 
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      text: script, model_id: "eleven_multilingual_v2",
-      voice_settings: { stability: 0.25, similarity_boost: 0.85, style: 1.0, use_speaker_boost: true },
+      text: script,
+      model_id: "eleven_turbo_v2_5",
+      language_code: "pt",
+      voice_settings: { stability: 0.35, similarity_boost: 0.80, style: 0.85, use_speaker_boost: true, speed: 1.0 },
     }),
   });
   if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${(await res.text()).substring(0, 300)}`);
@@ -190,87 +191,120 @@ async function generateNarration(script: string, apiKey: string, supabase: Retur
     if (r2.error) throw r2.error;
   }
   const url = supabase.storage.from("videos").getPublicUrl(fileName).data.publicUrl;
-  await log(supabase, "success", `Narração salva: ${url}`);
-  return url;
+  // Estimate duration: ~14 chars/sec in PT-BR informal speech with marcações
+  const durationS = Math.max(15, Math.min(50, script.length / 14));
+  await log(supabase, "success", `Narração salva: ${url} (~${durationS.toFixed(1)}s)`);
+  return { url, durationS };
 }
 
-// ── Creatomate composition ──────────────────────────────────
+// ── Creatomate composition (DYNAMIC: N clipes, narração-driven duration) ──
 function buildCreatomatePayload(
-  videoPartAUrl: string, videoPartBUrl: string, narrationUrl: string | null,
-  ov: { destino: string; preco: string; preco_normal: string; desconto: string; cia: string; escalas: string; tipo: string }
+  clipUrls: string[],
+  narrationUrl: string | null,
+  totalDurationS: number,
+  ov: { destino: string; preco: string; preco_normal: string; desconto: string; cia: string; escalas: string; tipo: string },
+  textOverlays: Array<{ tempo_s: number; texto: string }>,
 ) {
+  const N = clipUrls.length;
+  const CLIP_LEN = 5;            // cada clipe Higgsfield = 5s
+  const FADE = 0.5;              // crossfade entre clipes
+  const STEP = CLIP_LEN - FADE;  // intervalo entre starts
+
+  // Track 1: vídeos com crossfade
+  const videoElements = clipUrls.map((url, i) => {
+    const isLast = i === N - 1;
+    const time = i * STEP;
+    // último clipe estende pra cobrir até o fim da narração se necessário
+    const duration = isLast ? Math.max(CLIP_LEN, totalDurationS - time) : CLIP_LEN;
+    return {
+      type: "video", track: 1, time, duration, source: url, fit: "cover",
+      ...(i > 0 ? { transition: { type: "fade", duration: FADE } } : {}),
+      animations: [{ type: "scale", start_scale: "100%", end_scale: "108%", time: 0, duration, easing: "linear" }],
+    };
+  });
+
+  // Track 2: narração (volume 100, começa em 0.5s pra dar respiro)
+  const audioElements = narrationUrl ? [{
+    type: "audio", track: 2, time: 0.5, source: narrationUrl, volume: 100, duration: totalDurationS - 0.5,
+  }] : [];
+
+  // Track 3: overlays — header fixo + dinâmicos do roteiro + CTA final
+  const overlayElements: Array<Record<string, unknown>> = [
+    // Logo/marca topo
+    {
+      type: "text", track: 3, time: 0, duration: totalDurationS, text: "PromoCéu ✈️",
+      font_family: "Montserrat", font_weight: "800", font_size: 52,
+      fill_color: "#FFFFFF", shadow_color: "rgba(0,0,0,0.6)", shadow_blur: 8,
+      x_alignment: 50, y_alignment: 8, width: 100, height: 10,
+      x_padding: 2, y_padding: 1,
+      background_color: "rgba(0,0,0,0.3)", background_border_radius: 12,
+    },
+    // Destino
+    {
+      type: "text", track: 3, time: 1, duration: Math.max(4, totalDurationS - 6), text: ov.destino.toUpperCase(),
+      font_family: "Montserrat", font_weight: "900", font_size: 72,
+      fill_color: "#FFFFFF", stroke_color: "#000000", stroke_width: 3,
+      x_alignment: 50, y_alignment: 25, width: 90, height: 15,
+    },
+    // Badge desconto
+    {
+      type: "text", track: 3, time: 2, duration: Math.max(4, totalDurationS - 8), text: `-${ov.desconto} OFF`,
+      font_family: "Montserrat", font_weight: "800", font_size: 36,
+      fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 20,
+      x_alignment: 82, y_alignment: 18, width: 30, height: 6, x_padding: 3, y_padding: 1.5,
+    },
+    // Preço promo
+    {
+      type: "text", track: 3, time: 3, duration: Math.max(4, totalDurationS - 9), text: ov.preco,
+      font_family: "Montserrat", font_weight: "900", font_size: 96,
+      fill_color: "#00FF88", stroke_color: "#003322", stroke_width: 4,
+      x_alignment: 50, y_alignment: 72, width: 90, height: 12,
+    },
+    // Preço normal riscado
+    {
+      type: "text", track: 3, time: 3, duration: Math.max(4, totalDurationS - 9), text: `de ${ov.preco_normal}`,
+      font_family: "Montserrat", font_weight: "600", font_size: 32,
+      fill_color: "rgba(255,255,255,0.6)", text_decoration: "line-through",
+      x_alignment: 50, y_alignment: 66, width: 60, height: 5,
+    },
+    // Cia + escalas
+    {
+      type: "text", track: 3, time: 4, duration: Math.max(4, totalDurationS - 10),
+      text: `${ov.cia} • ${ov.tipo} • ${ov.escalas}`,
+      font_family: "Montserrat", font_weight: "600", font_size: 28,
+      fill_color: "#FFFFFF", background_color: "rgba(0,0,0,0.5)", background_border_radius: 8,
+      x_alignment: 50, y_alignment: 82, width: 85, height: 5, x_padding: 2, y_padding: 1,
+    },
+    // CTA final (últimos 6s)
+    {
+      type: "text", track: 3, time: Math.max(0, totalDurationS - 6), duration: 6,
+      text: "🔥 ENTRE NO GRUPO PROMOCÉU 🔥",
+      font_family: "Montserrat", font_weight: "800", font_size: 40,
+      fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 16,
+      x_alignment: 50, y_alignment: 90, width: 90, height: 8, x_padding: 3, y_padding: 2,
+      animations: [{ type: "scale", start_scale: "80%", end_scale: "100%", time: 0, duration: 0.5, easing: "ease-out" }],
+    },
+  ];
+
+  // Overlays dinâmicos do roteiro (capados em totalDurationS)
+  for (const ov2 of textOverlays.slice(0, 6)) {
+    if (ov2.tempo_s >= totalDurationS - 1) continue;
+    overlayElements.push({
+      type: "text", track: 4, time: ov2.tempo_s, duration: 3,
+      text: ov2.texto.toUpperCase(),
+      font_family: "Montserrat", font_weight: "900", font_size: 56,
+      fill_color: "#FFFF00", stroke_color: "#000000", stroke_width: 3,
+      x_alignment: 50, y_alignment: 50, width: 90, height: 10,
+      animations: [{ type: "scale", start_scale: "70%", end_scale: "100%", time: 0, duration: 0.4, easing: "ease-out" }],
+    });
+  }
+
   return {
-    output_format: "mp4",
-    width: 1080,
-    height: 1920,
-    frame_rate: 30,
+    output_format: "mp4", width: 1080, height: 1920, frame_rate: 30,
     source: {
-      output_format: "mp4",
-      width: 1080,
-      height: 1920,
-      frame_rate: 30,
-      duration: 30,
-      elements: [
-        // TRACK 1: Videos
-        {
-          type: "video", track: 1, time: 0, duration: 16, source: videoPartAUrl, fit: "cover",
-          animations: [{ type: "scale", start_scale: "100%", end_scale: "105%", time: 0, duration: 16, easing: "linear" }],
-        },
-        {
-          type: "video", track: 1, time: 14, duration: 16, source: videoPartBUrl, fit: "cover",
-          transition: { type: "fade", duration: 2 },
-          animations: [{ type: "scale", start_scale: "100%", end_scale: "105%", time: 0, duration: 16, easing: "linear" }],
-        },
-        // TRACK 2: Narration
-        ...(narrationUrl ? [{ type: "audio", track: 2, time: 1, source: narrationUrl, volume: 100, duration: 28 }] : []),
-        // TRACK 3: Overlays
-        {
-          type: "text", track: 3, time: 0, duration: 30, text: "PromoCéu ✈️",
-          font_family: "Montserrat", font_weight: "800", font_size: 52,
-          fill_color: "#FFFFFF", shadow_color: "rgba(0,0,0,0.6)", shadow_blur: 8,
-          x_alignment: 50, y_alignment: 8, width: 100, height: 10,
-          x_padding: 2, y_padding: 1,
-          background_color: "rgba(0,0,0,0.3)", background_border_radius: 12,
-        },
-        {
-          type: "text", track: 3, time: 2, duration: 26, text: ov.destino.toUpperCase(),
-          font_family: "Montserrat", font_weight: "900", font_size: 72,
-          fill_color: "#FFFFFF", stroke_color: "#000000", stroke_width: 3,
-          x_alignment: 50, y_alignment: 25, width: 90, height: 15,
-        },
-        {
-          type: "text", track: 3, time: 3, duration: 24, text: `-${ov.desconto} OFF`,
-          font_family: "Montserrat", font_weight: "800", font_size: 36,
-          fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 20,
-          x_alignment: 82, y_alignment: 18, width: 30, height: 6, x_padding: 3, y_padding: 1.5,
-        },
-        {
-          type: "text", track: 3, time: 4, duration: 24, text: ov.preco,
-          font_family: "Montserrat", font_weight: "900", font_size: 96,
-          fill_color: "#00FF88", stroke_color: "#003322", stroke_width: 4,
-          x_alignment: 50, y_alignment: 72, width: 90, height: 12,
-        },
-        {
-          type: "text", track: 3, time: 4, duration: 24, text: `de ${ov.preco_normal}`,
-          font_family: "Montserrat", font_weight: "600", font_size: 32,
-          fill_color: "rgba(255,255,255,0.6)", text_decoration: "line-through",
-          x_alignment: 50, y_alignment: 66, width: 60, height: 5,
-        },
-        {
-          type: "text", track: 3, time: 5, duration: 22,
-          text: `${ov.cia} • ${ov.tipo} • ${ov.escalas}`,
-          font_family: "Montserrat", font_weight: "600", font_size: 28,
-          fill_color: "#FFFFFF", background_color: "rgba(0,0,0,0.5)", background_border_radius: 8,
-          x_alignment: 50, y_alignment: 82, width: 85, height: 5, x_padding: 2, y_padding: 1,
-        },
-        {
-          type: "text", track: 3, time: 22, duration: 8, text: "🔥 ENTRE NO GRUPO PROMOCÉU 🔥",
-          font_family: "Montserrat", font_weight: "800", font_size: 40,
-          fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 16,
-          x_alignment: 50, y_alignment: 90, width: 90, height: 8, x_padding: 3, y_padding: 2,
-          animations: [{ type: "scale", start_scale: "80%", end_scale: "100%", time: 0, duration: 0.5, easing: "ease-out" }],
-        },
-      ],
+      output_format: "mp4", width: 1080, height: 1920, frame_rate: 30,
+      duration: totalDurationS,
+      elements: [...videoElements, ...audioElements, ...overlayElements],
     },
   };
 }
@@ -340,152 +374,155 @@ Deno.serve(async (req) => {
     const { data: promo, error: pErr } = await supabase.from("promocoes").select("*").eq("id", promoId).single();
     if (pErr || !promo) throw new Error("Promo não encontrada: " + pErr?.message);
 
-    // Parse storyboard
+    // Load voice config
+    const { data: cfgRow } = await supabase.from("config_agentes").select("config").eq("agente", "orquestrador").maybeSingle();
+    const voiceId = ((cfgRow?.config as Record<string, unknown>)?.elevenlabs_voice as string) || "nPczCjzI2devNBz1zQrb";
+
+    // Parse storyboard / video_prompts
     const pv = promo.prompt_variations as Record<string, unknown> | null;
     const storyboard = (pv?.storyboard || pv) as Record<string, unknown>;
-    const partA = (storyboard?.part_a || (storyboard?.parts as unknown[])?.[0]) as { prompt: string; motion_prompt?: string; duration?: number } | undefined;
-    const partB = (storyboard?.part_b || (storyboard?.parts as unknown[])?.[1]) as { prompt: string; motion_prompt?: string; duration?: number } | undefined;
-    const narrationScript = (storyboard?.narration_script || pv?.narration_script) as string | undefined;
+    const videoPromptsArr = (promo.video_prompts || pv?.video_prompts || null) as string[] | null;
+    const partA = (storyboard?.part_a || (storyboard?.parts as unknown[])?.[0]) as { prompt: string; motion_prompt?: string } | undefined;
+    const partB = (storyboard?.part_b || (storyboard?.parts as unknown[])?.[1]) as { prompt: string; motion_prompt?: string } | undefined;
+    const narrationScript = (promo.narration_script || storyboard?.narration_script || pv?.narration_script) as string | undefined;
 
-    if (!partA?.prompt || !partB?.prompt) throw new Error("Storyboard incompleto: part_a.prompt e part_b.prompt obrigatórios");
     if (!narrationScript) throw new Error("narration_script ausente");
 
     // Create video record
     const { data: videoRec, error: insErr } = await supabase.from("videos").insert({
-      promocao_id: promoId, variation_label: "Story 30s", status: "gerando",
-      storyboard: storyboard,
-      payload: { partA, partB },
+      promocao_id: promoId, variation_label: "Story dinâmico", status: "gerando_narracao",
+      storyboard, payload: { partA, partB, video_prompts: videoPromptsArr },
     }).select().single();
     if (insErr) throw new Error("Insert video: " + insErr.message);
     const videoId = videoRec.id;
 
     await supabase.from("promocoes").update({ status: "em_producao" }).eq("id", promoId);
 
-    // ═══ FASE 1: Discover T2I and generate images ═══
-    const t2iEndpoint = await discoverT2I(higgsHeaders, logFn);
-    if (!t2iEndpoint) throw new Error("Nenhum modelo T2I disponível no Higgsfield. Verifique créditos e API key.");
-
-    await log(supabase, "info", `Gerando imagens via ${t2iEndpoint.name}...`);
-
-    const [imgReqA, imgReqB] = await Promise.all([
-      submitToHiggsfield(t2iEndpoint.path, t2iEndpoint.body(partA.prompt), higgsHeaders),
-      submitToHiggsfield(t2iEndpoint.path, t2iEndpoint.body(partB.prompt), higgsHeaders),
-    ]);
-
-    await log(supabase, "success", `T2I submetido — A: ${imgReqA}, B: ${imgReqB}`);
-
-    // Poll images (timeout 90s)
-    const imgStart = Date.now();
-    let imageUrlA: string | null = null;
-    let imageUrlB: string | null = null;
-
-    while (Date.now() - imgStart < 90000) {
-      await new Promise(r => setTimeout(r, 3000));
-
-      if (!imageUrlA) {
-        const rA = await pollHiggsfield(imgReqA, higgsAuth);
-        if (rA.status === "completed" && rA.imageUrl) imageUrlA = rA.imageUrl;
-        if (rA.status === "failed") throw new Error("Imagem A falhou: " + rA.error);
-      }
-      if (!imageUrlB) {
-        const rB = await pollHiggsfield(imgReqB, higgsAuth);
-        if (rB.status === "completed" && rB.imageUrl) imageUrlB = rB.imageUrl;
-        if (rB.status === "failed") throw new Error("Imagem B falhou: " + rB.error);
-      }
-      if (imageUrlA && imageUrlB) break;
-    }
-
-    if (!imageUrlA || !imageUrlB) throw new Error(`Timeout T2I (90s). A: ${imageUrlA ? "ok" : "pendente"}, B: ${imageUrlB ? "ok" : "pendente"}`);
-    await log(supabase, "success", `Imagens prontas!`);
-
-    // ═══ FASE 2: Discover I2V and animate images ═══
-    const motionA = partA.motion_prompt || "Slow cinematic dolly forward through the scene, subtle ambient motion";
-    const motionB = partB.motion_prompt || "Smooth orbit camera movement around the subject, gentle ambient motion";
-
-    // Discover I2V using image A — this first request IS Part A
-    const i2vDiscovery = await discoverI2V(imageUrlA, motionA, higgsHeaders, logFn);
-    if (!i2vDiscovery) throw new Error("Nenhum modelo I2V disponível. Testados: " + I2V_ENDPOINTS.map(e => e.name).join(", "));
-
-    const partAVideoReqId = i2vDiscovery.requestId;
-    const i2vEp = i2vDiscovery.endpoint;
-
-    // Submit Part B with same endpoint
-    const partBVideoReqId = await submitToHiggsfield(i2vEp.path, i2vEp.body(imageUrlB, motionB), higgsHeaders);
-    await log(supabase, "success", `I2V submetido via ${i2vEp.name} — A: ${partAVideoReqId}, B: ${partBVideoReqId}`);
-
-    // Generate narration in parallel
+    // ═══ FASE 0: Narração PRIMEIRO (define duração total) ═══
     let narrationUrl: string | null = null;
+    let totalDuration = 30;
     try {
-      narrationUrl = await generateNarration(narrationScript, EL_KEY, supabase, promoId);
+      const nar = await generateNarration(narrationScript, EL_KEY, supabase, promoId, voiceId);
+      narrationUrl = nar.url;
+      totalDuration = nar.durationS;
+      await supabase.from("promocoes").update({
+        audio_narracao_url: narrationUrl,
+        duracao_narracao_s: totalDuration,
+      }).eq("id", promoId);
     } catch (e) {
-      await log(supabase, "warn", `Narração falhou: ${(e as Error).message} — continuando sem`);
+      await log(supabase, "warn", `Narração falhou: ${(e as Error).message} — usando 30s default`);
     }
 
-    // Save state
-    await supabase.from("videos").update({
-      status: "aguardando_render",
-      narration_url: narrationUrl,
-      payload: {
-        provider: "higgsfield",
-        t2i_model: t2iEndpoint.name,
-        i2v_model: i2vEp.name,
-        partA: { ...partA, image_url: imageUrlA, request_id: partAVideoReqId },
-        partB: { ...partB, image_url: imageUrlB, request_id: partBVideoReqId },
-        narration_url: narrationUrl,
-        overlay_config: storyboard?.overlay_config,
-        narration_script: narrationScript,
-      },
-    }).eq("id", videoId);
+    // ═══ Calcular N de clipes (cap 4 pra caber em ~150s timeout) ═══
+    // N=2 cobre até ~10s, N=3 até ~14.5s, N=4 até ~19s. Estende último clipe pra cobrir resto.
+    const N = Math.min(4, Math.max(2, Math.ceil(totalDuration / 9)));
+    await log(supabase, "info", `Narração ${totalDuration.toFixed(1)}s → ${N} clipes Higgsfield`);
 
-    // ═══ FASE 3: Poll videos (timeout 240s) ═══
+    // ═══ Resolver lista de prompts ═══
+    let prompts: Array<{ prompt: string; motion: string }> = [];
+    if (videoPromptsArr && videoPromptsArr.length >= N) {
+      prompts = videoPromptsArr.slice(0, N).map((p, i) => ({
+        prompt: p,
+        motion: i === 0 ? "Slow cinematic dolly forward, subtle ambient motion"
+          : i === N - 1 ? "Slow zoom out reveal, dreamy atmosphere"
+          : "Smooth tracking camera, gentle parallax",
+      }));
+    } else if (partA?.prompt && partB?.prompt) {
+      // fallback: repete part_a/part_b alternando
+      for (let i = 0; i < N; i++) {
+        const src = i % 2 === 0 ? partA : partB;
+        prompts.push({
+          prompt: src.prompt,
+          motion: src.motion_prompt || (i % 2 === 0 ? "Slow dolly forward" : "Smooth orbit"),
+        });
+      }
+    } else {
+      throw new Error("Sem video_prompts[] nem storyboard.part_a/part_b — regenere o pacote");
+    }
+
+    await supabase.from("promocoes").update({ clipes_total: N, clipes_recebidos: 0 }).eq("id", promoId);
+
+    // ═══ FASE 1: Discover T2I e gerar N imagens em paralelo ═══
+    await supabase.from("videos").update({ status: "gerando_arte" }).eq("id", videoId);
+    const t2iEndpoint = await discoverT2I(higgsHeaders, logFn);
+    if (!t2iEndpoint) throw new Error("Nenhum modelo T2I disponível no Higgsfield. Verifique créditos.");
+
+    await log(supabase, "info", `Submetendo ${N} imagens via ${t2iEndpoint.name}...`);
+    const imgReqIds = await Promise.all(
+      prompts.map(p => submitToHiggsfield(t2iEndpoint.path, t2iEndpoint.body(p.prompt), higgsHeaders))
+    );
+    await log(supabase, "success", `T2I submetido: ${imgReqIds.length} requests`);
+
+    // Poll imagens (timeout 120s)
+    const imgStart = Date.now();
+    const imageUrls: (string | null)[] = new Array(N).fill(null);
+    while (Date.now() - imgStart < 120000) {
+      await new Promise(r => setTimeout(r, 3500));
+      await Promise.all(imgReqIds.map(async (rid, i) => {
+        if (imageUrls[i]) return;
+        const r = await pollHiggsfield(rid, higgsAuth);
+        if (r.status === "completed" && r.imageUrl) imageUrls[i] = r.imageUrl;
+        else if (r.status === "failed") throw new Error(`Imagem #${i + 1} falhou: ${r.error}`);
+      }));
+      if (imageUrls.every(Boolean)) break;
+    }
+    if (!imageUrls.every(Boolean)) {
+      throw new Error(`Timeout T2I (120s). Prontas: ${imageUrls.filter(Boolean).length}/${N}`);
+    }
+    await log(supabase, "success", `${N} imagens prontas`);
+
+    // ═══ FASE 2: Discover I2V (1ª submissão) + submeter restantes ═══
+    await supabase.from("videos").update({ status: "gerando_video" }).eq("id", videoId);
+    const disc = await discoverI2V(imageUrls[0]!, prompts[0].motion, higgsHeaders, logFn);
+    if (!disc) throw new Error("Nenhum I2V disponível. Testados: " + I2V_ENDPOINTS.map(e => e.name).join(", "));
+
+    const videoReqIds: string[] = [disc.requestId];
+    const i2vEp = disc.endpoint;
+    for (let i = 1; i < N; i++) {
+      const rid = await submitToHiggsfield(i2vEp.path, i2vEp.body(imageUrls[i]!, prompts[i].motion), higgsHeaders);
+      videoReqIds.push(rid);
+    }
+    await log(supabase, "success", `I2V submetido (${i2vEp.name}): ${videoReqIds.length} requests`);
+
+    // Poll vídeos (timeout 240s)
     const vidStart = Date.now();
-    let videoUrlA: string | null = null;
-    let videoUrlB: string | null = null;
-
-    await log(supabase, "info", `Polling vídeos I2V (timeout: 240s)...`);
+    const videoUrls: (string | null)[] = new Array(N).fill(null);
+    await log(supabase, "info", `Polling ${N} vídeos I2V (timeout: 240s)...`);
 
     while (Date.now() - vidStart < 240000) {
       await new Promise(r => setTimeout(r, 8000));
       const elapsed = Math.round((Date.now() - vidStart) / 1000);
-
-      if (!videoUrlA) {
-        const rA = await pollHiggsfield(partAVideoReqId, higgsAuth);
-        if (rA.status === "completed" && rA.videoUrl) { videoUrlA = rA.videoUrl; await log(supabase, "success", `[A] Vídeo pronto! ${elapsed}s`); }
-        else if (rA.status === "failed") throw new Error("[A] I2V falhou: " + rA.error);
+      await Promise.all(videoReqIds.map(async (rid, i) => {
+        if (videoUrls[i]) return;
+        const r = await pollHiggsfield(rid, higgsAuth);
+        if (r.status === "completed" && r.videoUrl) {
+          videoUrls[i] = r.videoUrl;
+          await log(supabase, "success", `[clipe ${i + 1}] pronto em ${elapsed}s`);
+          await supabase.from("promocoes").update({ clipes_recebidos: videoUrls.filter(Boolean).length }).eq("id", promoId);
+        } else if (r.status === "failed") {
+          throw new Error(`[clipe ${i + 1}] I2V falhou: ${r.error}`);
+        }
+      }));
+      if (videoUrls.every(Boolean)) break;
+      if (elapsed % 30 < 10) {
+        const ready = videoUrls.filter(Boolean).length;
+        await log(supabase, "info", `Polling ${elapsed}s — ${ready}/${N} prontos`);
       }
-      if (!videoUrlB) {
-        const rB = await pollHiggsfield(partBVideoReqId, higgsAuth);
-        if (rB.status === "completed" && rB.videoUrl) { videoUrlB = rB.videoUrl; await log(supabase, "success", `[B] Vídeo pronto! ${elapsed}s`); }
-        else if (rB.status === "failed") throw new Error("[B] I2V falhou: " + rB.error);
-      }
-
-      if (videoUrlA && videoUrlB) break;
-      if (elapsed % 30 < 10) await log(supabase, "info", `Polling ${elapsed}s — A: ${videoUrlA ? "✅" : "⏳"}, B: ${videoUrlB ? "✅" : "⏳"}`);
+    }
+    if (!videoUrls.every(Boolean)) {
+      const ready = videoUrls.filter(Boolean).length;
+      throw new Error(`Timeout I2V (240s). Prontos: ${ready}/${N}`);
     }
 
-    if (!videoUrlA || !videoUrlB) {
-      await supabase.from("videos").update({
-        status: "timeout_render",
-        payload: {
-          partA: { request_id: partAVideoReqId, video_url: videoUrlA },
-          partB: { request_id: partBVideoReqId, video_url: videoUrlB },
-          narration_url: narrationUrl,
-        },
-      }).eq("id", videoId);
-      await log(supabase, "warn", `Timeout. A: ${videoUrlA ? "ok" : "pendente"}, B: ${videoUrlB ? "ok" : "pendente"}`);
-      return new Response(JSON.stringify({ status: "timeout", videoId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    // Upload clipes pro storage
+    const storedClipes = await Promise.all(
+      videoUrls.map((url, i) => uploadToStorage(supabase, url!, `scenes/${promoId}_${i}_${Date.now()}.mp4`, "video/mp4"))
+    );
+    await supabase.from("promocoes").update({ clipes_urls: storedClipes }).eq("id", promoId);
+    await supabase.from("videos").update({ scene_video_url: storedClipes[0], status: "compondo" }).eq("id", videoId);
 
-    // Upload scenes to storage
-    const [storedA, storedB] = await Promise.all([
-      uploadToStorage(supabase, videoUrlA, `scenes/${promoId}_A_${Date.now()}.mp4`, "video/mp4"),
-      uploadToStorage(supabase, videoUrlB, `scenes/${promoId}_B_${Date.now()}.mp4`, "video/mp4"),
-    ]);
-
-    await supabase.from("videos").update({ scene_video_url: storedA, status: "compondo" }).eq("id", videoId);
-
-    // ═══ FASE 4: Creatomate composition ═══
-    await log(supabase, "info", "Compondo vídeo final 1080x1920...");
+    // ═══ FASE 4: Creatomate dinâmico ═══
+    await log(supabase, "info", `Compondo vídeo final 1080x1920 com ${N} clipes + narração ${totalDuration.toFixed(1)}s...`);
 
     const overlayData = {
       destino: (promo.destino as string)?.split("(")?.[0]?.trim() || promo.destino || "",
@@ -496,19 +533,23 @@ Deno.serve(async (req) => {
       escalas: (promo.escalas as string) || "Direto",
       tipo: (promo.tipo_voo as string) || "ida e volta",
     };
+    const textOverlaysArr = Array.isArray(promo.text_overlays) ? (promo.text_overlays as Array<{ tempo_s: number; texto: string }>) : [];
 
-    const creatPayload = buildCreatomatePayload(storedA, storedB, narrationUrl, overlayData);
+    const creatPayload = buildCreatomatePayload(storedClipes, narrationUrl, totalDuration, overlayData, textOverlaysArr);
     const finalUrl = await composeWithCreatomate(creatPayload as unknown as Record<string, unknown>, CREAT_KEY, supabase);
     const storedFinal = await uploadToStorage(supabase, finalUrl, `finals/${promoId}_${Date.now()}.mp4`, "video/mp4");
 
     await supabase.from("videos").update({
-      video_url: storedA, video_final_url: storedFinal, narration_url: narrationUrl,
+      video_url: storedClipes[0], video_final_url: storedFinal, narration_url: narrationUrl,
       status: "pronto", erro_detalhes: null,
     }).eq("id", videoId);
-    await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", promoId);
-    await log(supabase, "success", `✅ Vídeo PRONTO: ${storedFinal}`);
+    await supabase.from("promocoes").update({
+      status: "video_pronto",
+      video_final_url: storedFinal,
+    }).eq("id", promoId);
+    await log(supabase, "success", `✅ Vídeo PRONTO (${N} clipes, ${totalDuration.toFixed(1)}s): ${storedFinal}`);
 
-    return new Response(JSON.stringify({ status: "pronto", videoId, videoUrl: storedFinal }), {
+    return new Response(JSON.stringify({ status: "pronto", videoId, videoUrl: storedFinal, duration: totalDuration, clipes: N }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

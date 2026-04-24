@@ -99,10 +99,12 @@ export type Database = {
           bagagem: string | null
           cia_aerea: string | null
           classe: string | null
+          clipes_urls: Json | null
           created_at: string | null
           cta_text: string | null
           dados_extras: Json | null
           destino: string
+          duracao_narracao_s: number | null
           escalas: string | null
           fonte: string | null
           hashtags: Json | null
@@ -128,7 +130,9 @@ export type Database = {
           updated_at: string | null
           url_fonte: string | null
           validade: string | null
+          video_final_url: string | null
           video_prompt: string | null
+          video_prompts: Json | null
         }
         Insert: {
           art_prompt?: string | null
@@ -136,10 +140,12 @@ export type Database = {
           bagagem?: string | null
           cia_aerea?: string | null
           classe?: string | null
+          clipes_urls?: Json | null
           created_at?: string | null
           cta_text?: string | null
           dados_extras?: Json | null
           destino: string
+          duracao_narracao_s?: number | null
           escalas?: string | null
           fonte?: string | null
           hashtags?: Json | null
@@ -165,7 +171,9 @@ export type Database = {
           updated_at?: string | null
           url_fonte?: string | null
           validade?: string | null
+          video_final_url?: string | null
           video_prompt?: string | null
+          video_prompts?: Json | null
         }
         Update: {
           art_prompt?: string | null
@@ -173,10 +181,12 @@ export type Database = {
           bagagem?: string | null
           cia_aerea?: string | null
           classe?: string | null
+          clipes_urls?: Json | null
           created_at?: string | null
           cta_text?: string | null
           dados_extras?: Json | null
           destino?: string
+          duracao_narracao_s?: number | null
           escalas?: string | null
           fonte?: string | null
           hashtags?: Json | null
@@ -202,7 +212,9 @@ export type Database = {
           updated_at?: string | null
           url_fonte?: string | null
           validade?: string | null
+          video_final_url?: string | null
           video_prompt?: string | null
+          video_prompts?: Json | null
         }
         Relationships: []
       }
