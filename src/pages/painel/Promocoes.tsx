@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Search, CheckCircle, XCircle, RefreshCw, Video, Eye, Plus, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Json } from "@/integrations/supabase/types";
+import BotaoGerarVideo from "@/components/painel/BotaoGerarVideo";
 
 interface Promo {
   id: string;
@@ -246,9 +247,16 @@ const Promocoes = () => {
                     </Badge>
                   </td>
                   <td className="p-3">
-                    <Button size="sm" variant="ghost" onClick={() => setSelected(p)} className="text-slate-400 hover:text-white">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => setSelected(p)} className="text-slate-400 hover:text-white">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <BotaoGerarVideo
+                        promocaoId={p.id}
+                        statusAtual={p.status}
+                        onSuccess={fetchPromos}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
