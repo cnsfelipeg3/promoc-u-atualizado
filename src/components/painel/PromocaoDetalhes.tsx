@@ -369,29 +369,73 @@ export default function PromocaoDetalhes({ promocaoId, open, onClose, onChange }
                 </Section>
               )}
 
-              {/* Vídeo gerado */}
-              {(video?.video_final_url || promo.higgsfield_request_id) && (
-                <Section icon={<Film className="h-4 w-4" />} title="Vídeo final">
-                  {video?.video_final_url ? (
-                    <div className="space-y-2">
-                      <video controls src={video.video_final_url} className="w-full max-h-96 rounded bg-black" />
-                      <div className="flex gap-2">
-                        <Button asChild size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                          <a href={video.video_final_url} download target="_blank" rel="noreferrer">
-                            <Download className="h-4 w-4 mr-2" /> Download
-                          </a>
-                        </Button>
-                        <Badge className="bg-emerald-500/20 text-emerald-400 self-center">{video.status}</Badge>
+              {/* Vídeo final + clipes */}
+              {(() => {
+                const finalUrl = promo.video_final_url || video?.video_final_url;
+                const clipes = Array.isArray(promo.clipes_urls) ? (promo.clipes_urls as string[]) : [];
+                const total = promo.clipes_total ?? 0;
+                const recebidos = promo.clipes_recebidos ?? 0;
+                const showProgress = !finalUrl && total > 0;
+                if (!finalUrl && !showProgress && !promo.higgsfield_request_id) return null;
+                return (
+                  <Section icon={<Film className="h-4 w-4" />} title="Vídeo final">
+                    {finalUrl ? (
+                      <div className="space-y-3">
+                        <video controls src={finalUrl} className="w-full max-h-[480px] rounded bg-black" />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Button asChild size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                            <a href={finalUrl} download target="_blank" rel="noreferrer">
+                              <Download className="h-4 w-4 mr-2" /> Baixar MP4
+                            </a>
+                          </Button>
+                          {promo.duracao_narracao_s != null && (
+                            <Badge variant="outline" className="border-white/20 text-slate-300">
+                              ⏱ {Number(promo.duracao_narracao_s).toFixed(1)}s
+                            </Badge>
+                          )}
+                          {total > 0 && (
+                            <Badge variant="outline" className="border-white/20 text-slate-300">
+                              🎬 {total} clipes
+                            </Badge>
+                          )}
+                          {video?.status && (
+                            <Badge className="bg-emerald-500/20 text-emerald-400">{video.status}</Badge>
+                          )}
+                        </div>
+                        {clipes.length > 0 && (
+                          <details className="text-xs">
+                            <summary className="text-slate-400 cursor-pointer hover:text-white">
+                              Clipes individuais ({clipes.length})
+                            </summary>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                              {clipes.map((url, i) => (
+                                <video key={i} src={url} controls className="w-full aspect-[9/16] rounded bg-black" />
+                              ))}
+                            </div>
+                          </details>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-                      Vídeo em produção (request: {promo.higgsfield_request_id?.slice(0, 12)}…)
-                    </div>
-                  )}
-                </Section>
-              )}
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                          {showProgress
+                            ? `Gerando ${recebidos}/${total} clipes...`
+                            : `Vídeo em produção...`}
+                        </div>
+                        {showProgress && (
+                          <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="bg-amber-500 h-full transition-all"
+                              style={{ width: `${total > 0 ? (recebidos / total) * 100 : 0}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Section>
+                );
+              })()}
             </div>
 
             {/* Footer */}
