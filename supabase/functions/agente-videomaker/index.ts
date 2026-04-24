@@ -197,83 +197,114 @@ async function generateNarration(script: string, apiKey: string, supabase: Retur
   return { url, durationS };
 }
 
-// ── Creatomate composition ──────────────────────────────────
+// ── Creatomate composition (DYNAMIC: N clipes, narração-driven duration) ──
 function buildCreatomatePayload(
-  videoPartAUrl: string, videoPartBUrl: string, narrationUrl: string | null,
-  ov: { destino: string; preco: string; preco_normal: string; desconto: string; cia: string; escalas: string; tipo: string }
+  clipUrls: string[],
+  narrationUrl: string | null,
+  totalDurationS: number,
+  ov: { destino: string; preco: string; preco_normal: string; desconto: string; cia: string; escalas: string; tipo: string },
+  textOverlays: Array<{ tempo_s: number; texto: string }>,
 ) {
+  const N = clipUrls.length;
+  const CLIP_LEN = 5;            // cada clipe Higgsfield = 5s
+  const FADE = 0.5;              // crossfade entre clipes
+  const STEP = CLIP_LEN - FADE;  // intervalo entre starts
+
+  // Track 1: vídeos com crossfade
+  const videoElements = clipUrls.map((url, i) => {
+    const isLast = i === N - 1;
+    const time = i * STEP;
+    // último clipe estende pra cobrir até o fim da narração se necessário
+    const duration = isLast ? Math.max(CLIP_LEN, totalDurationS - time) : CLIP_LEN;
+    return {
+      type: "video", track: 1, time, duration, source: url, fit: "cover",
+      ...(i > 0 ? { transition: { type: "fade", duration: FADE } } : {}),
+      animations: [{ type: "scale", start_scale: "100%", end_scale: "108%", time: 0, duration, easing: "linear" }],
+    };
+  });
+
+  // Track 2: narração (volume 100, começa em 0.5s pra dar respiro)
+  const audioElements = narrationUrl ? [{
+    type: "audio", track: 2, time: 0.5, source: narrationUrl, volume: 100, duration: totalDurationS - 0.5,
+  }] : [];
+
+  // Track 3: overlays — header fixo + dinâmicos do roteiro + CTA final
+  const overlayElements: Array<Record<string, unknown>> = [
+    // Logo/marca topo
+    {
+      type: "text", track: 3, time: 0, duration: totalDurationS, text: "PromoCéu ✈️",
+      font_family: "Montserrat", font_weight: "800", font_size: 52,
+      fill_color: "#FFFFFF", shadow_color: "rgba(0,0,0,0.6)", shadow_blur: 8,
+      x_alignment: 50, y_alignment: 8, width: 100, height: 10,
+      x_padding: 2, y_padding: 1,
+      background_color: "rgba(0,0,0,0.3)", background_border_radius: 12,
+    },
+    // Destino
+    {
+      type: "text", track: 3, time: 1, duration: Math.max(4, totalDurationS - 6), text: ov.destino.toUpperCase(),
+      font_family: "Montserrat", font_weight: "900", font_size: 72,
+      fill_color: "#FFFFFF", stroke_color: "#000000", stroke_width: 3,
+      x_alignment: 50, y_alignment: 25, width: 90, height: 15,
+    },
+    // Badge desconto
+    {
+      type: "text", track: 3, time: 2, duration: Math.max(4, totalDurationS - 8), text: `-${ov.desconto} OFF`,
+      font_family: "Montserrat", font_weight: "800", font_size: 36,
+      fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 20,
+      x_alignment: 82, y_alignment: 18, width: 30, height: 6, x_padding: 3, y_padding: 1.5,
+    },
+    // Preço promo
+    {
+      type: "text", track: 3, time: 3, duration: Math.max(4, totalDurationS - 9), text: ov.preco,
+      font_family: "Montserrat", font_weight: "900", font_size: 96,
+      fill_color: "#00FF88", stroke_color: "#003322", stroke_width: 4,
+      x_alignment: 50, y_alignment: 72, width: 90, height: 12,
+    },
+    // Preço normal riscado
+    {
+      type: "text", track: 3, time: 3, duration: Math.max(4, totalDurationS - 9), text: `de ${ov.preco_normal}`,
+      font_family: "Montserrat", font_weight: "600", font_size: 32,
+      fill_color: "rgba(255,255,255,0.6)", text_decoration: "line-through",
+      x_alignment: 50, y_alignment: 66, width: 60, height: 5,
+    },
+    // Cia + escalas
+    {
+      type: "text", track: 3, time: 4, duration: Math.max(4, totalDurationS - 10),
+      text: `${ov.cia} • ${ov.tipo} • ${ov.escalas}`,
+      font_family: "Montserrat", font_weight: "600", font_size: 28,
+      fill_color: "#FFFFFF", background_color: "rgba(0,0,0,0.5)", background_border_radius: 8,
+      x_alignment: 50, y_alignment: 82, width: 85, height: 5, x_padding: 2, y_padding: 1,
+    },
+    // CTA final (últimos 6s)
+    {
+      type: "text", track: 3, time: Math.max(0, totalDurationS - 6), duration: 6,
+      text: "🔥 ENTRE NO GRUPO PROMOCÉU 🔥",
+      font_family: "Montserrat", font_weight: "800", font_size: 40,
+      fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 16,
+      x_alignment: 50, y_alignment: 90, width: 90, height: 8, x_padding: 3, y_padding: 2,
+      animations: [{ type: "scale", start_scale: "80%", end_scale: "100%", time: 0, duration: 0.5, easing: "ease-out" }],
+    },
+  ];
+
+  // Overlays dinâmicos do roteiro (capados em totalDurationS)
+  for (const ov2 of textOverlays.slice(0, 6)) {
+    if (ov2.tempo_s >= totalDurationS - 1) continue;
+    overlayElements.push({
+      type: "text", track: 4, time: ov2.tempo_s, duration: 3,
+      text: ov2.texto.toUpperCase(),
+      font_family: "Montserrat", font_weight: "900", font_size: 56,
+      fill_color: "#FFFF00", stroke_color: "#000000", stroke_width: 3,
+      x_alignment: 50, y_alignment: 50, width: 90, height: 10,
+      animations: [{ type: "scale", start_scale: "70%", end_scale: "100%", time: 0, duration: 0.4, easing: "ease-out" }],
+    });
+  }
+
   return {
-    output_format: "mp4",
-    width: 1080,
-    height: 1920,
-    frame_rate: 30,
+    output_format: "mp4", width: 1080, height: 1920, frame_rate: 30,
     source: {
-      output_format: "mp4",
-      width: 1080,
-      height: 1920,
-      frame_rate: 30,
-      duration: 30,
-      elements: [
-        // TRACK 1: Videos
-        {
-          type: "video", track: 1, time: 0, duration: 16, source: videoPartAUrl, fit: "cover",
-          animations: [{ type: "scale", start_scale: "100%", end_scale: "105%", time: 0, duration: 16, easing: "linear" }],
-        },
-        {
-          type: "video", track: 1, time: 14, duration: 16, source: videoPartBUrl, fit: "cover",
-          transition: { type: "fade", duration: 2 },
-          animations: [{ type: "scale", start_scale: "100%", end_scale: "105%", time: 0, duration: 16, easing: "linear" }],
-        },
-        // TRACK 2: Narration
-        ...(narrationUrl ? [{ type: "audio", track: 2, time: 1, source: narrationUrl, volume: 100, duration: 28 }] : []),
-        // TRACK 3: Overlays
-        {
-          type: "text", track: 3, time: 0, duration: 30, text: "PromoCéu ✈️",
-          font_family: "Montserrat", font_weight: "800", font_size: 52,
-          fill_color: "#FFFFFF", shadow_color: "rgba(0,0,0,0.6)", shadow_blur: 8,
-          x_alignment: 50, y_alignment: 8, width: 100, height: 10,
-          x_padding: 2, y_padding: 1,
-          background_color: "rgba(0,0,0,0.3)", background_border_radius: 12,
-        },
-        {
-          type: "text", track: 3, time: 2, duration: 26, text: ov.destino.toUpperCase(),
-          font_family: "Montserrat", font_weight: "900", font_size: 72,
-          fill_color: "#FFFFFF", stroke_color: "#000000", stroke_width: 3,
-          x_alignment: 50, y_alignment: 25, width: 90, height: 15,
-        },
-        {
-          type: "text", track: 3, time: 3, duration: 24, text: `-${ov.desconto} OFF`,
-          font_family: "Montserrat", font_weight: "800", font_size: 36,
-          fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 20,
-          x_alignment: 82, y_alignment: 18, width: 30, height: 6, x_padding: 3, y_padding: 1.5,
-        },
-        {
-          type: "text", track: 3, time: 4, duration: 24, text: ov.preco,
-          font_family: "Montserrat", font_weight: "900", font_size: 96,
-          fill_color: "#00FF88", stroke_color: "#003322", stroke_width: 4,
-          x_alignment: 50, y_alignment: 72, width: 90, height: 12,
-        },
-        {
-          type: "text", track: 3, time: 4, duration: 24, text: `de ${ov.preco_normal}`,
-          font_family: "Montserrat", font_weight: "600", font_size: 32,
-          fill_color: "rgba(255,255,255,0.6)", text_decoration: "line-through",
-          x_alignment: 50, y_alignment: 66, width: 60, height: 5,
-        },
-        {
-          type: "text", track: 3, time: 5, duration: 22,
-          text: `${ov.cia} • ${ov.tipo} • ${ov.escalas}`,
-          font_family: "Montserrat", font_weight: "600", font_size: 28,
-          fill_color: "#FFFFFF", background_color: "rgba(0,0,0,0.5)", background_border_radius: 8,
-          x_alignment: 50, y_alignment: 82, width: 85, height: 5, x_padding: 2, y_padding: 1,
-        },
-        {
-          type: "text", track: 3, time: 22, duration: 8, text: "🔥 ENTRE NO GRUPO PROMOCÉU 🔥",
-          font_family: "Montserrat", font_weight: "800", font_size: 40,
-          fill_color: "#FFFFFF", background_color: "#FF3B30", background_border_radius: 16,
-          x_alignment: 50, y_alignment: 90, width: 90, height: 8, x_padding: 3, y_padding: 2,
-          animations: [{ type: "scale", start_scale: "80%", end_scale: "100%", time: 0, duration: 0.5, easing: "ease-out" }],
-        },
-      ],
+      output_format: "mp4", width: 1080, height: 1920, frame_rate: 30,
+      duration: totalDurationS,
+      elements: [...videoElements, ...audioElements, ...overlayElements],
     },
   };
 }
