@@ -261,67 +261,17 @@ serve(async (req: Request) => {
   }
 });
 
-async function dispararProducao(supabase: any, promocaoId: string, pacote: any) {
-  const tasks: Promise<any>[] = [];
-
-  if (Deno.env.get("ELEVENLABS_API_KEY") && pacote.narration_script) {
-    tasks.push(gerarNarracao(supabase, promocaoId, pacote.narration_script));
-  }
-
-  // Reutiliza o agente-videomaker existente (já integra Higgsfield + webhook)
-  tasks.push(
-    supabase.functions.invoke("agente-videomaker", { body: { promocao_id: promocaoId } })
-      .then(({ error }: any) => {
-        if (error) return log(supabase, "orquestrador", "error", "Falha ao invocar agente-videomaker", { error });
-        return log(supabase, "orquestrador", "success", "agente-videomaker disparado");
-      })
-      .catch((e: any) => log(supabase, "orquestrador", "error", "Exceção ao invocar agente-videomaker", { erro: e?.message }))
-  );
-
-  await Promise.allSettled(tasks);
-}
-
-async function gerarNarracao(supabase: any, promocaoId: string, script: string) {
+async function dispararProducao(supabase: any, promocaoId: string, _pacote: any) {
+  // Narração agora é gerada DENTRO do agente-videomaker (que mede duração e dispara Higgsfield em sequência)
   try {
-    const { data: configRow } = await supabase
-      .from("config_agentes").select("config").eq("agente", "orquestrador").maybeSingle();
-    const voiceId = (configRow?.config as any)?.elevenlabs_voice ?? "21m00Tcm4TlvDq8ikWAM";
-
-    const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
-      method: "POST",
-      headers: {
-        "xi-api-key": Deno.env.get("ELEVENLABS_API_KEY")!,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: script,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.6, use_speaker_boost: true },
-      }),
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      await log(supabase, "elevenlabs", "error", `Falha narração: ${resp.status}`, { errText });
-      return;
+    const { error } = await supabase.functions.invoke("agente-videomaker", { body: { promocao_id: promocaoId } });
+    if (error) {
+      await log(supabase, "orquestrador", "error", "Falha ao invocar agente-videomaker", { error });
+    } else {
+      await log(supabase, "orquestrador", "success", "agente-videomaker disparado");
     }
-
-    const audioBuf = new Uint8Array(await resp.arrayBuffer());
-    const filename = `narracao_${promocaoId}_${Date.now()}.mp3`;
-
-    const { error: upErr } = await supabase.storage.from("audios")
-      .upload(filename, audioBuf, { contentType: "audio/mpeg", upsert: true });
-    if (upErr) {
-      await log(supabase, "elevenlabs", "error", "Falha upload narração", { upErr });
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from("audios").getPublicUrl(filename);
-    await supabase.from("promocoes")
-      .update({ audio_narracao_url: urlData.publicUrl }).eq("id", promocaoId);
-    await log(supabase, "elevenlabs", "success", `Narração gerada: ${urlData.publicUrl}`);
-  } catch (err: any) {
-    await log(supabase, "elevenlabs", "error", "Exceção narração", { erro: err?.message });
+  } catch (e: any) {
+    await log(supabase, "orquestrador", "error", "Exceção ao invocar agente-videomaker", { erro: e?.message });
   }
 }
 
