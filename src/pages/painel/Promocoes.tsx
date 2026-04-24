@@ -11,6 +11,7 @@ import { Search, CheckCircle, XCircle, RefreshCw, Video, Eye, Plus, FileText, Ch
 import { Label } from "@/components/ui/label";
 import { Json } from "@/integrations/supabase/types";
 import BotaoGerarVideo from "@/components/painel/BotaoGerarVideo";
+import PromocaoDetalhes from "@/components/painel/PromocaoDetalhes";
 
 interface Promo {
   id: string;
@@ -60,6 +61,7 @@ const Promocoes = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Promo | null>(null);
+  const [detalhesId, setDetalhesId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showInsert, setShowInsert] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -248,7 +250,7 @@ const Promocoes = () => {
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => setSelected(p)} className="text-slate-400 hover:text-white">
+                      <Button size="sm" variant="ghost" onClick={() => setDetalhesId(p.id)} className="text-slate-400 hover:text-white" title="Ver pacote criativo">
                         <Eye className="h-4 w-4" />
                       </Button>
                       <BotaoGerarVideo
