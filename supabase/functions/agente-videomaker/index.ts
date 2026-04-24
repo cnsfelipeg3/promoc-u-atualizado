@@ -374,152 +374,155 @@ Deno.serve(async (req) => {
     const { data: promo, error: pErr } = await supabase.from("promocoes").select("*").eq("id", promoId).single();
     if (pErr || !promo) throw new Error("Promo não encontrada: " + pErr?.message);
 
-    // Parse storyboard
+    // Load voice config
+    const { data: cfgRow } = await supabase.from("config_agentes").select("config").eq("agente", "orquestrador").maybeSingle();
+    const voiceId = ((cfgRow?.config as Record<string, unknown>)?.elevenlabs_voice as string) || "nPczCjzI2devNBz1zQrb";
+
+    // Parse storyboard / video_prompts
     const pv = promo.prompt_variations as Record<string, unknown> | null;
     const storyboard = (pv?.storyboard || pv) as Record<string, unknown>;
-    const partA = (storyboard?.part_a || (storyboard?.parts as unknown[])?.[0]) as { prompt: string; motion_prompt?: string; duration?: number } | undefined;
-    const partB = (storyboard?.part_b || (storyboard?.parts as unknown[])?.[1]) as { prompt: string; motion_prompt?: string; duration?: number } | undefined;
-    const narrationScript = (storyboard?.narration_script || pv?.narration_script) as string | undefined;
+    const videoPromptsArr = (promo.video_prompts || pv?.video_prompts || null) as string[] | null;
+    const partA = (storyboard?.part_a || (storyboard?.parts as unknown[])?.[0]) as { prompt: string; motion_prompt?: string } | undefined;
+    const partB = (storyboard?.part_b || (storyboard?.parts as unknown[])?.[1]) as { prompt: string; motion_prompt?: string } | undefined;
+    const narrationScript = (promo.narration_script || storyboard?.narration_script || pv?.narration_script) as string | undefined;
 
-    if (!partA?.prompt || !partB?.prompt) throw new Error("Storyboard incompleto: part_a.prompt e part_b.prompt obrigatórios");
     if (!narrationScript) throw new Error("narration_script ausente");
 
     // Create video record
     const { data: videoRec, error: insErr } = await supabase.from("videos").insert({
-      promocao_id: promoId, variation_label: "Story 30s", status: "gerando",
-      storyboard: storyboard,
-      payload: { partA, partB },
+      promocao_id: promoId, variation_label: "Story dinâmico", status: "gerando_narracao",
+      storyboard, payload: { partA, partB, video_prompts: videoPromptsArr },
     }).select().single();
     if (insErr) throw new Error("Insert video: " + insErr.message);
     const videoId = videoRec.id;
 
     await supabase.from("promocoes").update({ status: "em_producao" }).eq("id", promoId);
 
-    // ═══ FASE 1: Discover T2I and generate images ═══
-    const t2iEndpoint = await discoverT2I(higgsHeaders, logFn);
-    if (!t2iEndpoint) throw new Error("Nenhum modelo T2I disponível no Higgsfield. Verifique créditos e API key.");
-
-    await log(supabase, "info", `Gerando imagens via ${t2iEndpoint.name}...`);
-
-    const [imgReqA, imgReqB] = await Promise.all([
-      submitToHiggsfield(t2iEndpoint.path, t2iEndpoint.body(partA.prompt), higgsHeaders),
-      submitToHiggsfield(t2iEndpoint.path, t2iEndpoint.body(partB.prompt), higgsHeaders),
-    ]);
-
-    await log(supabase, "success", `T2I submetido — A: ${imgReqA}, B: ${imgReqB}`);
-
-    // Poll images (timeout 90s)
-    const imgStart = Date.now();
-    let imageUrlA: string | null = null;
-    let imageUrlB: string | null = null;
-
-    while (Date.now() - imgStart < 90000) {
-      await new Promise(r => setTimeout(r, 3000));
-
-      if (!imageUrlA) {
-        const rA = await pollHiggsfield(imgReqA, higgsAuth);
-        if (rA.status === "completed" && rA.imageUrl) imageUrlA = rA.imageUrl;
-        if (rA.status === "failed") throw new Error("Imagem A falhou: " + rA.error);
-      }
-      if (!imageUrlB) {
-        const rB = await pollHiggsfield(imgReqB, higgsAuth);
-        if (rB.status === "completed" && rB.imageUrl) imageUrlB = rB.imageUrl;
-        if (rB.status === "failed") throw new Error("Imagem B falhou: " + rB.error);
-      }
-      if (imageUrlA && imageUrlB) break;
-    }
-
-    if (!imageUrlA || !imageUrlB) throw new Error(`Timeout T2I (90s). A: ${imageUrlA ? "ok" : "pendente"}, B: ${imageUrlB ? "ok" : "pendente"}`);
-    await log(supabase, "success", `Imagens prontas!`);
-
-    // ═══ FASE 2: Discover I2V and animate images ═══
-    const motionA = partA.motion_prompt || "Slow cinematic dolly forward through the scene, subtle ambient motion";
-    const motionB = partB.motion_prompt || "Smooth orbit camera movement around the subject, gentle ambient motion";
-
-    // Discover I2V using image A — this first request IS Part A
-    const i2vDiscovery = await discoverI2V(imageUrlA, motionA, higgsHeaders, logFn);
-    if (!i2vDiscovery) throw new Error("Nenhum modelo I2V disponível. Testados: " + I2V_ENDPOINTS.map(e => e.name).join(", "));
-
-    const partAVideoReqId = i2vDiscovery.requestId;
-    const i2vEp = i2vDiscovery.endpoint;
-
-    // Submit Part B with same endpoint
-    const partBVideoReqId = await submitToHiggsfield(i2vEp.path, i2vEp.body(imageUrlB, motionB), higgsHeaders);
-    await log(supabase, "success", `I2V submetido via ${i2vEp.name} — A: ${partAVideoReqId}, B: ${partBVideoReqId}`);
-
-    // Generate narration in parallel
+    // ═══ FASE 0: Narração PRIMEIRO (define duração total) ═══
     let narrationUrl: string | null = null;
+    let totalDuration = 30;
     try {
-      narrationUrl = await generateNarration(narrationScript, EL_KEY, supabase, promoId);
+      const nar = await generateNarration(narrationScript, EL_KEY, supabase, promoId, voiceId);
+      narrationUrl = nar.url;
+      totalDuration = nar.durationS;
+      await supabase.from("promocoes").update({
+        audio_narracao_url: narrationUrl,
+        duracao_narracao_s: totalDuration,
+      }).eq("id", promoId);
     } catch (e) {
-      await log(supabase, "warn", `Narração falhou: ${(e as Error).message} — continuando sem`);
+      await log(supabase, "warn", `Narração falhou: ${(e as Error).message} — usando 30s default`);
     }
 
-    // Save state
-    await supabase.from("videos").update({
-      status: "aguardando_render",
-      narration_url: narrationUrl,
-      payload: {
-        provider: "higgsfield",
-        t2i_model: t2iEndpoint.name,
-        i2v_model: i2vEp.name,
-        partA: { ...partA, image_url: imageUrlA, request_id: partAVideoReqId },
-        partB: { ...partB, image_url: imageUrlB, request_id: partBVideoReqId },
-        narration_url: narrationUrl,
-        overlay_config: storyboard?.overlay_config,
-        narration_script: narrationScript,
-      },
-    }).eq("id", videoId);
+    // ═══ Calcular N de clipes (cap 4 pra caber em ~150s timeout) ═══
+    // N=2 cobre até ~10s, N=3 até ~14.5s, N=4 até ~19s. Estende último clipe pra cobrir resto.
+    const N = Math.min(4, Math.max(2, Math.ceil(totalDuration / 9)));
+    await log(supabase, "info", `Narração ${totalDuration.toFixed(1)}s → ${N} clipes Higgsfield`);
 
-    // ═══ FASE 3: Poll videos (timeout 240s) ═══
+    // ═══ Resolver lista de prompts ═══
+    let prompts: Array<{ prompt: string; motion: string }> = [];
+    if (videoPromptsArr && videoPromptsArr.length >= N) {
+      prompts = videoPromptsArr.slice(0, N).map((p, i) => ({
+        prompt: p,
+        motion: i === 0 ? "Slow cinematic dolly forward, subtle ambient motion"
+          : i === N - 1 ? "Slow zoom out reveal, dreamy atmosphere"
+          : "Smooth tracking camera, gentle parallax",
+      }));
+    } else if (partA?.prompt && partB?.prompt) {
+      // fallback: repete part_a/part_b alternando
+      for (let i = 0; i < N; i++) {
+        const src = i % 2 === 0 ? partA : partB;
+        prompts.push({
+          prompt: src.prompt,
+          motion: src.motion_prompt || (i % 2 === 0 ? "Slow dolly forward" : "Smooth orbit"),
+        });
+      }
+    } else {
+      throw new Error("Sem video_prompts[] nem storyboard.part_a/part_b — regenere o pacote");
+    }
+
+    await supabase.from("promocoes").update({ clipes_total: N, clipes_recebidos: 0 }).eq("id", promoId);
+
+    // ═══ FASE 1: Discover T2I e gerar N imagens em paralelo ═══
+    await supabase.from("videos").update({ status: "gerando_arte" }).eq("id", videoId);
+    const t2iEndpoint = await discoverT2I(higgsHeaders, logFn);
+    if (!t2iEndpoint) throw new Error("Nenhum modelo T2I disponível no Higgsfield. Verifique créditos.");
+
+    await log(supabase, "info", `Submetendo ${N} imagens via ${t2iEndpoint.name}...`);
+    const imgReqIds = await Promise.all(
+      prompts.map(p => submitToHiggsfield(t2iEndpoint.path, t2iEndpoint.body(p.prompt), higgsHeaders))
+    );
+    await log(supabase, "success", `T2I submetido: ${imgReqIds.length} requests`);
+
+    // Poll imagens (timeout 120s)
+    const imgStart = Date.now();
+    const imageUrls: (string | null)[] = new Array(N).fill(null);
+    while (Date.now() - imgStart < 120000) {
+      await new Promise(r => setTimeout(r, 3500));
+      await Promise.all(imgReqIds.map(async (rid, i) => {
+        if (imageUrls[i]) return;
+        const r = await pollHiggsfield(rid, higgsAuth);
+        if (r.status === "completed" && r.imageUrl) imageUrls[i] = r.imageUrl;
+        else if (r.status === "failed") throw new Error(`Imagem #${i + 1} falhou: ${r.error}`);
+      }));
+      if (imageUrls.every(Boolean)) break;
+    }
+    if (!imageUrls.every(Boolean)) {
+      throw new Error(`Timeout T2I (120s). Prontas: ${imageUrls.filter(Boolean).length}/${N}`);
+    }
+    await log(supabase, "success", `${N} imagens prontas`);
+
+    // ═══ FASE 2: Discover I2V (1ª submissão) + submeter restantes ═══
+    await supabase.from("videos").update({ status: "gerando_video" }).eq("id", videoId);
+    const disc = await discoverI2V(imageUrls[0]!, prompts[0].motion, higgsHeaders, logFn);
+    if (!disc) throw new Error("Nenhum I2V disponível. Testados: " + I2V_ENDPOINTS.map(e => e.name).join(", "));
+
+    const videoReqIds: string[] = [disc.requestId];
+    const i2vEp = disc.endpoint;
+    for (let i = 1; i < N; i++) {
+      const rid = await submitToHiggsfield(i2vEp.path, i2vEp.body(imageUrls[i]!, prompts[i].motion), higgsHeaders);
+      videoReqIds.push(rid);
+    }
+    await log(supabase, "success", `I2V submetido (${i2vEp.name}): ${videoReqIds.length} requests`);
+
+    // Poll vídeos (timeout 240s)
     const vidStart = Date.now();
-    let videoUrlA: string | null = null;
-    let videoUrlB: string | null = null;
-
-    await log(supabase, "info", `Polling vídeos I2V (timeout: 240s)...`);
+    const videoUrls: (string | null)[] = new Array(N).fill(null);
+    await log(supabase, "info", `Polling ${N} vídeos I2V (timeout: 240s)...`);
 
     while (Date.now() - vidStart < 240000) {
       await new Promise(r => setTimeout(r, 8000));
       const elapsed = Math.round((Date.now() - vidStart) / 1000);
-
-      if (!videoUrlA) {
-        const rA = await pollHiggsfield(partAVideoReqId, higgsAuth);
-        if (rA.status === "completed" && rA.videoUrl) { videoUrlA = rA.videoUrl; await log(supabase, "success", `[A] Vídeo pronto! ${elapsed}s`); }
-        else if (rA.status === "failed") throw new Error("[A] I2V falhou: " + rA.error);
+      await Promise.all(videoReqIds.map(async (rid, i) => {
+        if (videoUrls[i]) return;
+        const r = await pollHiggsfield(rid, higgsAuth);
+        if (r.status === "completed" && r.videoUrl) {
+          videoUrls[i] = r.videoUrl;
+          await log(supabase, "success", `[clipe ${i + 1}] pronto em ${elapsed}s`);
+          await supabase.from("promocoes").update({ clipes_recebidos: videoUrls.filter(Boolean).length }).eq("id", promoId);
+        } else if (r.status === "failed") {
+          throw new Error(`[clipe ${i + 1}] I2V falhou: ${r.error}`);
+        }
+      }));
+      if (videoUrls.every(Boolean)) break;
+      if (elapsed % 30 < 10) {
+        const ready = videoUrls.filter(Boolean).length;
+        await log(supabase, "info", `Polling ${elapsed}s — ${ready}/${N} prontos`);
       }
-      if (!videoUrlB) {
-        const rB = await pollHiggsfield(partBVideoReqId, higgsAuth);
-        if (rB.status === "completed" && rB.videoUrl) { videoUrlB = rB.videoUrl; await log(supabase, "success", `[B] Vídeo pronto! ${elapsed}s`); }
-        else if (rB.status === "failed") throw new Error("[B] I2V falhou: " + rB.error);
-      }
-
-      if (videoUrlA && videoUrlB) break;
-      if (elapsed % 30 < 10) await log(supabase, "info", `Polling ${elapsed}s — A: ${videoUrlA ? "✅" : "⏳"}, B: ${videoUrlB ? "✅" : "⏳"}`);
+    }
+    if (!videoUrls.every(Boolean)) {
+      const ready = videoUrls.filter(Boolean).length;
+      throw new Error(`Timeout I2V (240s). Prontos: ${ready}/${N}`);
     }
 
-    if (!videoUrlA || !videoUrlB) {
-      await supabase.from("videos").update({
-        status: "timeout_render",
-        payload: {
-          partA: { request_id: partAVideoReqId, video_url: videoUrlA },
-          partB: { request_id: partBVideoReqId, video_url: videoUrlB },
-          narration_url: narrationUrl,
-        },
-      }).eq("id", videoId);
-      await log(supabase, "warn", `Timeout. A: ${videoUrlA ? "ok" : "pendente"}, B: ${videoUrlB ? "ok" : "pendente"}`);
-      return new Response(JSON.stringify({ status: "timeout", videoId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    // Upload clipes pro storage
+    const storedClipes = await Promise.all(
+      videoUrls.map((url, i) => uploadToStorage(supabase, url!, `scenes/${promoId}_${i}_${Date.now()}.mp4`, "video/mp4"))
+    );
+    await supabase.from("promocoes").update({ clipes_urls: storedClipes }).eq("id", promoId);
+    await supabase.from("videos").update({ scene_video_url: storedClipes[0], status: "compondo" }).eq("id", videoId);
 
-    // Upload scenes to storage
-    const [storedA, storedB] = await Promise.all([
-      uploadToStorage(supabase, videoUrlA, `scenes/${promoId}_A_${Date.now()}.mp4`, "video/mp4"),
-      uploadToStorage(supabase, videoUrlB, `scenes/${promoId}_B_${Date.now()}.mp4`, "video/mp4"),
-    ]);
-
-    await supabase.from("videos").update({ scene_video_url: storedA, status: "compondo" }).eq("id", videoId);
-
-    // ═══ FASE 4: Creatomate composition ═══
-    await log(supabase, "info", "Compondo vídeo final 1080x1920...");
+    // ═══ FASE 4: Creatomate dinâmico ═══
+    await log(supabase, "info", `Compondo vídeo final 1080x1920 com ${N} clipes + narração ${totalDuration.toFixed(1)}s...`);
 
     const overlayData = {
       destino: (promo.destino as string)?.split("(")?.[0]?.trim() || promo.destino || "",
@@ -530,19 +533,23 @@ Deno.serve(async (req) => {
       escalas: (promo.escalas as string) || "Direto",
       tipo: (promo.tipo_voo as string) || "ida e volta",
     };
+    const textOverlaysArr = Array.isArray(promo.text_overlays) ? (promo.text_overlays as Array<{ tempo_s: number; texto: string }>) : [];
 
-    const creatPayload = buildCreatomatePayload(storedA, storedB, narrationUrl, overlayData);
+    const creatPayload = buildCreatomatePayload(storedClipes, narrationUrl, totalDuration, overlayData, textOverlaysArr);
     const finalUrl = await composeWithCreatomate(creatPayload as unknown as Record<string, unknown>, CREAT_KEY, supabase);
     const storedFinal = await uploadToStorage(supabase, finalUrl, `finals/${promoId}_${Date.now()}.mp4`, "video/mp4");
 
     await supabase.from("videos").update({
-      video_url: storedA, video_final_url: storedFinal, narration_url: narrationUrl,
+      video_url: storedClipes[0], video_final_url: storedFinal, narration_url: narrationUrl,
       status: "pronto", erro_detalhes: null,
     }).eq("id", videoId);
-    await supabase.from("promocoes").update({ status: "video_pronto" }).eq("id", promoId);
-    await log(supabase, "success", `✅ Vídeo PRONTO: ${storedFinal}`);
+    await supabase.from("promocoes").update({
+      status: "video_pronto",
+      video_final_url: storedFinal,
+    }).eq("id", promoId);
+    await log(supabase, "success", `✅ Vídeo PRONTO (${N} clipes, ${totalDuration.toFixed(1)}s): ${storedFinal}`);
 
-    return new Response(JSON.stringify({ status: "pronto", videoId, videoUrl: storedFinal }), {
+    return new Response(JSON.stringify({ status: "pronto", videoId, videoUrl: storedFinal, duration: totalDuration, clipes: N }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
