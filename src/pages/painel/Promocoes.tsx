@@ -552,6 +552,14 @@ const Promocoes = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Novo modal de detalhes do pacote criativo */}
+      <PromocaoDetalhes
+        promocaoId={detalhesId}
+        open={!!detalhesId}
+        onClose={() => setDetalhesId(null)}
+        onChange={fetchPromos}
+      />
     </div>
   );
 };
