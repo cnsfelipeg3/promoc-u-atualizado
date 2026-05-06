@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Plane } from "lucide-react";
 import logoWhite from "@/assets/logo-promoceu-branco.png";
 
+/* Itens de menu desabilitados em 2026-05-06 — manter para futura reativação
 const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
   { label: "Tecnologia", href: "#tecnologia" },
@@ -19,6 +20,7 @@ const navLinks = [
   { label: "Planos", href: "#planos" },
   { label: "FAQ", href: "#faq" },
 ];
+*/
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
