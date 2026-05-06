@@ -3,18 +3,22 @@ import SocialProofNotifications from "@/components/landing/SocialProofNotificati
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import HowPromoCeuWorksSection from "@/components/landing/HowPromoCeuWorksSection";
-import TechnologySection from "@/components/landing/TechnologySection";
+// DESABILITADO em 2026-05-06 — Seção Tecnologia removida da home pra enxugar a página de venda. Restaurar descomentando este bloco se necessário.
+// import TechnologySection from "@/components/landing/TechnologySection";
 import NumbersSection from "@/components/landing/NumbersSection";
 import PriceDropChartSection from "@/components/landing/PriceDropChartSection";
 import SavingsCounterSection from "@/components/landing/SavingsCounterSection";
 import MidCTASection from "@/components/landing/MidCTASection";
-import ProofSection from "@/components/landing/ProofSection";
+// DESABILITADO em 2026-05-06 — Seção "Promoções reais que passaram pelo grupo" removida (redundante com FlightBoard).
+// import ProofSection from "@/components/landing/ProofSection";
 import FlightBoardSection from "@/components/landing/FlightBoardSection";
 import GlobalMapSection from "@/components/landing/GlobalMapSection";
-import BrazilStatesSection from "@/components/landing/BrazilStatesSection";
+// DESABILITADO em 2026-05-06 — Seção "Promoções por estado" removida (terceira prova social redundante).
+// import BrazilStatesSection from "@/components/landing/BrazilStatesSection";
 import AirlinePartnersSection from "@/components/landing/AirlinePartnersSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import HowItWorksSection from "@/components/landing/HowItWorksSection";
+// DESABILITADO em 2026-05-06 — Seção "Como funciona na prática" removida (já consolidada nos ícones do hero).
+// import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import PlansSection from "@/components/landing/PlansSection";
 import GuaranteeSection from "@/components/landing/GuaranteeSection";
@@ -38,7 +42,8 @@ const Index = () => {
       <HeroSection />
 
       <HowPromoCeuWorksSection />
-      <TechnologySection />
+      {/* DESABILITADO em 2026-05-06 — Seção Tecnologia removida da home pra enxugar a página de venda. */}
+      {/* <TechnologySection /> */}
 
       <NumbersSection />
       <PriceDropChartSection />
@@ -46,15 +51,18 @@ const Index = () => {
 
       <MidCTASection />
 
-      <ProofSection />
+      {/* DESABILITADO em 2026-05-06 — Seção "Promoções reais que passaram pelo grupo" removida (redundante com FlightBoard). */}
+      {/* <ProofSection /> */}
       <FlightBoardSection />
       <GlobalMapSection />
-      <BrazilStatesSection />
+      {/* DESABILITADO em 2026-05-06 — Seção "Promoções por estado" removida (terceira prova social redundante). */}
+      {/* <BrazilStatesSection /> */}
 
       <AirlinePartnersSection />
       <TestimonialsSection />
 
-      <HowItWorksSection />
+      {/* DESABILITADO em 2026-05-06 — Seção "Como funciona na prática" removida (já consolidada nos ícones do hero). */}
+      {/* <HowItWorksSection /> */}
       <ComparisonSection />
 
       <PlansSection />
@@ -94,7 +102,7 @@ const Index = () => {
               <h4 className="font-display font-semibold mb-4 text-sm text-foreground">Informações</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>contato@promoceu.com.br</p>
-                <p>CNPJ: 00.000.000/0001-00</p>
+                <p>CNPJ: [INSERIR_CNPJ_PROMOCEU]</p>
                 <p>São Paulo, SP — Brasil</p>
               </div>
             </div>
