@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, Plane } from "lucide-react";
+import { motion } from "framer-motion";
+import { Plane } from "lucide-react";
 import logoWhite from "@/assets/logo-promoceu-branco.png";
 
+/* Itens de menu desabilitados em 2026-05-06 — manter para futura reativação
 const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
   { label: "Tecnologia", href: "#tecnologia" },
@@ -19,11 +20,10 @@ const navLinks = [
   { label: "Planos", href: "#planos" },
   { label: "FAQ", href: "#faq" },
 ];
+*/
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
   useEffect(() => {
@@ -54,92 +54,12 @@ export default function Navbar() {
             />
           </a>
 
-          <div className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <div
-                key={link.label}
-                className="relative"
-                onMouseEnter={() => link.sub && setOpenDropdown(link.label)}
-                onMouseLeave={() => setOpenDropdown(null)}
-              >
-                <a
-                  href={link.href}
-                  className="flex items-center gap-1 px-3.5 py-2 text-sm font-medium text-foreground/70 hover:text-primary transition-colors rounded-lg hover:bg-primary/5"
-                >
-                  {link.label}
-                  {link.sub && <ChevronDown className="w-3.5 h-3.5" />}
-                </a>
-                <AnimatePresence>
-                  {link.sub && openDropdown === link.label && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 8 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-1 w-48 rounded-xl shadow-lg overflow-hidden glass-card"
-                    >
-                      {link.sub.map((sub) => (
-                        <a
-                          key={sub.label}
-                          href={sub.href}
-                          className="block px-4 py-2.5 text-sm text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
-                        >
-                          {sub.label}
-                        </a>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-
-          <div className="hidden lg:flex items-center gap-3">
-            <a href="#planos" className="glow-button text-sm !px-5 !py-2.5 flex items-center gap-2">
-              <Plane className="w-4 h-4" />
-              Assinar agora
-            </a>
-          </div>
-
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-foreground">
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <a href="#planos" className="glow-button text-sm !px-5 !py-2.5 flex items-center gap-2">
+            <Plane className="w-4 h-4" />
+            Assinar agora
+          </a>
         </div>
       </div>
-
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="lg:hidden overflow-hidden bg-background/95 backdrop-blur-lg border-b border-border/50"
-          >
-            <div className="px-4 py-4 space-y-1">
-              {navLinks.map((link) => (
-                <div key={link.label}>
-                  <a href={link.href} onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
-                    {link.label}
-                  </a>
-                  {link.sub && (
-                    <div className="pl-6">
-                      {link.sub.map((sub) => (
-                        <a key={sub.label} href={sub.href} onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                          {sub.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              <a href="#planos" onClick={() => setMobileOpen(false)} className="block glow-button text-sm text-center mt-4">
-                Assinar agora
-              </a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.nav>
   );
 }

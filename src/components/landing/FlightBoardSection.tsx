@@ -299,10 +299,10 @@ export default function FlightBoardSection() {
             </p>
           </div>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-center mb-4">
-            Terminal de monitoramento <span className="text-gradient-primary">PromoCéu</span>
+            Oportunidades reais detectadas pela <span className="text-gradient-primary">plataforma</span>
           </h2>
           <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-            Clique em qualquer voo para ver a rota real no mapa interativo.
+            Voos monitorados em tempo real — assim como aparecem no grupo todos os dias.
           </p>
         </ScrollReveal>
 
