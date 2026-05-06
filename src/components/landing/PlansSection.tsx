@@ -163,6 +163,26 @@ export default function PlansSection() {
             </ScrollReveal>
           ))}
         </div>
+
+        <ScrollReveal delay={0.2}>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-0 text-sm text-muted-foreground">
+            {[
+              "Cancele quando quiser, sem multa",
+              "Compra 100% segura via Hub.la",
+              "Acesso imediato ao grupo",
+            ].map((badge, i, arr) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                  {badge}
+                </span>
+                {i < arr.length - 1 && (
+                  <span className="hidden sm:inline text-muted-foreground/40 px-3">·</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollReveal>
       </div>
 
       <AnimatePresence>
